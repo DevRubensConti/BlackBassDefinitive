@@ -5,7 +5,7 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: linear-gradient(rgba(10,10,10,.95), rgba(10,10,10,.95)),
+  background: linear-gradient(rgba(10,10,10,.75), rgba(10,10,10,.75)),
               url('/images/background.png') no-repeat center center fixed;
   background-size: cover;
   color: var(--cor-secundaria);
@@ -160,11 +160,11 @@ button:active { transform: translateY(1px); }
 
 /* Botão Fale com o Vendedor */
 .btn-chat {
-  background-color: var(--cor-secundaria-clara);
+  background-color: var(--cor-primaria);
   color: #fff;
 }
 .btn-chat:hover {
-  background-color: var(--cor-secundaria-escura-2);
+  background-color: var(--cor-primaria-escura);
 }
 
 /* Botão Favoritar */
@@ -174,7 +174,7 @@ button:active { transform: translateY(1px); }
   border: 2px solid var(--cor-secundaria);
 }
 .btn-favorite:hover {
-  background-color: var(--cor-secundaria-escura-2);
+  background-color: var(--cor-secundaria-clara);
   color: #fff;
 }
 
@@ -266,7 +266,7 @@ button:active { transform: translateY(1px); }
 
 .stars-item{align-self: left;}
 .star-item.filled{ font-size:18px; opacity:1; }
-.star-item{ font-size:18px; opacity:.25; align: left;}
+.star-item{ font-size:18px; opacity:.25; }
 
 .item-views {
   display: flex;
@@ -326,6 +326,7 @@ button:active { transform: translateY(1px); }
   .price-rating h2 { font-size: 18px; }
   .rating { font-size: 16px; }
   .description { font-size: 13px;}
+
   .item-specs h3 { font-size: 14px; }
   .item-specs li { font-size: 12px; }
   .seller-card{ flex-direction:column; }
@@ -333,3 +334,53 @@ button:active { transform: translateY(1px); }
   .seller-avatar{ width:110px; height:110px; }
   .seller-desc{ min-height:120px; }
 }
+
+/* --- Modal de Oferta --- */
+.oferta-modal {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.45); z-index: 1000; padding: 20px;
+}
+.oferta-modal.hidden { display: none; }
+
+.oferta-dialog {
+  width: 100%; max-width: 520px; background: var(--cor-letras-navbar); border-radius: 16px; padding: 22px 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+}
+.oferta-close {
+  position: absolute; margin-left: -6px; margin-top: -6px; right: 18px; top: 14px; border: 0; background: transparent;
+  font-size: 28px; line-height: 1; cursor: pointer;
+}
+.oferta-price-line { display: flex; justify-content: space-between; margin: 10px 0 14px; }
+.oferta-label { display: block; font-weight: 600; margin: 10px 0 6px; }
+#ofertaValor, #ofertaMensagem {
+  width: 100%; border: 1px solid #ddd; border-radius: 10px; padding: 10px 12px; font-size: 16px;
+}
+.oferta-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+.btn-primary {
+  background: var(--cor-primaria, #57BD89); color: #fff; border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+}
+.btn-outline {
+  background: #fff; color: #333; border: 1px solid #ccc; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+}
+.btn-offer {
+  width: 100%; background: var(--cor-primaria-clara, #ff9060); color: #fff; border: 0; padding: 12px 14px; border-radius: 12px; cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-offer:hover {
+  background: var(--cor-primaria-escura);
+  
+}
+
+.oferta-feedback { margin-top: 10px; font-size: 0.95rem; color: #333; }
+
+.btn.disabled,
+button.disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.indisponivel { color: #d33; font-weight: 600; }
+.disponivel   { color: #2e7d32; }
+.description { white-space: pre-line; line-height: 1.5; }

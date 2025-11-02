@@ -14,13 +14,49 @@
     <form method="GET" class="filtros-lojas" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
     <input type="text" name="nome" placeholder="Buscar por nome da loja" value="<%= query?.nome || '' %>" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
 
-    <select name="estado" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
-        <option value="">Todos os estados</option>
-        <option value="SP" <%= query?.estado === 'SP' ? 'selected' : '' %>>São Paulo</option>
-        <option value="RJ" <%= query?.estado === 'RJ' ? 'selected' : '' %>>Rio de Janeiro</option>
-        <option value="MG" <%= query?.estado === 'MG' ? 'selected' : '' %>>Minas Gerais</option>
-        <!-- Adicione mais se quiser -->
-    </select>
+<%
+// Lista oficial de UFs — o value é a sigla, pois é o que vai para o banco
+const UFs = [
+  { sigla: 'AC', nome: 'Acre' },
+  { sigla: 'AL', nome: 'Alagoas' },
+  { sigla: 'AP', nome: 'Amapá' },
+  { sigla: 'AM', nome: 'Amazonas' },
+  { sigla: 'BA', nome: 'Bahia' },
+  { sigla: 'CE', nome: 'Ceará' },
+  { sigla: 'DF', nome: 'Distrito Federal' },
+  { sigla: 'ES', nome: 'Espírito Santo' },
+  { sigla: 'GO', nome: 'Goiás' },
+  { sigla: 'MA', nome: 'Maranhão' },
+  { sigla: 'MT', nome: 'Mato Grosso' },
+  { sigla: 'MS', nome: 'Mato Grosso do Sul' },
+  { sigla: 'MG', nome: 'Minas Gerais' },
+  { sigla: 'PA', nome: 'Pará' },
+  { sigla: 'PB', nome: 'Paraíba' },
+  { sigla: 'PR', nome: 'Paraná' },
+  { sigla: 'PE', nome: 'Pernambuco' },
+  { sigla: 'PI', nome: 'Piauí' },
+  { sigla: 'RJ', nome: 'Rio de Janeiro' },
+  { sigla: 'RN', nome: 'Rio Grande do Norte' },
+  { sigla: 'RS', nome: 'Rio Grande do Sul' },
+  { sigla: 'RO', nome: 'Rondônia' },
+  { sigla: 'RR', nome: 'Roraima' },
+  { sigla: 'SC', nome: 'Santa Catarina' },
+  { sigla: 'SP', nome: 'São Paulo' },
+  { sigla: 'SE', nome: 'Sergipe' },
+  { sigla: 'TO', nome: 'Tocantins' },
+];
+const estadoSel = (query?.estado || '').toUpperCase();
+%>
+
+<select name="estado" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+  <option value="">Todos os estados</option>
+  <% UFs.forEach(uf => { %>
+    <option value="<%= uf.sigla %>" <%= estadoSel === uf.sigla ? 'selected' : '' %>>
+      <%= uf.nome %> (<%= uf.sigla %>)
+    </option>
+  <% }) %>
+</select>
+
 
     <select name="nota_min" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
         <option value="">Qualquer nota</option>
@@ -34,23 +70,30 @@
 
 
     <% if (lojas.length === 0) { %>
-      <p style="color: #888; font-style: italic;">Nenhuma loja cadastrada até o momento.</p>
-    <% } else { %>
-      <div class="grid-produtos">
-        <% lojas.forEach(loja => { %>
-          <div class="card-produto">
-            <div class="mini-galeria">
-              <img src="<%= loja.icone_url || '/images/store_logos/store.png' %>" alt="Logo da Loja" class="banner-logo" style="max-height: 100px;">
-            </div>
-            <h4><%= loja.nomeFantasia %></h4>
-            <p><strong>Nota:</strong> <%= loja.nota %> ⭐</p>
-            <a href="/loja/<%= loja.id %>">
-              <button class="btn-vermais">Ver Produtos</button>
-            </a>
-          </div>
-        <% }) %>
+  <p style="color: #888; font-style: italic;">Nenhuma loja cadastrada até o momento.</p>
+<% } else { %>
+  <div class="grid-lojas">
+    <% lojas.forEach(loja => { %>
+      <div class="card-loja">
+        <img
+          src="<%= loja.icone_url || '/images/store_logos/store.png' %>"
+          alt="Logo da loja <%= loja.nomeFantasia %>"
+          class="banner-logo"
+          loading="lazy"
+        />
+        <h4 title="<%= loja.nomeFantasia %>"><%= loja.nomeFantasia %></h4>
+
+        <p>
+          <strong>Nota:</strong>
+          <%= Number(loja.nota_media || 0).toFixed(1) %> ⭐
+        </p>
+
+        <a class="btn-vermais" href="/loja/<%= loja.id %>">Ver Produtos</a>
       </div>
-    <% } %>
+    <% }) %>
+  </div>
+<% } %>
+
   </main>
 
   <%- include('partials/footer.ejs') %>

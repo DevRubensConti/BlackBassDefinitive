@@ -1,0 +1,272 @@
+<!-- views/loja-financeiro.ejs -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Financeiro — <%= loja.nomeFantasia %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/financeiro.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .fin-actions{display:flex;gap:10px;align-items:center}
+    .btn.sec{background:#fff;color:var(--cor-primaria);border:1px solid var(--cor-primaria)}
+    .top-produto{display:flex;align-items:center;gap:10px}
+    .top-produto img{width:40px;height:40px;object-fit:cover;border-radius:8px;background:#f4f4f4}
+    .empty{padding:12px;background:rgba(0,0,0,.03);border-radius:10px}
+    .grid-2{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;align-items:start}
+    @media (max-width:960px){.grid-2{grid-template-columns:1fr}}
+    .ano-toolbar{display:flex;align-items:center;gap:10px;margin:8px 0 12px}
+    .ano-toolbar label{font-size:14px;opacity:.8}
+    .ano-toolbar select{padding:6px 8px;border:1px solid #ddd;border-radius:8px;background:#fff}
+  </style>
+</head>
+<body>
+
+<main class="fin-container">
+  <% const brl = n => Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); %>
+
+  <header class="fin-header">
+    <div>
+      <h1>Financeiro — <%= loja.nomeFantasia %></h1>
+      <div style="opacity:.7;font-size:12px;margin-top:2px;">
+        Período: <strong><%= de %></strong> a <strong><%= ate %></strong>
+      </div>
+    </div>
+
+    <div class="fin-actions">
+      <form method="GET" class="fin-filtros">
+        <label>De <input type="date" name="de" value="<%= de %>" required></label>
+        <label>Até <input type="date" name="ate" value="<%= ate %>" required></label>
+        <button class="btn">Aplicar</button>
+      </form>
+
+      <a class="btn sec"
+         href="/api/minha-loja/financeiro/export.csv?<%= new URLSearchParams({ de, ate }).toString() %>">
+         Exportar CSV
+      </a>
+    </div>
+  </header>
+
+  <!-- KPIs -->
+  <section class="fin-cards">
+    <div class="card">
+      <span class="label">GMV Realizado</span>
+      <strong><%= brl(resumo?.realizado?.gmv) %></strong>
+    </div>
+    <div class="card">
+      <span class="label">Pedidos Realizados</span>
+      <strong><%= resumo?.realizado?.pedidos || 0 %></strong>
+    </div>
+    <div class="card">
+      <span class="label">Ticket Médio (Realizado)</span>
+      <strong><%= brl(resumo?.realizado?.ticket_medio) %></strong>
+    </div>
+    <div class="card">
+      <span class="label">Repasse (Realizado)</span>
+      <strong><%= brl(resumo?.realizado?.repasse_loja) %></strong>
+    </div>
+
+    <div class="card">
+      <span class="label">GMV Previsto</span>
+      <strong><%= brl(resumo?.previsto?.gmv) %></strong>
+    </div>
+    <div class="card">
+      <span class="label">Pedidos Previstos</span>
+      <strong><%= resumo?.previsto?.pedidos || 0 %></strong>
+    </div>
+    <div class="card">
+      <span class="label">Ticket Médio (Previsto)</span>
+      <strong><%= brl(resumo?.previsto?.ticket_medio) %></strong>
+    </div>
+    <div class="card">
+      <span class="label">Repasse (Previsto)</span>
+      <strong><%= brl(resumo?.previsto?.repasse_loja) %></strong>
+    </div>
+  </section>
+
+  <section class="grid-2">
+    <!-- Vendas por mês (gráfico) -->
+    <section>
+      <h2>Vendas por mês — GMV</h2>
+
+      <!-- Filtro de Ano (client-side) -->
+      <div class="ano-toolbar">
+        <label for="anoSelect">Ano:</label>
+        <select id="anoSelect" aria-label="Filtrar por ano"></select>
+      </div>
+
+      <div class="card" style="padding:12px;">
+        <canvas id="gmvChart" height="120"></canvas>
+      </div>
+    </section>
+
+    <!-- Top Produtos -->
+    <section>
+      <h2>Top produtos (por GMV)</h2>
+      <% if (!topProdutos || !topProdutos.length) { %>
+        <div class="empty">Sem vendas realizadas no período.</div>
+      <% } else { %>
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Produto</th><th>Pedidos</th><th>Qtd</th><th>GMV</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% topProdutos.forEach(p => { %>
+              <tr>
+                <td>
+                  <a class="top-produto" href="/item/<%= p.produto_id %>">
+                    <% if (p.imagem_url) { %>
+                      <img src="<%= p.imagem_url %>" alt="">
+                    <% } else { %>
+                      <img src="/images/placeholder.png" alt="">
+                    <% } %>
+                    <span><%= p.nome || p.produto_id %></span>
+                  </a>
+                </td>
+                <td><%= p.pedidos %></td>
+                <td><%= p.qtd_total %></td>
+                <td><%= brl(p.gmv) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+  </section>
+
+  <!-- Série diária (tabela) -->
+  <section class="fin-tabelas">
+    <h2>Série diária — tabela</h2>
+    <% if (!diario || !diario.length) { %>
+      <div class="empty">Sem dados no período selecionado.</div>
+    <% } else { %>
+      <table class="tabela">
+        <thead>
+          <tr>
+            <th>Dia</th><th>Realização</th><th>Pedidos</th><th>GMV</th><th>Comissão</th><th>Repasse</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% diario.forEach(l => { %>
+            <tr>
+              <td><%= l.dia %></td>
+              <td class="chip <%= l.realizacao %>"><%= l.realizacao %></td>
+              <td><%= l.pedidos %></td>
+              <td><%= brl(l.gmv) %></td>
+              <td><%= brl(l.receita_marketplace) %></td>
+              <td><%= brl(l.repasse_loja) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </section>
+</main>
+
+<script>
+  // --- Gráfico mensal (a partir de "diario") ---
+  (function() {
+    const diario = <%- JSON.stringify(diario || []) %>;
+
+    // Utilidades
+    const mesesPt = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const fmtBRL = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+    // Descobrir anos disponíveis a partir de 'diario'
+    const anosSet = new Set(
+      diario
+        .map(r => {
+          // r.dia esperado "YYYY-MM-DD"
+          if (!r?.dia) return null;
+          const y = String(r.dia).slice(0,4);
+          return /^\d{4}$/.test(y) ? Number(y) : null;
+        })
+        .filter(Boolean)
+    );
+    if (anosSet.size === 0) anosSet.add(new Date().getFullYear());
+    const anos = Array.from(anosSet).sort((a,b)=>b-a); // desc
+
+    // Ano inicial (pega da URL se existir)
+    const url = new URL(window.location.href);
+    const anoURL = url.searchParams.get('ano');
+    let anoSelecionado = anoURL && /^\d{4}$/.test(anoURL) ? Number(anoURL) : anos[0];
+
+    // Preenche o select
+    const sel = document.getElementById('anoSelect');
+    anos.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a; opt.textContent = a;
+      if (a === anoSelecionado) opt.selected = true;
+      sel.appendChild(opt);
+    });
+
+    function agregaMensal(tipo, ano) {
+      // retorna array de 12 posições com GMV somado por mês (0..11)
+      const soma = Array(12).fill(0);
+      for (const r of diario) {
+        if (r.realizacao !== tipo || !r?.dia) continue;
+        const y = Number(String(r.dia).slice(0,4));
+        if (y !== ano) continue;
+        const m = Number(String(r.dia).slice(5,7)) - 1; // 0..11
+        if (m >= 0 && m <= 11) soma[m] += Number(r.gmv || 0);
+      }
+      return soma;
+    }
+
+    // Cria/Atualiza gráfico
+    const ctx = document.getElementById('gmvChart');
+    let chart;
+    function render(ano) {
+      const realizado = agregaMensal('realizado', ano);
+      const previsto  = agregaMensal('previsto',  ano);
+
+      const data = {
+        labels: mesesPt,
+        datasets: [
+          { label: 'GMV Realizado', data: realizado },
+          { label: 'GMV Previsto',  data: previsto }
+        ]
+      };
+
+      const options = {
+        responsive: true,
+        plugins: {
+          legend: { display: true },
+          tooltip: {
+            callbacks: {
+              label: c => `${c.dataset.label}: ${fmtBRL(c.parsed.y)}`
+            }
+          },
+          title: { display: false }
+        },
+        scales: {
+          y: { ticks: { callback: v => fmtBRL(v) } }
+        }
+      };
+
+      if (chart) {
+        chart.data = data;
+        chart.options = options;
+        chart.update();
+      } else if (ctx && window.Chart) {
+        chart = new Chart(ctx, { type: 'bar', data, options });
+      }
+    }
+
+    // Primeira renderização
+    render(anoSelecionado);
+
+    // Mudança de ano -> atualiza gráfico e URL (sem recarregar)
+    sel.addEventListener('change', () => {
+      anoSelecionado = Number(sel.value);
+      url.searchParams.set('ano', String(anoSelecionado));
+      history.replaceState(null, '', url.toString());
+      render(anoSelecionado);
+    });
+  })();
+</script>
+
+</body>
+</html>

@@ -6,7 +6,8 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
-const supabase = require('./supabase');
+const supabaseDb = require('./supabase/supabaseDb');
+
 
 const app = express();
 const server = http.createServer(app);
@@ -50,6 +51,11 @@ app.use('/', require('./routes/pedidos'));
 app.use('/', require('./routes/chat'));
 app.use('/', require('./routes/modelos')); 
 app.use('/', require('./routes/descricao')); 
+app.use('/', require('./routes/avaliacoes'));
+app.use('/', require('./routes/financeiro'));
+app.use('/', require('./routes/ofertas'));
+
+
 
 // ---------- Socket.io ----------
 io.on('connection', (socket) => {
@@ -77,7 +83,7 @@ io.on('connection', (socket) => {
       if (!chatId || !mensagem || !mensagem.trim()) return;
 
       // Salva no Supabase conforme nova estrutura
-      const { data, error } = await supabase
+      const { data, error } = await supabaseDb
         .from('mensagens')
         .insert([{
           chat_id: chatId,

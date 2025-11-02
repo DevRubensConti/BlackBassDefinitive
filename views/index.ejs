@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   
   <link rel="stylesheet" href="/css/index.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 </head>
 <body>
   <%- include('partials/navbar.ejs') %>
@@ -20,7 +22,7 @@
           </div>
           <div class="info-produto">
             <h3><%= item.nome %></h3>
-            <p><strong>Preço:</strong> R$ <%= item.preco %></p>
+            <p><strong>Preço:</strong> R$ <%= Number(item.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
             <p><strong>Shape:</strong> <%= item.shape || '—' %></p>
             <p><strong>Marca:</strong> <%= item.marca || '—' %></p>
             <p><strong>Condição:</strong> <%= item.condicao || '—' %></p>
@@ -60,28 +62,57 @@
 </div>
 
   <div class="stores-title">
-    <h2>Lojas Favoritas:</h2>
-  </div>
-  <div class="stores-carousel-wrap">
-    <div class="stores-carousel-row">
-      <img src="/images/back.png" id="storesBackBtn">
+  <h2>Lojas Favoritas:</h2>
+</div>
 
-      <div class="stores-carousel">
-        <div>
-          <% lojasTop.forEach(loja => { %>
-            <a href="/loja/<%= loja.id %>" title="<%= loja.nomeFantasia %>">
-              <img 
-                src="<%= loja.icone_url || '/images/store_logos/store.png' %>" 
-                alt="<%= loja.nomeFantasia %>" 
-                class="banner-logo"
-              >
-            </a>
-          <% }) %>
+<div class="stores-carousel-wrap">
+  <div class="stores-carousel-row">
+    <img src="/images/back.png" id="storesBackBtn" alt="Voltar">
+
+<div class="stores-carousel">
+  <div class="stores-track">
+    <% (lojasTop || []).forEach(loja => { %>
+      <div class="store-card">
+        <a href="/loja/<%= loja.id %>" title="<%= loja.nomeFantasia %>">
+          <img 
+            src="<%= loja.icone_url || '/images/store_logos/store.png' %>" 
+            alt="<%= loja.nomeFantasia %>" 
+            class="banner-logo"
+          >
+        </a>
+
+        <div class="store-rating">
+          <% 
+            const nota = Number(loja.nota_media) || 0;
+            const estrelasCheias = Math.floor(nota);
+            const meiaEstrela = (nota % 1) >= 0.5;
+            const estrelasVazias = 5 - estrelasCheias - (meiaEstrela ? 1 : 0);
+          %>
+
+          <% for (let i = 0; i < estrelasCheias; i++) { %>
+            <i class="fa-solid fa-star"></i>
+          <% } %>
+
+          <% if (meiaEstrela) { %>
+            <i class="fa-solid fa-star-half-stroke"></i>
+          <% } %>
+
+          <% for (let i = 0; i < estrelasVazias; i++) { %>
+            <i class="fa-regular fa-star"></i>
+          <% } %>
+
+          <span class="nota-text">(<%= nota.toFixed(1) %>)</span>
         </div>
       </div>
+    <% }) %>
+  </div>
+</div>
 
-      <img src="/images/forward.png" id="storesForwardBtn">
-    </div>
+    <img src="/images/forward.png" id="storesForwardBtn" alt="Avançar">
+  </div>
+</div>
+
+
 
   </div>
   

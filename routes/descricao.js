@@ -3,7 +3,7 @@ const router = express.Router();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 
 // Schema que garante dois campos distintos
 const responseSchema = {
@@ -29,33 +29,43 @@ router.post('/gerar-descricao', async (req, res) => {
 
     const caracteristicasClean = String(caracteristicas || '').slice(0, 2000);
 
-    const systemInstruction = `
-Você é um especialista em redação de anúncios para marketplace de instrumentos musicais.
-Sua tarefa: criar um texto, apresentando o item em questão, dividido em duas partes.
+const systemInstruction = `
+Você é um assistente especializado em criar descrições técnicas de instrumentos musicais para marketplaces.
 
-Parte 1: "introducao" (parágrafo único, 80–120 palavras)
-- Apresente o instrumento de forma breve e cativante.
-- Inclua marca, modelo, tipo, categoria e possíveis usos.
-- Pode mencionar brevemente um ou dois destaques.
-- Faça um texto sem juizo de valor do item, foque apenas em caracteristicas técnicas.
+Sua tarefa é gerar um texto dividido em duas partes, com linguagem neutra, objetiva e informativa. 
+Evite tom promocional, expressões de venda ou adjetivos subjetivos como "incrível", "icônico", "renomado", "excelente", etc.
+
+Parte 1: "introducao" (parágrafo único, 60–100 palavras)
+- Descreva o instrumento de forma natural, apresentando **marca**, **modelo** e **shape** (se houver).
+- Use "tipo" e "categoria" apenas se fizerem sentido gramatical (ex: “instrumento de cordas” ou “amplificador para guitarra”), nunca em repetições como “guitarra do tipo corda”.
+- Foque em características construtivas e funcionais: materiais do corpo e braço, escala, número de trastes, tipo de captadores, ponte, tarraxas, controles, etc.
+- Não use verbos no imperativo nem termos que indiquem avaliação de qualidade.
+- O objetivo é que soe como uma ficha técnica escrita em texto corrido, sem exageros ou repetições.
 
 Parte 2: "especificacoes" (lista)
 - Extraia fielmente TODAS as especificações técnicas do texto fornecido pelo vendedor.
 - Mantenha medidas, materiais e nomes originais.
-- Liste cada especificação em um item curto, no formato "Chave: valor".
+- Liste cada item no formato "Chave: valor".
+- Não inclua comentários adicionais nem crie informações novas.
 
-Nunca invente informações não citadas.
-Se o texto não se referir a itens do ramo da músicas, responda com "Não foi possivel gerar a descrição a partir deste texto.".
+Importante:
+- Nunca invente detalhes que não estejam mencionados.
+- Se o texto não se referir a um item musical, responda com:
+  "Não foi possível gerar a descrição a partir deste texto."
+- Traduza para português do Brasil, se necessário.
 `.trim();
 
-    const prompt = `
+
+    // ⚠️ mantenha os dados sem observações entre parênteses
+    const userPrompt = `
 Gere APENAS JSON válido conforme o schema, com os campos "introducao" e "especificacoes".
+Se necessário, inclua também "erro" (string) apenas no caso não musical.
 
 Dados do produto:
 - Nome: ${nome}
 - Marca: ${marca}
-- Tipo: ${tipo} (Define que tipo de instrumento é. Ou se é um acessório.)
-- Categoria: ${categoria} 
+- Tipo: ${tipo}
+- Categoria: ${categoria}
 - Shape/Modelo: ${shape || 'n/d'}
 
 Texto do vendedor:
@@ -68,24 +78,45 @@ ${caracteristicasClean || 'n/d'}
       model: MODEL,
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema
+        responseSchema: {
+          type: "object",
+          properties: {
+            introducao: { type: "string" },
+            especificacoes: {
+              type: "array",
+              items: { type: "string" }
+            },
+            erro: { type: "string" }
+          },
+          required: ["introducao", "especificacoes"]
+        }
       },
       systemInstruction
     });
 
     const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }]
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }]
     });
 
-    const raw = result.response.text();
-    let parsed;
-    try { parsed = JSON.parse(raw); } catch {}
+    // 🔧 Sanitiza cercas de código antes do parse
+    const raw = (result.response?.text?.() || "").trim()
+      .replace(/^```(?:json)?/i, '')
+      .replace(/```$/, '');
 
-    if (!parsed?.introducao || !parsed?.especificacoes) {
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch (e) {
+      console.error("Falha ao parsear JSON:", raw);
       return res.status(500).json({ error: 'Falha ao gerar descrição no formato esperado.' });
     }
 
-    // Junta introdução + especificações em um texto final (se quiser salvar pronto)
+    if (parsed.erro) {
+      return res.status(400).json({ error: parsed.erro });
+    }
+
+    if (!parsed?.introducao || !Array.isArray(parsed?.especificacoes)) {
+      return res.status(500).json({ error: 'Falha ao gerar descrição no formato esperado.' });
+    }
+
     const descricaoFinal = `${parsed.introducao}\n\nEspecificações:\n${parsed.especificacoes.map(s => `- ${s}`).join('\n')}`;
 
     return res.json({

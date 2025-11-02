@@ -19,7 +19,7 @@
           shape: Array.isArray(query.shape) ? query.shape : query.shape ? [query.shape] : [],
           condicao: query.condicao || '',
           preco_min: query.preco_min || '0',
-          preco_max: query.preco_max || '100000-',
+          preco_max: query.preco_max || '100000',
           acabamento: query.acabamento || ''
         }; %>
 
@@ -36,46 +36,83 @@
 
       <div class="filtro-box">
         <h3>Pesquisa</h3>
-        <input type="text" placeholder="Buscar instrumento..." name="pesquisa"/>
+     <input
+  id="pesquisa"
+  type="text"
+  placeholder="Buscar instrumento..."
+  name="pesquisa"
+  value="<%= (query.pesquisa || '') %>"
+/>
+        <script>
+  document.getElementById('pesquisa')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') e.target.form?.submit();
+  });
+</script>
       </div>
 
       <div class="filtro-box">
-        <h3>Preço (R$)</h3>
-        <div class="slider-preco">
-          <span>Mín: R$ <span id="preco-min">0</span></span>
-          <input type="range" id="range-min" name="preco_min" min="0" max="100000" step="50" value="<%= selected.preco_min %>">
-      
-          <span>Máx: R$ <span id="preco-max">1000000</span></span>
-          <input type="range" id="range-max" name="preco_max" min="0" max="1000000" step="50" value="<%= selected.preco_max %>">
-        </div>
-      </div>
+  <h3>Preço (R$)</h3>
+  <div class="slider-preco">
+    <span>Mín: <span id="preco-min">
+      <%= Number(query.preco_min || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) %>
+    </span></span>
+
+    <input
+      type="range"
+      id="range-min"
+      name="preco_min"
+      min="0"
+      max="<%= priceMaxBound %>"
+      step="<%= priceStep %>"
+      value="<%= Math.max(0, Math.min(Number(query.preco_min || 0), priceMaxBound)) %>"
+    >
+
+    <span>Máx: <span id="preco-max">
+      <%= Number(Math.min(Number(query.preco_max || priceMaxBound), priceMaxBound))
+          .toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) %>
+    </span></span>
+
+    <input
+      type="range"
+      id="range-max"
+      name="preco_max"
+      min="0"
+      max="<%= priceMaxBound %>"
+      step="<%= priceStep %>"
+      value="<%= Math.max(0, Math.min(Number(query.preco_max || priceMaxBound), priceMaxBound)) %>"
+    >
+  </div>
+</div>
+
       <div class="filtro-box">
         <label><input type="checkbox" name="promo"/> Produtos em Promoção</label>
       </div>
-      <div class="filtro-box">
-        <h3>Tipo de Instrumento</h3>
-        <label><input type="checkbox" name="tipo[]" value="corda" <%= selected.tipo.includes('corda') ? 'checked' : '' %>> Corda</label>
-        <label><input type="checkbox" name="tipo[]" value="percussao" <%= selected.tipo.includes('percussao') ? 'checked' : '' %>> Percussão</label>
-        <label><input type="checkbox" name="tipo[]" value="teclado" <%= selected.tipo.includes('teclado') ? 'checked' : '' %>> Teclado/Piano</label>
-        <label><input type="checkbox" name="tipo[]" value="sopro" <%= selected.tipo.includes('sopro') ? 'checked' : '' %>> Sopro</label>
-        <label><input type="checkbox" name="tipo[]" value="audio" <%= selected.tipo.includes('audio') ? 'checked' : '' %>> Áudio</label>
-        <label><input type="checkbox" name="tipo[]" value="acessorio" <%= selected.tipo.includes('acessorio') ? 'checked' : '' %>> Acessório</label>
-      </div>
-      <div class="filtro-box">
-        <h3>Categoria</h3>
-        <label><input type="checkbox" name="categoria[]" value="guitarra" <%= selected.categoria.includes('guitarra') ? 'checked' : '' %>> Guitarra</label>
-        <label><input type="checkbox" name="categoria[]" value="violao" <%= selected.categoria.includes('violao') ? 'checked' : '' %>> Violão</label>
-        <label><input type="checkbox" name="categoria[]" value="baixo" <%= selected.categoria.includes('baixo') ? 'checked' : '' %>> Baixo</label>
-      </div>
-      <div class="filtro-box">
-        <h3>Shape</h3>
-        <label><input type="checkbox" name="shape[]" value="Stratocaster" <%= selected.shape.includes('Stratocaster') ? 'checked' : '' %>> Stratocaster</label>
-        <label><input type="checkbox" name="shape[]" value="Telecaster" <%= selected.shape.includes('Telecaster') ? 'checked' : '' %>> Telecaster</label>
-        <label><input type="checkbox" name="shape[]" value="Les Paul" <%= selected.shape.includes('Les Paul') ? 'checked' : '' %>> Les Paul</label>
-        <label><input type="checkbox" name="shape[]" value="SG" <%= selected.shape.includes('SG') ? 'checked' : '' %>> SG</label>
-        <label><input type="checkbox" name="shape[]" value="Explorer" <%= selected.shape.includes('Explorer') ? 'checked' : '' %>> Explorer</label>
-        <label><input type="checkbox" name="shape[]" value="Flying V" <%= selected.shape.includes('Flying V') ? 'checked' : '' %>> Flying V</label>
-      </div>
+<div class="filtro-box">
+  <h3>Tipo de Instrumento</h3>
+  <select id="tipo-select" name="tipo">
+    <option value="">Todos</option>
+    <option value="corda"     <%= selected.tipo[0] === 'corda' ? 'selected' : '' %>>Corda</option>
+    <option value="percussao" <%= selected.tipo[0] === 'percussao' ? 'selected' : '' %>>Percussão</option>
+    <option value="teclado"   <%= selected.tipo[0] === 'teclado' ? 'selected' : '' %>>Teclado/Piano</option>
+    <option value="sopro"     <%= selected.tipo[0] === 'sopro' ? 'selected' : '' %>>Sopro</option>
+    <option value="audio"     <%= selected.tipo[0] === 'audio' ? 'selected' : '' %>>Áudio</option>
+    <option value="acessorio" <%= selected.tipo[0] === 'acessorio' ? 'selected' : '' %>>Acessório</option>
+  </select>
+</div>
+<div class="filtro-box" id="categoria-container" style="display:none">
+  <h3>Categoria</h3>
+  <select id="categoria-select" name="categoria">
+    <option value="">Todas</option>
+  </select>
+</div>
+
+<div class="filtro-box" id="shape-container" style="display:none">
+  <h3>Shape</h3>
+  <select id="shape-select" name="shape">
+    <option value="">Todos</option>
+  </select>
+</div>
+
       <div class="filtro-box">
       <h3>Marca</h3>
       <label><input type="checkbox" name="marca[]" value="Fender" <%= selected.marca.includes('Fender') ? 'checked' : '' %>> Fender</label>
@@ -137,6 +174,29 @@
     <!-- Lista de produtos -->
     <section class="produtos">
       <h2>Instrumentos Disponíveis</h2>
+      <% if (pagination.total > 0) { %>
+    <div class="lista-head">
+      <p class="count">
+        Mostrando <%= pagination.startIndex %>–<%= pagination.endIndex %> de <%= pagination.total %>
+      </p>
+    </div>
+  <% } %>
+
+  <nav class="paginacao">
+    <% if (pagination.total > 0 && pagination.totalPages > 1) { %>
+      <a class="pag-btn <%= pagination.page === 1 ? 'disabled' : '' %>"
+         href="/produtos<%= pagination.qs %>page=<%= pagination.page - 1 %>&limit=<%= pagination.limit %>">« Anterior</a>
+
+      <% for (let p = pagination.start; p <= pagination.end; p++) { %>
+        <a class="pag-btn <%= p === pagination.page ? 'active' : '' %>"
+           href="/produtos<%= pagination.qs %>page=<%= p %>&limit=<%= pagination.limit %>"><%= p %></a>
+      <% } %>
+
+      <a class="pag-btn <%= pagination.page === pagination.totalPages ? 'disabled' : '' %>"
+         href="/produtos<%= pagination.qs %>page=<%= pagination.page + 1 %>&limit=<%= pagination.limit %>">Próxima »</a>
+    <% } %>
+  </nav>
+
       <div class="grid-produtos">
         <% produtos.forEach(item => { %>
           <div class="card-produto">
@@ -162,7 +222,7 @@
               </div>
             </div>
             <h4><%= item.nome %></h4>
-            <p>R$ <%= item.preco %></p>
+            <p><strong>Preço:</strong> <%= Number(item.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></p>
             <p class="tags"><strong>Tags:</strong> <%= item.tags %></p>
             <a href="/item/<%= item.id %>?voltar=<%= encodeURIComponent(urlAtual) %>">
               <button class="btn-vermais">Ver mais</button>
@@ -170,6 +230,20 @@
           </div>
         <% }) %>
       </div>
+        <nav class="paginacao">
+    <% if (pagination.total > 0 && pagination.totalPages > 1) { %>
+      <a class="pag-btn <%= pagination.page === 1 ? 'disabled' : '' %>"
+         href="/produtos<%= pagination.qs %>page=<%= pagination.page - 1 %>&limit=<%= pagination.limit %>">« Anterior</a>
+
+      <% for (let p = pagination.start; p <= pagination.end; p++) { %>
+        <a class="pag-btn <%= p === pagination.page ? 'active' : '' %>"
+           href="/produtos<%= pagination.qs %>page=<%= p %>&limit=<%= pagination.limit %>"><%= p %></a>
+      <% } %>
+
+      <a class="pag-btn <%= pagination.page === pagination.totalPages ? 'disabled' : '' %>"
+         href="/produtos<%= pagination.qs %>page=<%= pagination.page + 1 %>&limit=<%= pagination.limit %>">Próxima »</a>
+    <% } %>
+  </nav>
     </section>
   </main>
 
@@ -212,21 +286,161 @@
   const precoMaxLabel = document.getElementById('preco-max');
 
   function formatarValor(valor) {
-    return parseInt(valor).toLocaleString('pt-BR');
+    return Number(valor).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2
+    });
   }
 
-  rangeMin.addEventListener('input', () => {
+  function clampRanges() {
+    const minVal = Number(rangeMin.value);
+    const maxVal = Number(rangeMax.value);
+    if (minVal > maxVal) {
+      rangeMax.value = minVal; // impede cruzar
+    }
+  }
+
+  function syncLabels() {
     precoMinLabel.textContent = formatarValor(rangeMin.value);
+    precoMaxLabel.textContent = formatarValor(rangeMax.value);
+  }
+
+  // inicia labels corretas
+  syncLabels();
+
+  rangeMin.addEventListener('input', () => {
+    clampRanges();
+    syncLabels();
   });
 
   rangeMax.addEventListener('input', () => {
-    precoMaxLabel.textContent = formatarValor(rangeMax.value);
+    clampRanges();
+    syncLabels();
   });
-
-  // Atualiza os valores na primeira carga da página
-  precoMinLabel.textContent = formatarValor(rangeMin.value);
-  precoMaxLabel.textContent = formatarValor(rangeMax.value);
 </script>
+
+
+<script>
+  // Estado inicial do servidor
+  const selectedFromServer = <%- JSON.stringify(selected) %>;
+
+  // Mapa Tipo -> Categorias (ajuste para sua taxonomia real)
+  const MAP_CATEGORIAS = {
+    corda:     ['violao', 'guitarra', 'piano', 'baixo'],
+    percussao: ['bateria', 'percussao_mano', 'eletronica'],
+    teclado:   ['piano', 'teclado', 'sintetizador'],
+    sopro:     ['saxofone', 'trompete', 'flauta', 'clarinete'],
+    audio:     ['interface', 'monitor', 'microfone', 'fone'],
+    acessorio: ['correia', 'cabo', 'case', 'palheta']
+  };
+
+  // Mapa inverso Categoria -> Tipo (para auto-selecionar tipo se a URL já vier com categoria)
+  const CAT_TO_TIPO = Object.entries(MAP_CATEGORIAS).reduce((acc,[tipo,cats])=>{
+    cats.forEach(c => acc[c]=tipo);
+    return acc;
+  }, {});
+
+  // Shapes: só quando categoria = 'guitarra'
+  const SHAPES_GUITARRA = ['Stratocaster','Telecaster','Les Paul','SG','Explorer','Flying V'];
+
+  // Helpers
+  const $ = s => document.querySelector(s);
+  const toTitle = str => (str||'').replace(/_/g,' ').replace(/(^|\s)\S/g, s => s.toUpperCase());
+  function populateSelect(selectEl, values, {placeholder='Todos', selected=''} = {}) {
+    const prev = selectEl.value;
+    selectEl.innerHTML = '';
+    const opt0 = document.createElement('option');
+    opt0.value = '';
+    opt0.textContent = placeholder;
+    selectEl.appendChild(opt0);
+    values.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = toTitle(v);
+      selectEl.appendChild(opt);
+    });
+    const wanted = String(selected || prev || '');
+    if ([...selectEl.options].some(o => o.value === wanted)) {
+      selectEl.value = wanted;
+    }
+  }
+
+  // Elementos
+  const tipoSel   = $('#tipo-select');
+  const catWrap   = $('#categoria-container');
+  const catSel    = $('#categoria-select');
+  const shapeWrap = $('#shape-container');
+  const shapeSel  = $('#shape-select');
+
+  function showCategoria(show) { catWrap.style.display = show ? '' : 'none'; }
+  function showShape(show)     { shapeWrap.style.display = show ? '' : 'none'; }
+
+  function renderCategorias() {
+    const tipo = tipoSel.value || '';
+
+    if (!tipo) {
+      // Sem tipo: oculta Categoria e reseta valores
+      showCategoria(false);
+      catSel.value = '';
+      renderShapes('');
+      return;
+    }
+
+    // Com tipo: mostra Categoria e popula conforme o tipo
+    const cats = MAP_CATEGORIAS[tipo] || [];
+    showCategoria(true);
+    populateSelect(catSel, cats, {
+      placeholder: 'Todas',
+      selected: (selectedFromServer.categoria && selectedFromServer.categoria[0]) || ''
+    });
+
+    // Se a categoria atual não pertence ao tipo, limpa
+    if (catSel.value && !cats.includes(catSel.value)) {
+      catSel.value = '';
+    }
+
+    renderShapes(catSel.value);
+  }
+
+  function renderShapes(categoria) {
+    if (categoria === 'guitarra') {
+      showShape(true);
+      populateSelect(shapeSel, SHAPES_GUITARRA, {
+        placeholder: 'Todos',
+        selected: (selectedFromServer.shape && selectedFromServer.shape[0]) || ''
+      });
+    } else {
+      showShape(false);
+      shapeSel.innerHTML = '<option value="">Todos</option>';
+    }
+  }
+
+  // Inicialização
+  (function initCascata() {
+    // Caso a URL traga categoria mas não traga tipo, deduz o tipo e seleciona
+    let tipoInicial = (Array.isArray(selectedFromServer.tipo) ? selectedFromServer.tipo[0] : selectedFromServer.tipo) || '';
+    const catInicial = (Array.isArray(selectedFromServer.categoria) ? selectedFromServer.categoria[0] : selectedFromServer.categoria) || '';
+
+    if (!tipoInicial && catInicial && CAT_TO_TIPO[catInicial]) {
+      tipoInicial = CAT_TO_TIPO[catInicial];
+    }
+    if (tipoInicial) tipoSel.value = tipoInicial;
+
+    renderCategorias();
+
+    tipoSel.addEventListener('change', () => {
+      selectedFromServer.categoria = [];
+      selectedFromServer.shape = [];
+      renderCategorias();
+    });
+
+    catSel.addEventListener('change', () => {
+      renderShapes(catSel.value);
+    });
+  })();
+</script>
+
 
 </body>
 </html>

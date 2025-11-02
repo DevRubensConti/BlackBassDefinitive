@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Confirmação de e-mail</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/email-confirmado.css">
+</head>
+<body>
+    <%- include('partials/navbar') %>
+  <main class="ve-container">
+    <section class="ve-card" id="card">
+      <div class="ve-icon" aria-hidden="true">
+        <!-- check -->
+        <svg viewBox="0 0 24 24" width="28" height="28">
+          <path d="M20.285 6.708a1 1 0 0 1 .007 1.414l-9 9a1 1 0 0 1-1.414 0l-4-4a1 1 0 1 1 1.414-1.414l3.293 3.293 8.293-8.293a1 1 0 0 1 1.407 0z"></path>
+        </svg>
+      </div>
+
+      <h2 class="ve-title" id="titulo">Confirmando…</h2>
+      <p class="ve-text" id="msg">Processando seu link de confirmação.</p>
+
+      <a id="btn" class="ve-btn" href="<%= loginUrl %>" style="display:none;">
+        Ir para o login <span id="cdown" class="ve-cdown"></span>
+      </a>
+
+      <p id="detalhe" class="ve-note" style="display:none;">
+        <small id="extra"></small>
+      </p>
+    </section>
+  </main>
+    <%- include('partials/footer') %>
+  <script>
+    (function () {
+      const params  = new URLSearchParams(window.location.search);
+      const type    = params.get('type');               // 'signup', 'magiclink', 'recovery',...
+      const error   = params.get('error_description');  // mensagem de erro, se tiver
+
+      const card    = document.getElementById('card');
+      const titulo  = document.getElementById('titulo');
+      const msg     = document.getElementById('msg');
+      const btn     = document.getElementById('btn');
+      const detalhe = document.getElementById('detalhe');
+      const extra   = document.getElementById('extra');
+      const cdown   = document.getElementById('cdown');
+
+      const goLogin = () => { window.location.href = "<%= loginUrl %>"; };
+
+      if (error) {
+        // estado de erro (link inválido/expirado)
+        card.classList.add('is-error');
+        titulo.textContent = 'Não foi possível confirmar seu e-mail';
+        msg.textContent    = error || 'O link pode estar inválido ou expirado.';
+        extra.textContent  = 'Se precisar, solicite um novo e-mail de confirmação.';
+        detalhe.style.display = 'block';
+        btn.style.display     = 'inline-block';
+        return;
+      }
+
+      // sucesso (sem criar sessão)
+      if (type === 'signup') {
+        card.classList.add('is-ok');
+        titulo.textContent = 'E-mail confirmado com sucesso!';
+        msg.textContent    = 'Agora você já pode entrar com seu e-mail e senha.';
+        btn.style.display  = 'inline-block';
+
+        // contador 5s
+        let s = 5;
+        cdown.textContent = `(${s}s)`;
+        const t = setInterval(() => {
+          s -= 1;
+          cdown.textContent = `(${s}s)`;
+          if (s <= 0) { clearInterval(t); goLogin(); }
+        }, 1000);
+      } else {
+        // outros tipos de link (recovery/magic etc.)
+        card.classList.add('is-ok');
+        titulo.textContent = 'Link processado';
+        msg.textContent    = 'Você pode prosseguir para o login.';
+        btn.style.display  = 'inline-block';
+      }
+    })();
+  </script>
+</body>
+</html>

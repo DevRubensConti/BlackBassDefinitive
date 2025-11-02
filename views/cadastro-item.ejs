@@ -142,9 +142,23 @@
 						<div class="right-column">
 							<div class="form-row">
 								<div class="form-group">
-									<label>Preço (R$)</label>
-									<input type="number" name="preco" step="0.01" required>
+								<label>Preço (R$)</label>
+								<!-- Visível ao usuário (estilo Pix) -->
+								<input
+									type="text"
+									id="preco-mask"
+									inputmode="numeric"
+									autocomplete="off"
+									placeholder="0,00"
+									required
+									<% if (typeof produto !== 'undefined' && produto && typeof produto.preco !== 'undefined') { %>
+									data-inicial="<%= Number(produto.preco) %>"
+									<% } %>
+								>
+								<!-- Enviado ao servidor como número (ponto decimal) -->
+								<input type="hidden" name="preco" id="preco-real">
 								</div>
+
 								<div class="form-group">
 									<label>Condição</label>
 									<select name="condicao" required>
@@ -1148,6 +1162,85 @@ document.getElementById("gerar-descricao").addEventListener("click", async () =>
 })();
 </script>
 
+<script>
+(function () {
+  const elMask = document.getElementById('preco-mask');
+  const elReal = document.getElementById('preco-real');
+  if (!elMask || !elReal) return;
+
+  // Formata a partir de dígitos para "X.XXX,YY"
+  function formatarBRLFromDigits(digits) {
+    // garante pelo menos 3 dígitos (0,00)
+    digits = digits.replace(/\D/g, '');
+    if (!digits) digits = '0';
+    if (digits.length === 1) digits = '0' + digits;
+    if (digits.length === 2) digits = '0' + digits;
+
+    const intPart = digits.slice(0, -2);
+    const decPart = digits.slice(-2);
+
+    const intNumber = Number(intPart);
+    const intFormatted = intNumber.toLocaleString('pt-BR');
+    return `${intFormatted},${decPart}`;
+  }
+
+  // Converte a string exibida (pt-BR) para número "padrão" com ponto
+  function brlToNumber(str) {
+    if (!str) return 0;
+    // remove pontos de milhar e troca vírgula por ponto
+    const normalized = str.replace(/\./g, '').replace(',', '.').replace(/[^\d.]/g, '');
+    const n = Number(normalized);
+    return isNaN(n) ? 0 : n;
+  }
+
+  // Sincroniza hidden com o valor numérico em padrão JS (ponto)
+  function syncHidden() {
+    const val = elMask.value;
+    const n = brlToNumber(val);
+    // fixa 2 casas para enviar certinho
+    elReal.value = n.toFixed(2);
+  }
+
+  // Ao digitar: pega apenas dígitos e re-renderiza como Pix
+  function handleInput() {
+    const digits = elMask.value.replace(/\D/g, '');
+    elMask.value = formatarBRLFromDigits(digits);
+    // cursor vai pro fim — comportamento típico de máscara Pix
+    syncHidden();
+  }
+
+  // Inicializa: se estiver editando item, pré-carrega
+  (function init() {
+    const inicial = elMask.getAttribute('data-inicial');
+    if (inicial != null && inicial !== '') {
+      // inicial vem numérico (ex.: 1234.5)
+      const cents = Math.round(Number(inicial) * 100).toString();
+      elMask.value = formatarBRLFromDigits(cents);
+    } else {
+      // começa como 0,00
+      elMask.value = '0,00';
+    }
+    syncHidden();
+  })();
+
+  elMask.addEventListener('input', handleInput);
+  elMask.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text') || '';
+    const digits = text.replace(/\D/g, '');
+    elMask.value = formatarBRLFromDigits(digits);
+    syncHidden();
+  });
+
+  // Segurança extra: ao submeter, garante hidden atualizado
+  const form = elMask.closest('form');
+  if (form) {
+    form.addEventListener('submit', () => {
+      syncHidden();
+    });
+  }
+})();
+</script>
 
 
 

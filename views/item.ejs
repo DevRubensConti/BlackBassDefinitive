@@ -41,16 +41,19 @@
             <p class="seller-location">
               <%= [dono.cidade, dono.estado].filter(Boolean).join(' - ') %>
             </p>
-
-            <% if (dono.nota !== undefined && dono.nota !== null) { %>
-              <div class="seller-rating">
-                <div class="stars">
-                  <% for (let i=1; i<=5; i++) { %>
-                    <span class="star <%= i <= Number(dono.nota) ? 'filled' : '' %>">★</span>
-                  <% } %>
-                </div>
-              </div>
-            <% } %>
+          
+          <% const mediaDono = Number(dono?.nota_media || 0); %>
+          <div class="seller-rating">
+            <div class="stars">
+              <% for (let i=1; i<=5; i++) { %>
+                <span class="star <%= i <= Math.round(mediaDono) ? 'filled' : '' %>">★</span>
+              <% } %>
+            </div>
+            <small>
+              <strong><%= mediaDono.toFixed(1) %>/5</strong>
+              · <%= dono?.total_avaliacoes || 0 %> avaliações
+            </small>
+          </div>
 
             <a class="seller-profile" href="<%= item.tipo_usuario === 'pj' ? '/loja/' + dono.id : '/usuario/' + dono.id %>">
               Ver Perfil
@@ -62,59 +65,122 @@
             <div class="seller-desc">
               <%= (typeof dono.descricao === 'string' && dono.descricao.trim().length) ? dono.descricao : 'Sem descrição disponível.' %>
             </div>
-            <div class="seller-sales">
-              <strong>Itens vendidos:</strong> <%= dono.itens_vendidos || 0 %>
-            </div>
           </div>
         </section>
       <% } %>
 
       <div class="item-info">
-      <div class="buttons">
-        <!-- Comprar -->
-        <div class="action-row">
-          <form id="checkout-form-<%= item.id %>" action="/checkout" method="GET">
-            <button type="button" class="btn-buy" data-id="<%= item.id %>">Comprar</button>
-          </form>
-        </div>
+         <% const esgotado = Number(item.quantidade || 0) <= 0; %>
+         <% const proprioItem = !!(usuario && String(usuario.id) === String(item.usuario_id)); %>
+<div class="buttons">
+  <% if (proprioItem) { %>
+    <div class="action-row">
+      <div class="meu-anuncio-alert">Este anúncio é seu.</div>
+    </div>
 
-        <!-- Adicionar ao Carrinho -->
-        <div class="action-row">
-          <button class="btn-cart" onclick="adicionarCarrinho('<%= item.id %>')">Adicionar ao Carrinho</button>
-        </div>
+    <div class="action-row">
+      <button type="button" class="btn-buy disabled" disabled title="Indisponível">Comprar</button>
+    </div>
 
-        <!-- Fale com o Vendedor -->
-        <div class="contact-row">
-          <a href="/iniciar-chat/<%= item.id %>">
-            <button class="btn-chat">Fale com o Vendedor</button>
-          </a>
-        </div>
+    <div class="action-row">
+      <button class="btn-cart disabled" disabled title="Indisponível">Adicionar ao Carrinho</button>
+    </div>
 
-        <!-- Favoritar -->
-        <div class="favorite-row">
-          <button class="btn-favorite" onclick="favoritarItem('<%= item.id %>')">
-            Favoritar
-          </button>
-        </div>
-      </div>
+    <div class="action-row">
+      <button class="btn-offer disabled" disabled title="Indisponível">Fazer Oferta</button>
+    </div>
+
+    <div class="contact-row">
+      <button class="btn-chat disabled" disabled title="Indisponível">Fale com o Vendedor</button>
+    </div>
+  <% } else { %>
+    <!-- NÃO é dono do item: segue a regra do estoque -->
+    <div class="action-row">
+      <% if (esgotado) { %>
+        <button type="button" class="btn-buy disabled" disabled title="Indisponível">Indisponível</button>
+      <% } else { %>
+        <form id="checkout-form-<%= item.id %>" action="/checkout" method="GET">
+          <button type="button" class="btn-buy" data-id="<%= item.id %>">Comprar</button>
+        </form>
+      <% } %>
+    </div>
+
+    <div class="action-row">
+      <% if (esgotado) { %>
+        <button class="btn-cart disabled" disabled title="Indisponível">Indisponível</button>
+      <% } else { %>
+        <% if (!usuario) { %>
+  <button class="btn-cart" type="button" onclick="window.location.href='/login?redirect=<%= encodeURIComponent('/item/' + item.id) %>'">
+    Adicionar ao Carrinho
+  </button>
+<% } else { %>
+  <button class="btn-cart" type="button" onclick="adicionarCarrinho('<%= item.id %>')">
+    Adicionar ao Carrinho
+  </button>
+<% } %>
+      <% } %>
+    </div>
+
+  <div class="action-row">
+  <% if (!usuario) { %>
+    <button
+      type="button"
+      class="btn-offer"
+      onclick="window.location.href='/login?redirect=<%= encodeURIComponent('/item/' + item.id) %>'">
+      Fazer Oferta
+    </button>
+  <% } else { %>
+    <button
+      type="button"
+      class="btn-offer"
+      data-produto-id="<%= item.id %>"
+      data-preco="<%= Number(item.preco) %>">
+      Fazer Oferta
+    </button>
+  <% } %>
+</div>
+
+
+    <div class="contact-row">
+      <a href="/iniciar-chat/<%= item.id %>">
+        <button class="btn-chat">Fale com o Vendedor</button>
+      </a>
+    </div>
+  <% } %>
+
+  <div class="favorite-row">
+    <button class="btn-favorite" onclick="favoritarItem('<%= item.id %>')">Favoritar</button>
+  </div>
+</div>
+
+<script>
+  // expõe flags pro JS
+  window.esgotado = <%= esgotado ? 'true' : 'false' %>;
+  window.proprioItem = <%= proprioItem ? 'true' : 'false' %>;
+</script>
+
 
 
         <div class="price-rating">
-          <h2>R$ <%= item.preco %></h2>
+          <h2>R$ <%= Number(item.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></h2>
+
         </div>
-        <% if (item.nota !== undefined && item.nota !== null) { %>
-              <div class="item-rating">
-                <div class="stars-item">
-                  <% for (let i=1; i<=5; i++) { %>
-                    <span class="star-item <%= i <= Number(item.nota) ? 'filled' : '' %>">★</span>
-                  <% } %>
-                  <span class="view-icon">👁</span>
-                  <span class="view-count"><%= item.acessos || 0 %></span>
-                  <span class="days-listed">Anunciado há <%= item.dias_listado %> dias</span>
-                </div>
-              </div>
-              
-            <% } %>  
+        <% const mediaProd = Number(item?.nota_media || 0); %>
+        <div class="item-rating">
+          <div class="stars-item">
+            <% for (let i=1; i<=5; i++) { %>
+              <span class="star-item <%= i <= Math.round(mediaProd) ? 'filled' : '' %>">★</span>
+            <% } %>
+            <span style="margin-left:8px;">
+              <strong><%= mediaProd.toFixed(1) %>/5</strong>
+              · <%= item?.total_avaliacoes || 0 %> avaliações
+            </span>
+            <span class="view-icon">👁</span>
+            <span class="view-count"><%= item.acessos || 0 %></span>
+            <span class="days-listed">Anunciado há <%= item.dias_listado %> dias</span>
+          </div>
+        </div>
+ 
         <p class="description"><%= item.descricao %></p>
         <div class="item-specs">
           <h3>Especificações Técnicas</h3>
@@ -165,8 +231,11 @@
 </script>
 
 <script>
-  // Adiciona item ao carrinho pelo mini-botão "Adicionar ao Carrinho"
+  // Adiciona item ao carrinho pelo botão "Adicionar ao Carrinho"
   async function adicionarCarrinho(produtoId) {
+    if (window.proprioItem) { alert('Você não pode comprar seu próprio anúncio.'); return; }
+    if (window.esgotado)    { alert('Produto indisponível.'); return; }
+
     try {
       const res = await fetch(`/api/carrinho/adicionar/${produtoId}`, {
         method: 'POST',
@@ -192,11 +261,15 @@
   }
 </script>
 
+
 <script>
   // Fluxo "Compre Agora": adiciona ao carrinho e vai para /checkout
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.btn-buy[data-id]').forEach((btn) => {
       btn.addEventListener('click', async () => {
+        if (window.proprioItem) { alert('Você não pode comprar seu próprio anúncio.'); return; }
+        if (window.esgotado)    { alert('Produto indisponível.'); return; }
+
         const produtoId = btn.dataset.id;
         btn.disabled = true;
 
@@ -234,6 +307,159 @@
 
     return true;
   }
+</script>
+
+  async function adicionarCarrinhoCheckout(produtoId) {
+    const res = await fetch(`/api/carrinho/adicionar/${produtoId}`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
+      return false;
+    }
+
+    if (!res.ok) {
+      alert('Erro ao adicionar ao carrinho.');
+      return false;
+    }
+
+    return true;
+  }
+</script>
+<!-- Modal de Oferta -->
+<div id="modal-oferta" class="oferta-modal hidden" aria-hidden="true">
+  <div class="oferta-dialog" role="dialog" aria-modal="true" aria-labelledby="ofertaTitulo">
+    <button class="oferta-close" title="Fechar">×</button>
+    <h3 id="ofertaTitulo">Enviar Oferta</h3>
+
+    <div class="oferta-price-line">
+      <span>Preço do anúncio:</span>
+      <strong>R$ <span id="ofertaPrecoAnuncio"><%= Number(item.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) %></span></strong>
+    </div>
+
+    <label class="oferta-label">Valor da sua oferta (R$)</label>
+    <input id="ofertaValor" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off">
+
+    <label class="oferta-label">Mensagem (opcional)</label>
+    <textarea id="ofertaMensagem" rows="3" placeholder="Ex.: Posso retirar em mãos, consigo pagar à vista."></textarea>
+
+    <div class="oferta-actions">
+      <button id="ofertaCancelar" class="btn-outline">Cancelar</button>
+      <button id="ofertaEnviar" class="btn-primary" data-produto-id="<%= item.id %>">Enviar Oferta</button>
+    </div>
+
+    <p id="ofertaFeedback" class="oferta-feedback" role="status" aria-live="polite"></p>
+  </div>
+</div>
+<script>
+(function() {
+  const btnOffer = document.querySelector('.btn-offer');
+  const modal = document.getElementById('modal-oferta');
+  if (!btnOffer || !modal) return;
+
+  const dialog = modal.querySelector('.oferta-dialog');
+  const btnClose = modal.querySelector('.oferta-close');
+  const btnCancelar = modal.querySelector('#ofertaCancelar');
+  const btnEnviar = modal.querySelector('#ofertaEnviar');
+  const inputValor = modal.querySelector('#ofertaValor');
+  const textareaMsg = modal.querySelector('#ofertaMensagem');
+  const feedback = modal.querySelector('#ofertaFeedback');
+
+  const precoAnuncio = Number(btnOffer.dataset.preco || 0);
+
+  // Helpers
+  const openModal = () => {
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    inputValor.value = '';
+    textareaMsg.value = '';
+    feedback.textContent = '';
+    setTimeout(() => inputValor.focus(), 50);
+  };
+  const closeModal = () => {
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+  };
+
+  // Mascara/parse BRL simples
+  const parseBR = (str) => {
+    if (!str) return NaN;
+    const s = str.replace(/\./g,'').replace(',', '.').replace(/[^\d.]/g,'');
+    return Number(s);
+  };
+  const formatBR = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  inputValor.addEventListener('input', () => {
+    // permite digitar livre e só valida no envio
+  });
+
+  // Abrir
+  btnOffer.addEventListener('click', () => openModal());
+
+  // Fechar
+  [btnClose, btnCancelar].forEach(el => el.addEventListener('click', closeModal));
+  modal.addEventListener('click', (ev) => { if (ev.target === modal) closeModal(); });
+  document.addEventListener('keydown', (ev) => {
+    if (!modal.classList.contains('hidden') && ev.key === 'Escape') closeModal();
+  });
+
+  // Enviar
+  btnEnviar.addEventListener('click', async () => {
+    const produto_id = btnOffer.dataset.produtoId;
+    const valor = parseBR(inputValor.value);
+
+    if (!valor || isNaN(valor) || valor <= 0) {
+      feedback.textContent = 'Informe um valor de oferta válido.';
+      return;
+    }
+    // Validação leve: geralmente a oferta é <= preço do anúncio
+    if (precoAnuncio && valor > precoAnuncio) {
+      feedback.textContent = 'A oferta costuma ser menor ou igual ao preço do anúncio.';
+      return;
+    }
+
+    btnEnviar.disabled = true;
+    feedback.textContent = 'Enviando sua oferta...';
+
+    try {
+      const res = await fetch('/api/ofertas', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          produto_id,
+          valor: Number(valor.toFixed(2)),
+          mensagem: textareaMsg.value?.trim() || null
+        })
+      });
+
+      if (res.status === 401) {
+        // redireciona para login preservando retorno
+        window.location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
+        return;
+      }
+
+      if (!res.ok) {
+        const msg = (await res.json().catch(()=>({})))?.error || 'Não foi possível enviar a oferta.';
+        throw new Error(msg);
+      }
+
+      feedback.textContent = 'Oferta enviada com sucesso! O vendedor será notificado.';
+      // Fechar depois de um tempinho
+      setTimeout(() => {
+        closeModal();
+        // opcional: abrir chat
+        // window.location.href = '/iniciar-chat/<%= item.id %>';
+      }, 900);
+    } catch (e) {
+      feedback.textContent = e.message || 'Erro ao enviar oferta.';
+    } finally {
+      btnEnviar.disabled = false;
+    }
+  });
+})();
 </script>
 
 

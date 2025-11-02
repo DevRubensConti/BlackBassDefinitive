@@ -110,6 +110,8 @@ h1 {
   cursor: pointer;
   color: white;
   transition: background 0.3s;
+  align-items: center;
+  text-align: center;
 }
 
 .btn-acao:hover {

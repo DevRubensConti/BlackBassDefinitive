@@ -154,7 +154,7 @@ textarea {
   resize: vertical;
 }
 
-button[type="button"] {
+.cadastro-item-container button[type="button"]:not(.remove-btn) {
   margin-top: 30px;
   padding: 14px 24px;
   background-color: var(--cor-primaria);
@@ -166,6 +166,9 @@ button[type="button"] {
   width: auto;
   align-self: flex-end;
   transition: background 0.3s ease;
+}
+.cadastro-item-container button[type="button"]:not(.remove-btn):hover {
+  background-color: var(--cor-primaria-escura);
 }
 
 button[type="submit"] {

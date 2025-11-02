@@ -1,112 +1,226 @@
 @import url('/css/style.css');
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: url('/images/background.png') no-repeat center center fixed;
+  background: linear-gradient(rgba(10,10,10,.95), rgba(10,10,10,.95)),
+              url('/images/background.png') no-repeat center center fixed;
   background-size: cover;
+  color: var(--cor-secundaria);
 }
 
+/* -------------------------- */
+/* CONTAINER / TÍTULO         */
+/* -------------------------- */
 .listagem-container {
   max-width: 1300px;
-  margin: 60px auto;
-  padding: 0 40px;
-  color: var(--cor-secundaria);
+  margin: 40px auto;
+  padding: 0 20px;
 }
 
 .listagem-container h2 {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 32px;
+  font-size: 30px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   color: var(--cor-letras-navbar);
-  margin-bottom: 20px;
-  text-shadow: 2px 2px #333;
+  margin: 8px 0 24px;
+  text-shadow: 2px 2px #28573F;
 }
 
-/* Filtros */
+/* -------------------------- */
+/* FILTROS                    */
+/* -------------------------- */
 .filtros-lojas {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
   margin-bottom: 30px;
 }
 
 .filtros-lojas input,
 .filtros-lojas select {
   padding: 10px 14px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.filtros-lojas .btn-filtrar {
-  background-color: #FF814A;
-  color: white;
-  font-weight: bold;
-  padding: 10px 16px;
-  border: none;
+  border: 1px solid rgba(255,255,255,0.15);
   border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.filtros-lojas .btn-filtrar:hover {
-  background-color: #e86e33;
-}
-
-/* Grade de lojas */
-.grid-produtos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 30px;
-  margin-bottom: 60px;
-}
-
-.card-produto {
-  background: rgba(0, 0, 0, 0.5); /* escurecido */
-  backdrop-filter: blur(8px);
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 14px;
+  background: rgba(255,255,255,0.05);
   color: var(--cor-secundaria);
 }
 
+.filtros-lojas .btn-filtrar {
+  background: var(--cor-primaria);
+  color: #fff;
+  font-weight: bold;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.1s ease;
+}
+.filtros-lojas .btn-filtrar:hover {
+  background: var(--cor-primaria-escura);
+  transform: translateY(-1px);
+}
 
-.card-produto img.banner-logo {
-  width: 80px;
-  height: 80px;
+/* -------------------------- */
+/* GRID DE LOJAS              */
+/* -------------------------- */
+.grid-lojas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
+  gap: 28px;
+  margin-bottom: 60px;
+}
+
+/* -------------------------- */
+/* CARD DE LOJA               */
+/* -------------------------- */
+.card-loja {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  padding: 22px 18px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  transition: transform 0.15s ease;
+}
+.card-loja:hover { transform: translateY(-4px); }
+
+.card-loja img.banner-logo {
+  width: 90px; height: 90px;
   object-fit: cover;
   border-radius: 50%;
-  border: 2px solid white;
-  margin-bottom: 10px;
+  border: 2px solid var(--cor-secundaria);
+  margin-bottom: 12px;
 }
 
-.card-produto h4 {
-  font-size: 18px;
-  margin: 10px 0 5px;
+.card-loja h4 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  margin: 8px 0 4px;
+  color: var(--cor-letras-navbar);
 }
 
-.card-produto p {
+.card-loja p {
   font-size: 14px;
-  color: #ddd;
-  margin: 0 0 10px;
+  color: #ccc;
+  margin: 2px 0;
 }
 
-.card-produto button {
+/* rating dentro do card */
+.card-loja .estrelas {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin: 6px 0;
+}
+.card-loja .star {
+  font-size: 1.2rem;
+  color: #666;
+}
+.card-loja .star.filled { color: #ff6600; }
+
+.card-loja button {
+  margin-top: 12px;
   background: var(--cor-primaria);
-  color: white;
+  color: #fff;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 10px 18px;
+  border-radius: 20px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  font-weight: bold;
+  transition: background 0.2s ease;
+}
+.card-loja button:hover {
+  background: var(--cor-primaria-escura);
+}
+/* GRID DE LOJAS — força 4 por linha no desktop */
+.grid-lojas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 por linha */
+  gap: 28px;
+  margin-bottom: 60px;
 }
 
-.card-produto button:hover {
+/* Card já existia; mantendo e refinando */
+.card-loja {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  padding: 22px 18px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-loja:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+}
+
+/* Logo redonda */
+.card-loja .banner-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--cor-secundaria);
+  margin-bottom: 12px;
+}
+
+/* Título e texto */
+.card-loja h4 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  margin: 8px 0 4px;
+  color: var(--cor-letras-navbar);
+}
+.card-loja p {
+  font-size: 14px;
+  color: #ccc;
+  margin: 2px 0;
+}
+
+/* Link como botão */
+.card-loja .btn-vermais {
+  display: inline-block;
+  margin-top: 12px;
+  background: var(--cor-primaria);
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-weight: bold;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+.card-loja .btn-vermais:hover {
   background: var(--cor-primaria-escura);
+  transform: translateY(-1px);
+}
+
+/* RESPONSIVO — 3/2/1 colunas */
+@media (max-width: 1200px) {
+  .grid-lojas { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 900px) {
+  .grid-lojas { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .grid-lojas { grid-template-columns: 1fr; }
+  .card-loja { padding: 18px; }
+  .card-loja .banner-logo { width: 70px; height: 70px; }
+}
+
+/* -------------------------- */
+/* RESPONSIVO                 */
+/* -------------------------- */
+@media (max-width: 768px) {
+  .listagem-container h2 { font-size: 24px; text-align: center; }
+  .grid-lojas { gap: 20px; }
+  .card-loja { padding: 18px; }
+  .card-loja img.banner-logo { width: 70px; height: 70px; }
 }

@@ -49,7 +49,7 @@ body {
   max-width: 1300px;
   margin: 40px auto;
   padding: 10px;
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: linear-gradient(rgba(10,10,10,.65), rgba(10,10,10,.65));
   border-radius: 20px;
   backdrop-filter: blur(10px);
 }
@@ -85,7 +85,7 @@ body {
 
 .card-produto-uniforme {
   width: 250px;
-  background: rgba(0, 0, 0, 0.4); /* fundo escuro transparente */
+  background: linear-gradient(rgba(10,10,10,.65), rgba(10,10,10,.65)); /* fundo escuro transparente */
   backdrop-filter: blur(8px);     /* efeito fosco */
   -webkit-backdrop-filter: blur(8px); /* compatibilidade Safari */
   border-radius: 12px;
@@ -137,7 +137,7 @@ body {
 }
 
 .card-produto {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: linear-gradient(rgba(10,10,10,.65), rgba(10,10,10,.65));
   border-radius: 12px;
   position: relative;
   overflow: hidden;
@@ -233,7 +233,7 @@ body {
   gap: 30px;
   
   /* Fundo escuro translúcido com efeito fosco */
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(10,10,10,.65);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 
@@ -332,7 +332,7 @@ body {
   gap: 30px;
 
   /* Novo fundo escuro e translúcido */
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(10,10,10,.65);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 
@@ -418,6 +418,55 @@ body {
 .stores-carousel a img:hover {
   transform: scale(1.1);
 }
+
+/* ===== Ajustes do carrossel de lojas e estrelas ===== */
+.store-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  min-width: 120px;
+}
+
+.store-rating {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+
+.store-rating i {
+  color: var(--cor-secundaria); /* dourado */
+  font-size: 16px;
+  line-height: 1;
+}
+
+.store-rating .nota-text {
+  font-size: 13px;
+  color: #fff;
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+
+
+.store-card img.banner-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #ddd;
+  transition: transform 0.2s;
+}
+
+.store-card img.banner-logo:hover {
+  transform: scale(1.08);
+}
+
+
 
 
 

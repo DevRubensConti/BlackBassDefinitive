@@ -4,84 +4,614 @@
   <meta charset="UTF-8">
   <title>Painel da Loja</title>
   <link rel="stylesheet" href="/css/painel-loja.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
   <%- include('partials/navbar') %>
 
-  <main class="painel-container">
-    <h2>Bem-vindo, <%= loja.nomeFantasia %>!</h2>
+  <%
+  // ===== Defaults para evitar ReferenceError na view =====
+  const sel        = (typeof selected !== 'undefined' && selected) ? selected : {};
+  const filtrosV   = (typeof filtrosVendas !== 'undefined' && filtrosVendas) ? filtrosVendas : {};
+  const kpisSafe   = (typeof kpis !== 'undefined' && kpis) ? kpis : {};
+  const relSafe    = (typeof relatorio !== 'undefined' && relatorio) ? relatorio : {};
+  const lojaSafe   = (typeof loja !== 'undefined' && loja) ? loja : {};
+  const produtosSafe = Array.isArray(produtos) ? produtos : [];
+  %>
 
-    <section class="dados-loja">
-      <img src="<%= loja.icone_url || '/images/store_logos/store.png' %>" alt="Logo da loja" class="logo-loja">
-      <p><strong>CNPJ:</strong> <%= loja.cnpj %></p>
-      <p><strong>Email:</strong> <%= loja.email %></p>
-      <p><strong>Telefone:</strong> <%= loja.telefone %></p>
-      <a href="/painel/editar-loja" class="btn-editar">Editar dados da loja</a>
+  <main class="painel-container">
+    <header class="painel-header">
+      <div class="loja-head">
+        <img src="<%= lojaSafe.icone_url || '/images/store_logos/store.png' %>" alt="Logo da loja" class="logo-loja">
+        <div>
+          <h2>Bem-vindo, <%= lojaSafe.nomeFantasia || 'Sua Loja' %>!</h2>
+          <p class="subtle">
+            <strong>CNPJ:</strong> <%= lojaSafe.cnpj || '-' %> •
+            <strong>Email:</strong> <%= lojaSafe.email || '-' %> •
+            <strong>Telefone:</strong> <%= lojaSafe.telefone || '-' %>
+          </p>
+        </div>
+      </div>
+      <a href="/painel/editar-loja" class="btn-ghost">Editar dados da loja</a>
+    </header>
+
+    <!-- Abas -->
+    <nav class="tabs">
+      <button class="tab active" data-target="tab-produtos">Produtos</button>
+      <button class="tab" data-target="tab-vendas">Minhas Vendas</button>
+      <button class="tab" data-target="tab-relatorios">Relatórios Financeiros</button>
+    </nav>
+
+    <!-- ===================== PRODUTOS ===================== -->
+    <section id="tab-produtos" class="tab-pane active">
+      <div class="toolbar">
+        <a href="/cadastro-item" class="btn-primary">+ Novo Produto</a>
+
+        <form class="filters" method="GET" action="">
+          <input type="text" name="q" placeholder="Buscar por nome..." value="<%= sel.q || '' %>">
+          <select name="status">
+            <option value="">Status</option>
+            <option value="Ativo"   <%= sel.status === 'Ativo' ? 'selected' : '' %>>Ativo</option>
+            <option value="Inativo" <%= sel.status === 'Inativo' ? 'selected' : '' %>>Inativo</option>
+          </select>
+          <button class="btn-ghost" type="submit">Filtrar</button>
+        </form>
+      </div>
+
+      <table class="tabela elegante">
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th>Nome</th>
+            <th>Preço</th>
+            <th>Quantidade</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% produtosSafe.forEach(item => {
+               const imagem = item.imagem_url ? item.imagem_url.split(',')[0].trim() : '/images/sem-imagem.png';
+               const precoBRL = Number(item.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+               const qtd = item.quantidade ?? item.estoque ?? '-';
+               const status = item.status ?? (Number(qtd) > 0 ? 'Ativo' : 'Inativo');
+          %>
+            <tr>
+              <td data-label="Foto"><img src="<%= imagem %>" alt="Produto" class="thumb"></td>
+              <td data-label="Nome"><%= item.nome %></td>
+              <td data-label="Preço"><%= precoBRL %></td>
+              <td data-label="Quantidade"><%= qtd %></td>
+              <td data-label="Status">
+                <span class="badge <%= status === 'Ativo' ? 'ok' : 'off' %>"><%= status %></span>
+              </td>
+              <td data-label="Ações" class="acoes">
+                <a href="/painel/produto/<%= item.id %>/editar" class="btn-ghost">Editar</a>
+                <form id="form-excluir-<%= item.id %>" action="/produto/<%= item.id %>/excluir" method="POST" style="display:none;"></form>
+                <button
+                  type="button"
+                  class="btn-danger btn-excluir"
+                  data-id="<%= item.id %>"
+                  data-nome="<%= (item.nome || '').replace(/\"/g,'&quot;') %>">
+                  Excluir
+                </button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
     </section>
 
-    <section class="produtos-listados">
-      <h3>Produtos da Loja</h3>
-      <a href="/cadastro-item" class="btn-novo-produto">+ Novo Produto</a>
-      <div class="grid-produtos">
-        <% produtos.forEach(item => { %>
-          <div class="card-produto">
-            <img src="<%= item.imagem_url?.split(',')[0] %>" alt="Imagem do produto">
-            <h4><%= item.nome %></h4>
-            <p>R$ <%= item.preco %></p>
-            <div class="botoes">
-              <a href="/painel/produto/<%= item.id %>/editar" class="btn-editar">Editar</a>
-              <form id="form-excluir-<%= item.id %>" action="/produto/<%= item.id %>/excluir" method="POST" style="display: none;"></form>
-              <button
-                type="button"
-                class="btn-excluir"
-                data-id="<%= item.id %>"
-                data-nome="<%= item.nome.replace(/"/g, '&quot;') %>">
-                Excluir Produto
-              </button>
-            </div>
+    <!-- ===================== MINHAS VENDAS ===================== -->
+    <section id="tab-vendas" class="tab-pane">
+      <div class="card" style="margin-bottom:12px;">
+        <div class="toolbar" style="margin:0 0 8px; gap:10px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong>Análise:</strong>
+            <select id="selAnaliseVendas" class="btn-ghost" style="min-height:38px;">
+              <option value="marca">por Marca</option>
+              <option value="categoria">por Categoria</option>
+              <option value="shape">por Shape</option>
+            </select>
           </div>
+          <div class="toolbar-actions" style="margin-left:auto; gap:12px;">
+            <span id="analiseResumo" class="subtle"></span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1.1fr .9fr; gap:12px; align-items:center;">
+          <div><canvas id="vendasRosca" height="180"></canvas></div>
+          <div>
+            <table class="tabela elegante">
+              <thead><tr><th>Grupo</th><th>Valor Total de Vendas</th><th>%</th></tr></thead>
+              <tbody id="tblAnaliseBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><span>Total de pedidos (30d)</span><strong><%= kpisSafe.pedidos30 || 0 %></strong></div>
+        <div class="kpi"><span>Ticket médio</span><strong><%= Number(kpisSafe.ticketMedio || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) %></strong></div>
+        <div class="kpi"><span>Itens vendidos</span><strong><%= kpisSafe.itensVendidos || 0 %></strong></div>
+      </div>
+
+      <div class="toolbar">
+        <form class="filters" method="GET" action="">
+          <input type="hidden" name="tab" value="vendas">
+          <input type="date" name="inicio" value="<%= filtrosV.inicio || '' %>">
+          <input type="date" name="fim" value="<%= filtrosV.fim || '' %>">
+          <select name="status_pedido">
+            <option value="">Status do pedido</option>
+            <option value="pago"      <%= filtrosV.status_pedido==='pago' ? 'selected':'' %>>Pago</option>
+            <option value="enviado"   <%= filtrosV.status_pedido==='enviado' ? 'selected':'' %>>Enviado</option>
+            <option value="cancelado" <%= filtrosV.status_pedido==='cancelado' ? 'selected':'' %>>Cancelado</option>
+          </select>
+          <button class="btn-ghost" type="submit">Filtrar</button>
+        </form>
+        <div class="toolbar-actions">
+          <a href="/painel/vendas/exportar?formato=csv" class="btn-primary">Exportar CSV</a>
+        </div>
+      </div>
+
+      <table class="tabela elegante">
+      <thead>
+        <tr>
+          <th>Pedido</th>
+          <th>Data</th>
+          <!-- <th>Cliente</th> --> <!-- removido -->
+          <th>Itens</th>
+          <th>Valor</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% ((typeof vendas !== 'undefined' && Array.isArray(vendas)) ? vendas : []).forEach(v => { %>
+          <tr>
+            <td>#<%= v.id %></td>
+            <td><%= v.data_pedido ? new Date(v.data_pedido).toLocaleDateString('pt-BR') : '-' %></td>
+            <!-- <td><%= v.cliente_nome || '-' %></td> --> <!-- removido -->
+            <td><%= v.qtd_itens || 0 %></td>
+            <td><%= Number(v.preco_total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) %></td>
+            <td>
+            <%
+            // Normaliza o texto do status pra evitar erros de acentuação e maiúsculas
+            const st = (v.status || '').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+
+            // Define se deve ser "ok" (verde) ou "off" (cinza)
+            const statusOk = [
+              'pago',
+              'em processamento',
+              'em separacao',
+              'enviado',
+              'entregue'
+            ].includes(st);
+
+            const statusOff = [
+              'criado',
+              'aguardando pagamento'
+            ].includes(st);
+          %>
+
+          <span class="badge <%= statusOk ? 'ok' : (statusOff ? 'off' : '') %>">
+            <%= v.status || '-' %>
+          </span>
+            </td>
+          </tr>
         <% }) %>
+      </tbody>
+    </table>
+
+    </section>
+
+    <!-- ===================== RELATÓRIOS FINANCEIROS (novo) ===================== -->
+<section id="tab-relatorios" class="tab-pane">
+  <% const brl = n => Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); %>
+
+  <div class="toolbar" style="gap:12px; align-items:center;">
+    <form class="filters" method="GET" action="">
+      <input type="hidden" name="tab" value="relatorios">
+      <label>De <input type="date" name="de" value="<%= finDe %>" required></label>
+      <label>Até <input type="date" name="ate" value="<%= finAte %>" required></label>
+      <input type="hidden" name="tab" value="relatorios">
+      <button class="btn-ghost" type="submit">Aplicar</button>
+    </form>
+
+    <div class="toolbar-actions" style="margin-left:auto;">
+    <a class="btn-primary"
+      href="/api/minha-loja/financeiro/export.csv?<%= new URLSearchParams({ de:finDe, ate:finAte, tab:'relatorios' }).toString() %>">
+      Exportar CSV
+    </a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi"><span>Valor Total de Vendas (Realizado)</span><strong><%= brl(finResumo?.realizado?.gmv) %></strong></div>
+    <div class="kpi"><span>Pedidos Realizados</span><strong><%= finResumo?.realizado?.pedidos || 0 %></strong></div>
+    <div class="kpi"><span>Ticket Médio (Realizado)</span><strong><%= brl(finResumo?.realizado?.ticket_medio) %></strong></div>
+    <div class="kpi"><span>Repasse (Realizado)</span><strong><%= brl(finResumo?.realizado?.repasse_loja) %></strong></div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Gráfico -->
+    <section>
+      <h3>Vendas por mês — Valor Total de Vendas</h3>
+
+      <!-- Filtro de Ano -->
+      <div style="display:flex;align-items:center;gap:8px;margin:8px 0 12px">
+        <label for="anoSelect" style="font-size:14px;opacity:.8">Ano:</label>
+        <select id="anoSelect" aria-label="Filtrar por ano" style="padding:6px 8px;border:1px solid #ddd;border-radius:8px;background:#fff"></select>
+      </div>
+
+      <div class="card" style="padding:12px;">
+        <canvas id="gmvChart" height="120"></canvas>
       </div>
     </section>
-    <div id="popup-confirmacao" class="popup-modal" style="display: none;">
+
+    <!-- Top produtos -->
+    <section>
+      <h3>Top produtos (por Valor Total de Vendas)</h3>
+      <% if (!Array.isArray(finTop) || !finTop.length) { %>
+        <div class="empty">Sem vendas realizadas no período.</div>
+      <% } else { %>
+        <div class="tabela-wrapper">
+          <table class="tabela elegante">
+            <thead>
+              <tr>
+                <th>Produto</th><th>Pedidos</th><th>Qtd</th><th>Valor Total de Vendas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% finTop.forEach(p => { %>
+                <tr>
+                  <td>
+                    <a class="top-produto" href="/item/<%= p.produto_id %>">
+                      <% if (p.imagem_url) { %>
+                        <img src="<%= p.imagem_url %>" alt="" style="width:36px;height:36px;border-radius:8px;object-fit:cover;margin-right:8px;">
+                      <% } %>
+                      <span><%= p.nome || p.produto_id %></span>
+                    </a>
+                  </td>
+                  <td><%= p.pedidos %></td>
+                  <td><%= p.qtd_total %></td>
+                  <td><%= brl(p.gmv) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </div>
+
+  <!-- Tabela série diária -->
+  <section style="margin-top:16px;">
+    <h3>Série diária — tabela</h3>
+    <% if (!Array.isArray(finDiario) || !finDiario.length) { %>
+      <div class="empty">Sem dados no período selecionado.</div>
+    <% } else { %>
+      <div class="tabela-wrapper">
+        <table class="tabela elegante">
+          <thead>
+            <tr>
+              <th>Dia</th><th>Status</th><th>Pedidos</th><th>Valor Total de Vendas</th><th>Comissão</th><th>Repasse</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% finDiario.forEach(l => { %>
+              <tr>
+                <td><%= l.dia %></td>
+                <td><span class="chip <%= l.realizacao %>"><%= l.realizacao %></span></td>
+                <td><%= l.pedidos %></td>
+                <td><%= brl(l.gmv) %></td>
+                <td><%= brl(l.receita_marketplace) %></td>
+                <td><%= brl(l.repasse_loja) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</section>
+
+<!-- Chart.js (uma vez só na página; se já tiver, pode remover esta tag) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  (function(){
+    // vem do servidor
+    const diario = <%- JSON.stringify(finDiario || []) %>;
+
+    const mesesPt = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const fmtBRL  = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+    // tenta descobrir o campo de quantidade disponível no finDiario
+    const qtyField =
+      diario?.find(r => r && (r.qtd_total!=null || r.qtd!=null || r.quantidade!=null || r.itens!=null))
+        ? ['qtd_total','qtd','quantidade','itens'].find(k => diario.some(r => r?.[k]!=null))
+        : null;
+
+    // idem para "pedidos" (fallback secundário para quantidade)
+    const pedidosField = diario?.some(r => r?.pedidos!=null) ? 'pedidos' : null;
+
+    const anosSet = new Set(
+      (diario || [])
+        .map(r => r?.dia ? Number(String(r.dia).slice(0,4)) : null)
+        .filter(y => Number.isFinite(y))
+    );
+    if (!anosSet.size) anosSet.add(new Date().getFullYear());
+    const anos = Array.from(anosSet).sort((a,b)=>b-a);
+
+    const url = new URL(window.location.href);
+    const anoParam = url.searchParams.get('ano');
+    let anoSelecionado = /^\d{4}$/.test(anoParam || '') ? Number(anoParam) : anos[0];
+
+    const sel = document.getElementById('anoSelect');
+    anos.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a; opt.textContent = a;
+      if (a === anoSelecionado) opt.selected = true;
+      sel.appendChild(opt);
+    });
+
+    // Soma Valor Total de Vendas por mês
+    function agregaMensalValor(tipo, ano) {
+      const soma = Array(12).fill(0);
+      for (const r of diario) {
+        if (r.realizacao !== tipo || !r?.dia) continue;
+        const y = Number(String(r.dia).slice(0,4));
+        if (y !== ano) continue;
+        const m = Number(String(r.dia).slice(5,7)) - 1;
+        if (m>=0 && m<12) soma[m] += Number(r.gmv || 0);
+      }
+      return soma;
+    }
+
+    // Soma ITENS por mês (com fallback para "pedidos" se não houver campo de quantidade)
+    function pickQty(r){
+      if (qtyField) return Number(r[qtyField] || 0);
+      if (pedidosField) return Number(r[pedidosField] || 0);
+      return 0;
+    }
+    function agregaMensalQTD(tipo, ano) {
+      const soma = Array(12).fill(0);
+      for (const r of diario) {
+        if (r.realizacao !== tipo || !r?.dia) continue;
+        const y = Number(String(r.dia).slice(0,4));
+        if (y !== ano) continue;
+        const m = Number(String(r.dia).slice(5,7)) - 1;
+        if (m>=0 && m<12) soma[m] += pickQty(r);
+      }
+      return soma;
+    }
+
+    const ctx = document.getElementById('gmvChart');
+    let chart;
+
+    function render(ano) {
+      const valReal = agregaMensalValor('realizado', ano);
+      const valPrev = agregaMensalValor('previsto',  ano);
+
+      const qtdReal = agregaMensalQTD('realizado', ano);
+      const qtdPrev = agregaMensalQTD('previsto',  ano);
+
+      // guardamos as quantidades num map para o tooltip
+      const qtyByDataset = {
+        'Valor Total de Vendas (Realizado)': qtdReal,
+        'Valor Total de Vendas (Previsto)':  qtdPrev
+      };
+
+      const data = {
+        labels: mesesPt,
+        datasets: [
+          { label: 'Valor Total de Vendas (Realizado)', data: valReal },
+          { label: 'Valor Total de Vendas (Previsto)',  data: valPrev  }
+        ]
+      };
+
+      const options = {
+        responsive: true,
+        plugins: {
+          legend: { display: true },
+          tooltip: {
+            callbacks: {
+              label: (c) => {
+                const dsLabel = c.dataset.label;
+                const idx = c.dataIndex;
+                const itens = qtyByDataset[dsLabel]?.[idx] ?? 0;
+                const linhas = [
+                  `${dsLabel}: ${fmtBRL(c.parsed.y)}`,
+                  `Itens vendidos: ${itens}`
+                ];
+                if (!qtyField && pedidosField) linhas.push('(contando pedidos)');
+                return linhas;
+              }
+            }
+          }
+        },
+        scales: { y: { ticks: { callback: v => fmtBRL(v) } } }
+      };
+
+      if (chart) {
+        chart.data = data;
+        chart.options = options;
+        chart.update();
+      } else if (ctx && window.Chart) {
+        chart = new Chart(ctx, { type: 'bar', data, options });
+      }
+    }
+
+    render(anoSelecionado);
+
+    sel?.addEventListener('change', () => {
+      anoSelecionado = Number(sel.value);
+      url.searchParams.set('ano', String(anoSelecionado));
+      history.replaceState(null, '', url.toString());
+      render(anoSelecionado);
+    });
+
+    // mantém seu comportamento da aba "Relatórios"
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') === 'relatorios') {
+      const btn = document.querySelector('.tabs .tab[data-target="tab-relatorios"]');
+      if (btn) btn.click();
+    }
+  })();
+</script>
+
+
+
+    <!-- Modal de confirmação -->
+    <div id="popup-confirmacao" class="popup-modal" style="display:none;">
       <div class="popup-conteudo">
         <p id="mensagem-confirmacao"></p>
         <div class="popup-botoes">
-          <button id="cancelar-btn">Cancelar</button>
-          <button id="confirmar-btn">Confirmar Exclusão</button>
+          <button id="cancelar-btn" class="btn-ghost">Cancelar</button>
+          <button id="confirmar-btn" class="btn-danger">Confirmar Exclusão</button>
         </div>
       </div>
     </div>
   </main>
 
   <%- include('partials/footer') %>
-    <script>
-      let idProdutoSelecionado = null;
 
-      document.querySelectorAll('.btn-excluir').forEach(botao => {
-        botao.addEventListener('click', () => {
-          const id = botao.dataset.id;
-          const nome = botao.dataset.nome;
-          idProdutoSelecionado = id;
-
-          document.getElementById('mensagem-confirmacao').textContent =
-            `Tem certeza que deseja excluir o produto "${nome}"?`;
-
-          document.getElementById('popup-confirmacao').style.display = 'flex';
-        });
+  <script>
+    // ===== Abas =====
+    document.querySelectorAll('.tabs .tab').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.tabs .tab').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+        btn.classList.add('active');
+        const pane = document.getElementById(btn.dataset.target);
+        if (pane) pane.classList.add('active');
       });
+    });
 
-      document.getElementById('cancelar-btn').addEventListener('click', () => {
-        document.getElementById('popup-confirmacao').style.display = 'none';
+    // ===== Modal de exclusão (produtos) =====
+    let idProdutoSelecionado = null;
+    const modal = document.getElementById('popup-confirmacao');
+    const msg = document.getElementById('mensagem-confirmacao');
+
+    document.querySelectorAll('.btn-excluir').forEach(botao=>{
+      botao.addEventListener('click', ()=>{
+        idProdutoSelecionado = botao.dataset.id;
+        const nome = botao.dataset.nome || '';
+        if (msg) msg.textContent = `Tem certeza que deseja excluir o produto "${nome}"?`;
+        if (modal) modal.style.display = 'flex';
+      });
+    });
+
+    document.getElementById('cancelar-btn')?.addEventListener('click', ()=>{
+      if (modal) modal.style.display = 'none';
+      idProdutoSelecionado = null;
+    });
+
+    document.getElementById('confirmar-btn')?.addEventListener('click', ()=>{
+      if (idProdutoSelecionado){
+        const form = document.getElementById(`form-excluir-${idProdutoSelecionado}`);
+        if (form) form.submit();
+      }
+    });
+
+    // Fechar modal ao clicar fora
+    modal?.addEventListener('click', (e)=>{
+      if(e.target === modal){
+        modal.style.display = 'none';
         idProdutoSelecionado = null;
-      });
+      }
+    });
+  </script>
+  <script>
+(function(){
+  const $sel   = document.getElementById('selAnaliseVendas');
+  const $tbl   = document.getElementById('tblAnaliseBody');
+  const $sum   = document.getElementById('analiseResumo');
+  const ctx    = document.getElementById('vendasRosca');
+  const btnTab = document.querySelector('.tabs .tab[data-target="tab-vendas"]');
 
-      document.getElementById('confirmar-btn').addEventListener('click', () => {
-        if (idProdutoSelecionado) {
-          document.getElementById(`form-excluir-${idProdutoSelecionado}`).submit();
+  // pega período atual (reutiliza finDe/finAte, que já vêm do servidor)
+  const de  = '<%= finDe %>';
+  const ate = '<%= finAte %>';
+
+  let chart = null;
+
+  async function carregar(){
+    const group = $sel.value;
+    const url = `/api/minha-loja/vendas/analise?group=${encodeURIComponent(group)}&de=${encodeURIComponent(de)}&ate=${encodeURIComponent(ate)}`;
+    const r = await fetch(url);
+    const j = await r.json();
+
+    const labels = (j.series||[]).map(s => s.label);
+    const valores = (j.series||[]).map(s => s.gmv); // mantém estrutura do backend
+    const pcts = (j.series||[]).map(s => s.pct);
+
+    // resumo
+    const fmt = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    $sum.textContent = `Valor Total de Vendas no período: ${fmt(j.total_gmv)} | Pedidos: ${j.total_pedidos}`;
+
+    // tabela lateral
+    $tbl.innerHTML = (j.series||[]).map(s => `
+      <tr>
+        <td>${s.label}</td>
+        <td>${fmt(s.gmv)}</td>
+        <td>${(s.pct||0).toFixed(2)}%</td>
+      </tr>
+    `).join('') || `<tr><td colspan="3">Sem dados para o período.</td></tr>`;
+
+    // gráfico
+    if (ctx && window.Chart) {
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: valores }] },
+        options: {
+          responsive: true,
+          cutout: '55%',
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 14 } },
+            tooltip: {
+              callbacks: {
+                label: (c) => `${c.label}: ${fmt(c.parsed)} (${(pcts[c.dataIndex]||0).toFixed(2)}%)`
+              }
+            }
+          }
         }
       });
-    </script>
+    }
+  }
+
+  // troca de análise
+  $sel?.addEventListener('change', carregar);
+
+  // quando a aba "Minhas Vendas" abrir, carrega
+  btnTab?.addEventListener('click', carregar);
+
+  // se a aba já vier ativa ao carregar a página
+  if (document.getElementById('tab-vendas')?.classList.contains('active')) {
+    carregar();
+  }
+})();
+</script>
+<script>
+  // ativa a aba de acordo com ?tab=<alvo>
+  (function(){
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab'); // 'produtos' | 'vendas' | 'relatorios'
+    if (tabParam) {
+      const btn = document.querySelector(`.tabs .tab[data-target="tab-${tabParam}"]`);
+      if (btn) btn.click();
+    }
+    // quando o usuário clicar numa aba, atualiza a URL (sem recarregar) com ?tab=<alvo>
+    document.querySelectorAll('.tabs .tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = (btn.dataset.target || '').replace('tab-','');
+        const url = new URL(location.href);
+        url.searchParams.set('tab', key);
+        history.replaceState(null, '', url); // mantém filtros atuais
+      });
+    });
+  })();
+</script>
 
 </body>
 </html>

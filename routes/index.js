@@ -1,22 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../supabase');
+const supabaseDb = require('../supabase/supabaseDb');
 
 // Página inicial - lista de produtos recentes
 router.get('/', async (req, res) => {
   try {
-    // Mais vistos
-    const { data: maisVistos, error: mvError } = await supabase
+    // 🧩 Produtos mais vistos
+    const { data: maisVistos, error: mvError } = await supabaseDb
       .from('produtos')
       .select('id, nome, preco, imagem_url, shape, marca, condicao, acessos')
       .order('acessos', { ascending: false })
       .limit(8);
 
-    // Lojas top
-    const { data: lojasTop, error: lojasError } = await supabase
+    // 🏆 Lojas com melhores avaliações (Top 10) — usando nota_media
+    const { data: lojasTopRaw, error: lojasError } = await supabaseDb
       .from('usuarios_pj')
-      .select('id, nomeFantasia, icone_url, nota')
-      .order('nota', { ascending: false })
+      .select('id, nomeFantasia, icone_url, nota_media')
+      .order('nota_media', { ascending: false })
       .limit(10);
 
     if (mvError || lojasError) {
@@ -24,12 +24,25 @@ router.get('/', async (req, res) => {
       return res.status(500).send('Erro ao buscar dados.');
     }
 
-    res.render('index', { maisVistos, lojasTop });
+    // 🔧 Normaliza para número
+    const lojasTop = (lojasTopRaw || []).map(loja => ({
+      ...loja,
+      nota_media: parseFloat(loja.nota_media) || 0,
+    }));
+
+    // Renderiza a página inicial
+    res.render('index', { 
+      maisVistos, 
+      lojasTop
+    });
+
   } catch (e) {
     console.error('Erro na home:', e);
     res.status(500).send('Erro no servidor.');
   }
 });
+
+
 
 
 // Página de plano de assinatura

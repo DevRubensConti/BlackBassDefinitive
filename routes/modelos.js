@@ -1,7 +1,7 @@
 // routes/api.js (ou no seu produtos.js)
 const express = require('express');
 const router = express.Router();
-const supabase = require('../supabase');
+const supabaseDb = require('../supabase/supabaseDb');
 const { normalizeSimple } = require('../utils/normalizeText'); 
 
 // GET /api/modelos?marca=Fender&shape=Stratocaster
@@ -12,7 +12,7 @@ router.get('/api/modelos', async (req, res) => {
   if (!marcaN || !shapeN) return res.json({ modelos: [] });
 
   // se quiser tolerar dados antigos, use ilike; se não, pode manter eq
-  let { data, error } = await supabase
+  let { data, error } = await supabaseDb
     .from('catalogo_modelos')
     .select('modelo')
     .eq('ativo', true)
@@ -24,7 +24,7 @@ router.get('/api/modelos', async (req, res) => {
   let modelos = (data || []).map(r => r.modelo).filter(Boolean);
 
   if (modelos.length === 0) {
-    const fb = await supabase.from('produtos')
+    const fb = await supabaseDb.from('produtos')
       .select('modelo')
       .ilike('marca', marcaN)
       .ilike('shape', shapeN);

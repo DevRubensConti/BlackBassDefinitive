@@ -1,139 +1,154 @@
-<%- include('partials/navbar.ejs') %>
-<head><link rel="stylesheet" href="/css/loja.css"></head>
-
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title><%= loja.nomeFantasia %> - Loja</title>
+  <link rel="stylesheet" href="/css/loja.css">
+</head>
 <body>
-<main class="listagem-container">
+  <%- include('partials/navbar.ejs') %>
 
-    
-  <aside class="filtros">
-    <h2>Filtrar por</h2>
-    <form method="GET">
-      <div class="filtro-box">
-        <label>Marca:</label>
-        <input type="text" name="marca" placeholder="Ex: Fender" value="<%= typeof marca !== 'undefined' ? marca : '' %>">
-      </div>
-      <div class="filtro-box">
-        <label>Tipo:</label>
-        <input type="text" name="tipo" placeholder="Ex: Guitarra" value="<%= typeof tipo !== 'undefined' ? tipo : '' %>">
-      </div>
-      <div class="filtro-box">
-        <label>Preço Mín:</label>
-        <input type="number" name="preco_min" value="<%= typeof preco_min !== 'undefined' ? preco_min : 0 %>">
-      </div>
-      <div class="filtro-box">
-        <label>Preço Máx:</label>
-        <input type="number" name="preco_max" value="<%= typeof preco_max !== 'undefined' ? preco_max : 100000000 %>">
-      </div>
-      <button type="submit">Filtrar</button>
-    </form>
-  </aside>
+  <main class="listagem-container">
+    <!-- Lateral de filtros -->
+    <aside class="filtros">
+      <h2>Filtrar por</h2>
+      <form method="GET">
+        <div class="filtro-box">
+          <label>Marca:</label>
+          <input type="text" name="marca" placeholder="Ex: Fender" value="<%= typeof marca !== 'undefined' ? marca : '' %>">
+        </div>
 
-  <section class="produtos">
-  
-  <!-- SUBSTITUI OU LOGO ABAIXO de "loja-info" -->
+        <div class="filtro-box">
+          <label>Tipo:</label>
+          <input type="text" name="tipo" placeholder="Ex: Guitarra" value="<%= typeof tipo !== 'undefined' ? tipo : '' %>">
+        </div>
 
- <div class="banner-loja">
-  <!-- Esquerda: Logo + infos -->
-  <div class="banner-info">
-    <img src="<%= loja.icone_url %>" alt="Logo da Loja" class="banner-logo">
+        <div class="filtro-box">
+          <label>Preço Mín:</label>
+          <input type="number" name="preco_min" value="<%= typeof preco_min !== 'undefined' ? preco_min : '' %>">
+        </div>
 
-    <div class="banner-textos">
-      <h2><%= loja.nomeFantasia %></h2>
+        <div class="filtro-box">
+          <label>Preço Máx:</label>
+          <input type="number" name="preco_max" value="<%= typeof preco_max !== 'undefined' ? preco_max : '' %>">
+        </div>
 
-      <p class="loja-descricao">
-        <%= (loja.descricao && loja.descricao.trim().length) ? loja.descricao : 'Sem descrição disponível.' %>
-      </p>
+        <button type="submit">Filtrar</button>
+      </form>
+    </aside>
 
-      <p class="loja-local"><strong>Localização:</strong> <%= loja.cidade %> - <%= loja.estado %></p>
-      <p class="loja-telefone"><strong>Telefone:</strong> <%= loja.telefone %></p>
-    </div>
-  </div>
+    <!-- Conteúdo -->
+    <section class="produtos">
+      <!-- Banner da loja -->
+      <div class="banner-loja">
+        <!-- Esquerda: Logo + infos -->
+        <div class="banner-info">
+          <img src="<%= loja.icone_url || '/images/store-default.png' %>" alt="Logo da Loja" class="banner-logo">
 
-  <!-- Direita: Avaliação -->
-  <div class="banner-avaliacao">
-    <p><strong>Nota da Loja</strong></p>
-    <div class="estrelas">
-      <% for (let i=1; i<=5; i++) { %>
-        <span class="star <%= i <= Number(loja.nota) ? 'filled' : '' %>">★</span>
-      <% } %>
-    </div>
-  </div>
-</div>
+          <div class="banner-textos">
+            <h2><%= loja.nomeFantasia %></h2>
 
-  <% if (produtos.length > 0) { %>
-    <div class="grid-produtos">
-      <% produtos.forEach(item => { %>
-        <div class="card-produto">
-        <div class="mini-galeria">
-            <div class="carousel">
-            <% if (item.imagem_url) { 
-                const imagens = item.imagem_url.split(','); %>
-                
-                <div class="carousel-wrapper">
-                <% imagens.forEach((url, index) => { %>
-                    <img class="carousel-img <% if (index === 0) { %>active<% } %>" src="<%= url.trim() %>" alt="Imagem <%= index + 1 %>">
-                <% }) %>
-                </div>
+            <p class="loja-descricao">
+              <%= (loja.descricao && loja.descricao.trim().length) ? loja.descricao : 'Sem descrição disponível.' %>
+            </p>
 
-                <div class="carousel-controls">
-                <button class="prev">&#10094;</button>
-                <button class="next">&#10095;</button>
-                </div>
+            <p class="loja-local">
+              <strong>Localização:</strong>
+              <%= [loja.cidade, loja.estado].filter(Boolean).join(' - ') || 'Não informado' %>
+            </p>
 
-            <% } else { %>
-                <p style="color: #aaa; font-size: 12px;">(sem imagens)</p>
+            <% if (loja.telefone) { %>
+              <p class="loja-telefone"><strong>Telefone:</strong> <%= loja.telefone %></p>
             <% } %>
+          </div>
+        </div>
+
+        <!-- Direita: Avaliação agregada -->
+        <div class="banner-avaliacao">
+          <p><strong>Nota da Loja</strong></p>
+          <div class="estrelas">
+            <% const mediaLoja = Number(loja?.nota_media || 0); %>
+            <% for (let i=1; i<=5; i++) { %>
+              <span class="star <%= i <= Math.round(mediaLoja) ? 'filled' : '' %>">★</span>
+            <% } %>
+          </div>
+          <small>
+            <strong><%= mediaLoja.toFixed(1) %>/5</strong>
+            · <%= loja?.total_avaliacoes || 0 %> avaliações
+          </small>
+        </div>
+      </div>
+
+      <!-- Produtos -->
+      <% if (produtos.length > 0) { %>
+        <div class="grid-produtos">
+          <% produtos.forEach(item => { 
+               const imagens = (item.imagem_url || '').split(',').filter(Boolean);
+          %>
+            <div class="card-produto">
+              <div class="mini-galeria">
+                <div class="carousel">
+                  <% if (imagens.length) { %>
+                    <div class="carousel-wrapper">
+                      <% imagens.forEach((url, index) => { %>
+                        <img class="carousel-img <%= index === 0 ? 'active' : '' %>" src="<%= url.trim() %>" alt="Imagem <%= index + 1 %>">
+                      <% }) %>
+                    </div>
+
+                    <div class="carousel-controls">
+                      <button class="prev" type="button">&#10094;</button>
+                      <button class="next" type="button">&#10095;</button>
+                    </div>
+                  <% } else { %>
+                    <p style="color: #aaa; font-size: 12px;">(sem imagens)</p>
+                  <% } %>
+                </div>
+              </div>
+
+              <h4><%= item.nome %></h4>
+              <p><strong>Preço:</strong> <%= Number(item.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></p>
+
+              <% if (item.tags) { %>
+                <p class="tags"><strong>Tags:</strong> <%= item.tags %></p>
+              <% } %>
+              <a href="/item/<%= item.id %>">
+                <button type="button">Ver mais</button>
+              </a>
             </div>
+          <% }) %>
         </div>
+      <% } else { %>
+        <p>Nenhum produto encontrado nesta loja.</p>
+      <% } %>
+    </section>
+  </main>
 
-        <h4><%= item.nome %></h4>
-        <p>R$ <%= item.preco %></p>
-        <p class="tags"><strong>Tags:</strong> <%= item.tags %></p>
-        <a href="/item/<%= item.id %>">
-          <button>Ver mais</button>
-        </a>
-        </div>
-      <% }) %>
-    </div>
-  <% } else { %>
-    <p>Nenhum produto encontrado nesta loja.</p>
-  <% } %>
+  <%- include('partials/footer.ejs') %>
 
-</section>
+  <!-- Script do carrossel -->
+  <script>
+    document.querySelectorAll('.carousel').forEach(carousel => {
+      const images = carousel.querySelectorAll('.carousel-img');
+      const nextBtn = carousel.querySelector('.next');
+      const prevBtn = carousel.querySelector('.prev');
+      let currentIndex = 0;
 
+      const showImage = index => {
+        images.forEach((img, i) => img.classList.toggle('active', i === index));
+      };
 
-</main>
-
-<%- include('partials/footer.ejs') %>
-
-<script>
-  document.querySelectorAll('.carousel').forEach(carousel => {
-    const images = carousel.querySelectorAll('.carousel-img');
-    const nextBtn = carousel.querySelector('.next');
-    const prevBtn = carousel.querySelector('.prev');
-
-    let currentIndex = 0;
-
-    const showImage = index => {
-      images.forEach((img, i) => {
-        img.classList.toggle('active', i === index);
-      });
-    };
-
-    if (nextBtn && prevBtn && images.length > 0) {
-      nextBtn.addEventListener('click', () => {
-        currentIndex = (currentIndex + 1) % images.length;
-        showImage(currentIndex);
-      });
-
-      prevBtn.addEventListener('click', () => {
-        currentIndex = (currentIndex - 1 + images.length) % images.length;
-        showImage(currentIndex);
-      });
-    }
-
-    showImage(currentIndex);
-  });
-</script>
-
+      if (nextBtn && prevBtn && images.length > 0) {
+        nextBtn.addEventListener('click', () => {
+          currentIndex = (currentIndex + 1) % images.length;
+          showImage(currentIndex);
+        });
+        prevBtn.addEventListener('click', () => {
+          currentIndex = (currentIndex - 1 + images.length) % images.length;
+          showImage(currentIndex);
+        });
+      }
+      showImage(currentIndex);
+    });
+  </script>
 </body>
+</html>

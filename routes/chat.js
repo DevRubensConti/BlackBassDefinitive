@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../supabase');
+const supabaseDb = require('../supabase/supabaseDb');
 const { requireLogin } = require('../middlewares/auth');
 
-router.get('/iniciar-chat/:produtoId', async (req, res) => {
+router.get('/iniciar-chat/:produtoId', requireLogin, async (req, res) => {
   const { produtoId } = req.params;
   const usuarioAtual = req.session.usuario?.id;
 
@@ -12,11 +12,11 @@ router.get('/iniciar-chat/:produtoId', async (req, res) => {
   }
 
   // Buscar produto para saber o dono/vendedor
-  const { data: produto, error: erroProduto } = await supabase
+  const { data: produto, error: erroProduto } = await supabaseDb
     .from('produtos')
     .select('id, usuario_id')
     .eq('id', produtoId)
-    .single();
+    .maybeSingle();
 
   if (erroProduto || !produto) {
     return res.status(404).send('Produto não encontrado');
@@ -25,7 +25,7 @@ router.get('/iniciar-chat/:produtoId', async (req, res) => {
   const idVendedor = produto.usuario_id;
 
   // Verificar se já existe chat entre esses usuários para este produto
-  const { data: chatExistente } = await supabase
+  const { data: chatExistente } = await supabaseDb
     .from('chats')
     .select('*')
     .eq('id_remetente', usuarioAtual)
@@ -39,7 +39,7 @@ router.get('/iniciar-chat/:produtoId', async (req, res) => {
     chatId = chatExistente.id;
   } else {
     // Criar novo chat
-    const { data: novoChat, error: erroChat } = await supabase
+    const { data: novoChat, error: erroChat } = await supabaseDb
       .from('chats')
       .insert([{
         id_remetente: usuarioAtual,
@@ -71,11 +71,11 @@ router.get('/chat/:chatId', async (req, res) => {
   }
 
   // 1. Buscar dados do chat atual e verificar se o usuário participa dele
-  const { data: chat, error: erroChat } = await supabase
+  const { data: chat, error: erroChat } = await supabaseDb
     .from('chats')
     .select('*')
     .eq('id', chatId)
-    .single();
+    .maybeSingle();
 
   if (erroChat || !chat) {
     return res.status(404).send('Chat não encontrado');
@@ -88,7 +88,7 @@ router.get('/chat/:chatId', async (req, res) => {
   // 2. Buscar produto relacionado (se existir)
   let produto = null;
   if (chat.produto_id) {
-    const { data: produtoData } = await supabase
+    const { data: produtoData } = await supabaseDb
       .from('produtos')
       .select('*')
       .eq('id', chat.produto_id)
@@ -97,7 +97,7 @@ router.get('/chat/:chatId', async (req, res) => {
   }
 
   // 3. Buscar mensagens do chat atual
-  const { data: mensagens } = await supabase
+  const { data: mensagens } = await supabaseDb
     .from('mensagens')
     .select('*')
     .eq('chat_id', chatId)
@@ -111,7 +111,7 @@ router.get('/chat/:chatId', async (req, res) => {
   let outroUsuario = null;
 
   // Tenta como PF
-  const { data: pf } = await supabase
+  const { data: pf } = await supabaseDb
     .from('usuarios_pf')
     .select('id, nome, icone_url')
     .eq('id', outroUsuarioId)
@@ -121,7 +121,7 @@ router.get('/chat/:chatId', async (req, res) => {
     outroUsuario = { nome: pf.nome, icone_url: pf.icone_url };
   } else {
     // Tenta como PJ
-    const { data: pj } = await supabase
+    const { data: pj } = await supabaseDb
       .from('usuarios_pj')
       .select('id, nomeFantasia, icone_url')
       .eq('id', outroUsuarioId)
@@ -137,7 +137,7 @@ router.get('/chat/:chatId', async (req, res) => {
   }
 
   // 5. Buscar lista de todos os chats do usuário (para coluna lateral)
-  const { data: todosChats } = await supabase
+  const { data: todosChats } = await supabaseDb
     .from('chats')
     .select('*')
     .or(`id_remetente.eq.${usuarioAtual},id_destinatario.eq.${usuarioAtual}`);
@@ -148,7 +148,7 @@ router.get('/chat/:chatId', async (req, res) => {
 
       let outroUser = null;
 
-      const { data: pfUser } = await supabase
+      const { data: pfUser } = await supabaseDb
         .from('usuarios_pf')
         .select('nome, icone_url')
         .eq('id', outroId)
@@ -157,7 +157,7 @@ router.get('/chat/:chatId', async (req, res) => {
       if (pfUser) {
         outroUser = { nome: pfUser.nome, icone_url: pfUser.icone_url };
       } else {
-        const { data: pjUser } = await supabase
+        const { data: pjUser } = await supabaseDb
           .from('usuarios_pj')
           .select('nomeFantasia, icone_url')
           .eq('id', outroId)
@@ -192,7 +192,7 @@ router.get('/chat/:chatId', async (req, res) => {
 router.get('/meus-chats', requireLogin, async (req, res) => {
   const usuarioId = req.session.usuario.id;
 
-  const { data: chats, error: errorChats } = await supabase
+  const { data: chats, error: errorChats } = await supabaseDb
     .from('chats')
     .select('*')
     .or(`id_remetente.eq.${usuarioId},id_destinatario.eq.${usuarioId}`);
@@ -206,7 +206,7 @@ router.get('/meus-chats', requireLogin, async (req, res) => {
     chats.map(async (chat) => {
       const outroId = chat.id_remetente === usuarioId ? chat.id_destinatario : chat.id_remetente;
 
-      const { data: ultimaMsg } = await supabase
+      const { data: ultimaMsg } = await supabaseDb
         .from('mensagens')
         .select('*')
         .eq('chat_id', chat.id)
@@ -216,7 +216,7 @@ router.get('/meus-chats', requireLogin, async (req, res) => {
 
       let outroUsuario = null;
 
-      const { data: pf } = await supabase
+      const { data: pf } = await supabaseDb
         .from('usuarios_pf')
         .select('nome, icone_url')
         .eq('id', outroId)
@@ -225,7 +225,7 @@ router.get('/meus-chats', requireLogin, async (req, res) => {
       if (pf) {
         outroUsuario = pf;
       } else {
-        const { data: pj } = await supabase
+        const { data: pj } = await supabaseDb
           .from('usuarios_pj')
           .select('nomeFantasia, icone_url')
           .eq('id', outroId)
@@ -238,7 +238,7 @@ router.get('/meus-chats', requireLogin, async (req, res) => {
 
       let produtoInfo = null;
       if (chat.produto_id) {
-        const { data: produto } = await supabase
+        const { data: produto } = await supabaseDb
           .from('produtos')
           .select('nome, imagem_url')
           .eq('id', chat.produto_id)
@@ -266,29 +266,47 @@ router.get('/meus-chats', requireLogin, async (req, res) => {
 });
 
 
-
-
-router.post('/mensagens/enviar', async (req, res) => {
+router.post('/mensagens/enviar', requireLogin, async (req, res) => {
   const { chat_id, mensagem } = req.body;
   const usuarioAtual = req.session.usuario?.id;
 
-  if (!usuarioAtual) {
-    return res.redirect('/login');
+  // evita vazios
+  const texto = (mensagem || '').trim();
+  if (!texto) {
+    return res.redirect(`/chat/${chat_id}`);
   }
 
-  const { error } = await supabase
+  // valida participação no chat
+  const { data: chat, error: chatErr } = await supabaseDb
+    .from('chats')
+    .select('id, id_remetente, id_destinatario')
+    .eq('id', chat_id)
+    .maybeSingle();
+
+  if (chatErr || !chat) {
+    console.error(chatErr);
+    return res.status(404).send('Chat não encontrado');
+  }
+
+  if (chat.id_remetente !== usuarioAtual && chat.id_destinatario !== usuarioAtual) {
+    return res.status(403).send('Você não participa deste chat');
+  }
+
+  const { error } = await supabaseDb
     .from('mensagens')
     .insert([{
       chat_id,
       id_remetente: usuarioAtual,
-      mensagem
+      mensagem: texto
     }]);
 
   if (error) {
     console.error(error);
+    return res.status(500).send('Erro ao enviar mensagem');
   }
 
   res.redirect(`/chat/${chat_id}`);
 });
+
 
 module.exports = router;

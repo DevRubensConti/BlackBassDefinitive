@@ -21,10 +21,25 @@
             <label>Descrição</label>
             <textarea name="descricao" rows="6" required><%= produto.descricao %></textarea>
           </div>
-          <div class="form-group">
-            <label>Preço (R$)</label>
-            <input type="number" name="preco" step="0.01" value="<%= produto.preco %>" required>
-          </div>
+        <div class="form-group">
+        <label>Preço (R$)</label>
+        <!-- Campo visível, só dígitos, formata em tempo real -->
+        <input
+          type="text"
+          id="preco-mask"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="0,00"
+          required
+        >
+        <!-- Campo real enviado ao servidor -->
+        <input
+          type="hidden"
+          name="preco"
+          id="preco-real"
+          value="<%= Number(produto.preco || 0).toFixed(2) %>"
+        >
+      </div>
           <div class="form-group">
             <label>Tags</label>
             <input type="text" name="tags" value="<%= produto.tags %>">
@@ -166,5 +181,58 @@
   </div>
 
   <%- include('partials/footer') %>
+  <script>
+(function () {
+  const form = document.querySelector('form[action^="/painel/produto/"][method="POST"]');
+  const mask = document.getElementById('preco-mask');
+  const real = document.getElementById('preco-real');
+
+  function onlyDigits(v) {
+    return (v || '').replace(/\D+/g, '');
+  }
+
+  function formatBRLFromDigits(digits) {
+    if (!digits) return '0,00';
+    const int = BigInt(digits);
+    const cents = (int % 100n).toString().padStart(2, '0');
+    const reais = (int / 100n).toString();
+    const reaisFmt = reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${reaisFmt},${cents}`;
+  }
+
+  function setFromDigits(digits) {
+    mask.value = formatBRLFromDigits(digits);
+    // valor normalizado (ponto como separador decimal) para o backend
+    real.value = (Number(digits) / 100).toFixed(2);
+  }
+
+  // Inicializa a partir do valor vindo do servidor (ex.: "1234.56")
+  (function init() {
+    const initial = '<%= Number(produto.preco || 0).toFixed(2) %>'; // "1234.56"
+    const digits = initial.replace(/\D/g, ''); // "123456"
+    setFromDigits(digits);
+  })();
+
+  // Enquanto digita: aceita só dígitos e formata
+  mask.addEventListener('input', () => {
+    const digits = onlyDigits(mask.value);
+    setFromDigits(digits);
+  });
+
+  // Bloqueia teclas não numéricas (mantém navegação/edição)
+  mask.addEventListener('keydown', (e) => {
+    const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+    if (allowed.includes(e.key)) return;
+    if (!/^\d$/.test(e.key)) e.preventDefault();
+  });
+
+  // Garante sincronização no submit
+  form.addEventListener('submit', () => {
+    const digits = onlyDigits(mask.value);
+    real.value = (Number(digits) / 100).toFixed(2);
+  });
+})();
+</script>
+
 </body>
 </html>

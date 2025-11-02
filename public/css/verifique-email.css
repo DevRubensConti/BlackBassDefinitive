@@ -1,0 +1,90 @@
+:root {
+  --cor-primaria: #57BD89;
+  --cor-primaria-escura: #3e835f;
+  --cor-primaria-escura-2: #215038;
+  --cor-secundaria: #FF814A;
+  --cor-secundaria-escura: #fa5e49;
+  --cor-secundaria-clara: #ff9361;
+  --cor-fundo: #fffaf5;
+  --cor-texto: #4b4b4b;
+  --cor-letras-navbar: #ffecd2;
+  --cor-destaque: #ffdd99;
+  --bege-claro: #e4c08f;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: url('/images/background.png') no-repeat center center fixed;
+  background-size: cover;
+  color: var(--cor-secundaria);
+}
+/* Layout centralizado */
+.ve-container {
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Card */
+.ve-card {
+  background: #fff;
+  width: 100%;
+  max-width: 560px;
+  padding: 20px 20px;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  text-align: center;
+}
+
+/* Títulos e textos */
+.ve-title {
+  color: var(--cor-primaria-escura);
+  margin: 0 0 16px;
+  font-size: 24px;
+}
+
+.ve-text {
+  font-size: 16px;
+  line-height: 1.55;
+  margin: 10px 0 0;
+}
+
+.ve-email {
+  display: inline-block;
+  margin-top: 6px;
+  font-weight: 700;
+  color: var(--cor-secundaria);
+  word-break: break-all;
+}
+
+/* Botão */
+.ve-btn {
+  display: inline-block;
+  margin-top: 22px;
+  padding: 12px 20px;
+  background: var(--cor-primaria);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: transform .05s ease, background .25s ease, box-shadow .25s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+
+.ve-btn:hover {
+  background: var(--cor-primaria-escura);
+  box-shadow: 0 6px 16px rgba(0,0,0,.16);
+}
+
+.ve-btn:active {
+  transform: translateY(1px);
+}

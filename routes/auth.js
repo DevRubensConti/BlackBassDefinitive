@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../supabase');
-const bcrypt = require('bcrypt');
-
-
+// const supabase = require('../supabase'); // REMOVED
+const supabaseAuth = require('../supabase/supabaseAuth'); // ADDED: ANON (Auth)
+const supabaseDb   = require('../supabase/supabaseDb');   // ADDED: SERVICE ROLE (DB)
+const bcrypt = require('bcrypt'); // (opcional) remova se não usar
+const { ensureLoja, onlyDigits } = require('../helpers/loja');
+const redirectUrl = process.env.AUTH_REDIRECT_URL
 // Página de login
 router.get('/login', (req, res) => {
   res.render('login');
@@ -13,31 +15,63 @@ router.get('/login', (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, senha } = req.body;
 
-  // 1) Auth
-  const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+  // 1) Auth (usa o client ANON só para autenticação)
+  const { data: loginData, error: loginError } = await supabaseAuth.auth.signInWithPassword({ // CHANGED
     email,
     password: senha
   });
+
   if (loginError || !loginData?.user) {
     console.error('Erro ao logar no Supabase Auth:', loginError);
-    return res.status(401).render('login', { erroLogin: 'E-mail ou senha inválidos.' });
+
+    // ⚠️ E-mail ainda não confirmado
+    if (loginError?.code === 'email_not_confirmed' || /email not confirmed/i.test(loginError?.message || '')) {
+      return res.status(401).render('login', {
+        erroLogin: 'Seu e-mail ainda não foi confirmado.',
+        precisaConfirmar: true,
+        email
+      });
+    }
+
+    // Credenciais inválidas / senha errada
+    if (loginError?.code === 'invalid_credentials' || loginError?.status === 400) {
+      return res.status(401).render('login', {
+        erroLogin: 'E-mail ou senha inválidos.',
+        email
+      });
+    }
+
+    // Genérico
+    return res.status(500).render('login', {
+      erroLogin: 'Não foi possível fazer login agora. Tente novamente.',
+      email
+    });
   }
 
   const uid = loginData.user.id;
 
-  // 2) Busca PF
-  const pfResp = await supabase.from('usuarios_pf').select('*').eq('id', uid).single();
+  // 2) Busca PF (SERVICE ROLE)
+  const pfResp = await supabaseDb // CHANGED
+    .from('usuarios_pf')
+    .select('*')
+    .eq('id', uid)
+    .maybeSingle();
   const pf = pfResp.data;
 
-  // 3) Se não for PF, tenta PJ
+  // 3) Se não for PF, tenta PJ (SERVICE ROLE)
   let usuario = pf;
   let tipo = 'pf';
 
   if (!usuario) {
-    const pjResp = await supabase.from('usuarios_pj').select('*').eq('id', uid).single();
+    const pjResp = await supabaseDb // CHANGED
+      .from('usuarios_pj')
+      .select('*')
+      .eq('id', uid)
+      .maybeSingle();
     const pj = pjResp.data;
+
     if (!pj) {
-      return res.status(401).render('login', { erroLogin: 'Usuário não encontrado.' });
+      return res.status(401).render('login', { erroLogin: 'Usuário não encontrado.', email });
     }
     usuario = pj;
     tipo = 'pj';
@@ -51,13 +85,20 @@ router.post('/login', async (req, res) => {
     }
 
     // 5) Seta a sessão limpa (normalizando tipo)
+    const iconeValida =
+      usuario.icone_url &&
+      usuario.icone_url !== 'null' &&
+      String(usuario.icone_url).trim() !== '';
+
     req.session.usuario = {
       id: uid,
       nome: usuario.nome || usuario.nome_fantasia || usuario.nomeFantasia || '',
       tipo: (tipo || '').toLowerCase(), // 'pf' ou 'pj'
       email: usuario.email,
       telefone: usuario.telefone,
-      icone_url: usuario.icone_url || '/images/user_default.png'
+      icone_url: iconeValida
+        ? usuario.icone_url
+        : (tipo === 'pj' ? '/images/store_logos/store.png' : '/images/user_default.png')
     };
 
     // 6) Garante persistência antes do redirect
@@ -71,7 +112,26 @@ router.post('/login', async (req, res) => {
   });
 });
 
+// (Opcional) Reenviar e-mail de confirmação – usa supabaseAuth
+router.post('/auth/reenviar-confirmacao', async (req, res) => { // ADDED
+  const { email } = req.body;
+  if (!email) return res.redirect('/login');
 
+  const { error } = await supabaseAuth.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: process.env.AUTH_REDIRECT_URL }
+  });
+
+  if (error) {
+    console.error('Erro ao reenviar confirmação:', error);
+    return res.status(400).render('login', {
+      erroLogin: 'Não foi possível reenviar o e-mail de confirmação. Tente novamente mais tarde.',
+      email
+    });
+  }
+  return res.redirect(`/verifique-email?email=${encodeURIComponent(email)}`);
+});
 
 // Logout
 router.get('/logout', (req, res) => {
@@ -80,60 +140,58 @@ router.get('/logout', (req, res) => {
       console.error('Erro ao fazer logout:', err);
       return res.status(500).send('Erro ao fazer logout.');
     }
-
-    // Remove o cookie de sessão no cliente
-    res.clearCookie('connect.sid', {
-      path: '/',          // caminho onde o cookie é válido
-      httpOnly: true,     // só acessível pelo servidor
-      secure: false       // se estiver em produção com HTTPS, coloque true
-    });
-
+    res.clearCookie('connect.sid', { path: '/', httpOnly: true, secure: false });
     res.redirect('/');
   });
 });
 
-//Cadastro PJ
 router.post('/cadastro-pj', async (req, res) => {
   const {
     nomeFantasia, razaoSocial, cnpj, email, senha, telefone,
-    cep, estado, endereco, numero, bairro, complemento, icone_url
+    cep, estado, endereco, numero, bairro, complemento, cidade, descricao
   } = req.body;
 
   try {
-    // 1. Verifica se e-mail já existe em PF ou PJ
-    const { data: existePF } = await supabase.from('usuarios_pf').select('id').eq('email', email).single();
-    const { data: existePJ } = await supabase.from('usuarios_pj').select('id').eq('email', email).single();
-
-    if (existePF || existePJ) {
+    // 1) e-mail único entre PF e PJ
+    const [{ data: ePF }, { data: ePJ }] = await Promise.all([
+      supabaseDb.from('usuarios_pf').select('id').eq('email', email).maybeSingle(),
+      supabaseDb.from('usuarios_pj').select('id').eq('email', email).maybeSingle()
+    ]);
+    if (ePF || ePJ) {
       return res.render('cadastro-pj', { mensagemErro: 'Já existe uma conta com esse e-mail.' });
     }
 
-    // 2. Verifica se CNPJ já está cadastrado
-    const { data: cnpjExistente } = await supabase.from('usuarios_pj').select('id').eq('cnpj', cnpj).single();
-
-    if (cnpjExistente) {
-      return res.render('cadastro-pj', { mensagemErro: 'Já existe uma loja com esse CNPJ.' });
+    // 2) CNPJ único
+    const cnpjDigits = onlyDigits(cnpj);
+    if (cnpjDigits) {
+      const { data: cnpjExist } = await supabaseDb
+        .from('usuarios_pj')
+        .select('id')
+        .eq('cnpj', cnpjDigits)
+        .maybeSingle();
+      if (cnpjExist) {
+        return res.render('cadastro-pj', { mensagemErro: 'Já existe uma loja com esse CNPJ.' });
+      }
     }
 
-    // 3. Cria o usuário no Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // 3) Auth signUp (envia e-mail de confirmação)
+    const { data: signUp, error: signErr } = await supabaseAuth.auth.signUp({
       email,
-      password: senha
+      password: senha,
+      options: { emailRedirectTo: redirectUrl }
     });
-
-    if (authError || !authData?.user) {
-      console.error('Erro ao criar usuário no Auth:', authError);
+    if (signErr || !signUp?.user) {
+      console.error('Auth signUp (PJ) error:', signErr);
       return res.render('cadastro-pj', { mensagemErro: 'Erro ao registrar no sistema de autenticação.' });
     }
+    const uid = signUp.user.id;
 
-    const uid = authData.user.id;
-
-    // 4. Prepara os dados da loja
-    const loja = {
-      id: uid, // 👈 UID do Supabase Auth
+    // 4) Inserir em usuarios_pj
+    const pjRow = {
+      id: uid,
       nomeFantasia,
       razaoSocial,
-      cnpj,
+      cnpj: cnpjDigits || null,
       email,
       telefone,
       cep,
@@ -141,92 +199,118 @@ router.post('/cadastro-pj', async (req, res) => {
       endereco,
       numero,
       bairro,
-      complemento
+      complemento,
+      cidade: cidade || null,
+      descricao: descricao || null
     };
-
-    if (icone_url && icone_url.trim() !== '') {
-      loja.icone_url = icone_url;
+    const { error: insertPJError } = await supabaseDb.from('usuarios_pj').insert([pjRow]);
+    if (insertPJError) {
+      console.error('Insert usuarios_pj error:', insertPJError);
+      return res.status(500).render('cadastro-pj', { mensagemErro: 'Erro ao cadastrar loja (dados PJ).' });
     }
 
-    // 5. Insere na tabela usuarios_pj
-    const { error: insertError } = await supabase.from('usuarios_pj').insert([loja]);
+    // 5) Loja 1:1 (com cidade e icone_url)
+    await ensureLoja({
+      usuarioId: uid,
+      tipo: 'PJ',
+      nomeFantasia: nomeFantasia || razaoSocial,
+      cnpj: cnpjDigits || null,
+      cidade: cidade || null,
+      estado: estado || null,
+      descricao: descricao || null // ícone padrão (ou troque por req.body.icone_url validado)
+    });
 
-    if (insertError) {
-      console.error('Erro ao cadastrar loja:', insertError);
-      return res.status(500).send('Erro ao cadastrar loja');
-    }
-
-    res.redirect('/login');
+    // 6) Redireciona para aviso de confirmação
+    return res.redirect(`/verifique-email?email=${encodeURIComponent(email)}`);
   } catch (err) {
-    console.error('Erro ao processar cadastro:', err);
-    res.status(500).send('Erro interno ao processar o cadastro');
+    console.error('Erro no cadastro PJ:', err);
+    return res.status(500).render('cadastro-pj', { mensagemErro: err.message || 'Erro interno ao processar cadastro' });
   }
 });
 
-
-
+/* ================================
+   POST /cadastro-pf
+   ================================ */
 router.post('/cadastro-pf', async (req, res) => {
   try {
     const {
       nome, sobrenome, cpf, data_nascimento,
       email, senha, telefone,
-      cep, estado, endereco, numero, bairro, complemento
+      cep, estado, cidade, endereco, numero, bairro, complemento
     } = req.body;
 
-    // 1. Verifica se e-mail já existe em PF ou PJ
-    const { data: existePF } = await supabase.from('usuarios_pf').select('id').eq('email', email).single();
-    const { data: existePJ } = await supabase.from('usuarios_pj').select('id').eq('email', email).single();
-
-    if (existePF || existePJ) {
+    // 1) e-mail único entre PF e PJ
+    const [{ data: ePF }, { data: ePJ }] = await Promise.all([
+      supabaseDb.from('usuarios_pf').select('id').eq('email', email).maybeSingle(),
+      supabaseDb.from('usuarios_pj').select('id').eq('email', email).maybeSingle()
+    ]);
+    if (ePF || ePJ) {
       return res.render('cadastro-pf', { mensagemErro: 'Já existe uma conta com esse e-mail.' });
     }
 
-    // 2. Verifica se CPF já está cadastrado
-    const { data: cpfExistente } = await supabase.from('usuarios_pf').select('id').eq('cpf', cpf).single();
-
-    if (cpfExistente) {
-      return res.render('cadastro-pf', { mensagemErro: 'Já existe uma conta com esse CPF.' });
+    // 2) CPF único
+    const cpfDigits = onlyDigits(cpf);
+    if (cpfDigits) {
+      const { data: cpfExist } = await supabaseDb
+        .from('usuarios_pf')
+        .select('id')
+        .eq('cpf', cpfDigits)
+        .maybeSingle();
+      if (cpfExist) {
+        return res.render('cadastro-pf', { mensagemErro: 'Já existe uma conta com esse CPF.' });
+      }
     }
 
-    // 3. Cria o usuário no Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // 3) Auth signUp (e-mail de confirmação)
+    const { data: signUp, error: signErr } = await supabaseAuth.auth.signUp({
       email,
-      password: senha
+      password: senha,
+      options: { emailRedirectTo: redirectUrl }
     });
-
-    if (authError || !authData?.user) {
-      console.error('Erro ao criar usuário no Auth:', authError);
+    if (signErr || !signUp?.user) {
+      console.error('Auth signUp (PF) error:', signErr);
       return res.render('cadastro-pf', { mensagemErro: 'Erro ao registrar no sistema de autenticação.' });
     }
+    const uid = signUp.user.id;
 
-    const uid = authData.user.id;
-
-    // 4. Salva dados complementares na tabela usuarios_pf (usando o UID como id)
-    const { error: dbError } = await supabase.from('usuarios_pf').insert([{
-      id: uid, // 👈 Relacionado ao auth.uid()
+    // 4) Inserir em usuarios_pf
+    const pfRow = {
+      id: uid,
       nome,
       sobrenome,
-      cpf,
-      data_nascimento,
+      cpf: cpfDigits || null,
+      data_nascimento: data_nascimento || null,
       email,
       telefone,
       cep,
       estado,
+      cidade: cidade || null,
       endereco,
       numero,
       bairro,
       complemento
-    }]);
-
+    };
+    const { error: dbError } = await supabaseDb.from('usuarios_pf').insert([pfRow]);
     if (dbError) {
-      console.error('Erro ao inserir no usuarios_pf:', dbError);
-      return res.status(500).send('Erro ao salvar os dados do usuário.');
+      console.error('Insert usuarios_pf error:', dbError);
+      return res.status(500).render('cadastro-pf', { mensagemErro: 'Erro ao salvar os dados do usuário (PF).' });
     }
 
-    res.redirect('/plano-assinatura');
+    // 5) Loja 1:1 (PF também ganha cidade e ícone)
+    await ensureLoja({
+      usuarioId: uid,
+      tipo: 'PF',
+      nomeFantasia: `${nome || ''} ${sobrenome || ''}`.trim(),
+      cpf: cpfDigits || null,
+      cidade: cidade || null,
+      estado: estado || null
+    });
+
+    // 6) Aviso para verificar o e-mail
+    return res.redirect(`/verifique-email?email=${encodeURIComponent(email)}`);
   } catch (err) {
-    console.error('Erro interno:', err);
-    res.status(500).send('Erro interno ao processar cadastro');
+    console.error('Erro no cadastro PF:', err);
+    return res.status(500).render('cadastro-pf', { mensagemErro: err.message || 'Erro interno ao processar cadastro' });
   }
 });
 
@@ -248,5 +332,16 @@ router.get('/cadastro-pj', (req, res) => {
   res.render('cadastro-pj', { mensagemErro: null });
 });
 
-module.exports = router;
+// GET para "verifique seu e-mail"
+router.get('/verifique-email', (req, res) => {
+  const email = req.query.email;
+  if (!email) return res.redirect('/signup');
+  res.render('verifique-email', { email });
+});
 
+// Página de confirmação de e-mail
+router.get('/email-confirmado', (req, res) => {
+  res.render('email-confirmado', { loginUrl: '/login' });
+});
+
+module.exports = router;

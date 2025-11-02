@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <title>Meus Pedidos</title>
   <link rel="stylesheet" href="/css/pedidos.css">
+  <style>
+    /* Estilos do botão de avaliação (pode mover para pedidos.css) */
+    .btn-acao { display:inline-block; padding:8px 12px; border-radius:6px; border:1px solid #ccc; text-decoration:none; font-size:.9rem; line-height:1; background:#fff; color:#222; }
+    .btn-acao.btn-avaliar.enabled { background: var(--cor-primaria, #2e7d32); color:#fff; border-color: transparent; cursor:pointer; }
+    .btn-acao.btn-avaliar.enabled:hover { filter: brightness(0.95); }
+    .btn-acao.btn-avaliar.disabled { background:#ddd; color:#666; border:1px solid #ccc; cursor:not-allowed; opacity:.8; }
+  </style>
 </head>
 <body>
   <%- include('partials/navbar.ejs') %>
@@ -11,50 +18,154 @@
   <main class="pedidos-container">
     <h1>🛒 Meus Pedidos</h1>
 
-    <% if (pedidos.length > 0) { %>
-      <% pedidos.forEach(pedido => { %>
+    <!-- Avançar status do pedido (TCC) -->
+    <section class="avancar-status-box" style="margin: 16px 0 24px; padding: 12px; border: 1px solid #e5e5e5; border-radius: 8px; background: #fafafa;">
+      <form method="POST" action="/pedidos/avancar-status" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <label for="codigoPedido" style="font-weight:600;">Código do pedido:</label>
+        <input
+          type="text"
+          name="codigo"
+          id="codigoPedido"
+          placeholder="Ex.: ABC123-LOJA"
+          required
+          style="padding: 10px; border-radius: 6px; border: 1px solid #ccc; min-width: 260px;"
+        />
+        <button type="submit" class="btn-acao" style="padding: 10px 14px; border-radius: 6px; border: 1px solid transparent; background: var(--cor-primaria, #2e7d32); color:#fff; cursor:pointer;">
+          Avançar status
+        </button>
+        <input type="hidden" name="back" value="/meus-pedidos" />
+        <small style="color:#666;">
+          O status será avançado conforme o funil de referência (Criado → Aguardando pagamento → Pago → Em processamento → Em separação → Enviado → Entregue → …).
+        </small>
+      </form>
+    </section>
+
+    <% if ((grupos || []).length === 0) { %>
+      <p class="no-pedidos">Você ainda não realizou nenhum pedido.</p>
+    <% } else { %>
+      <%
+        // Helper para moeda BR
+        const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+        const toBRL = (v) => {
+          // aceita number e string tipo "1.234,56"
+          if (typeof v === 'number') return fmtBRL.format(v || 0);
+          const limpo = String(v ?? '')
+            .replace(/[^\d.,-]/g, '')     // mantém só dígitos, ponto, vírgula e sinal
+            .replace(/\./g, '')           // remove separadores de milhar com ponto
+            .replace(',', '.');           // troca vírgula decimal por ponto
+          const n = Number(limpo);
+          return fmtBRL.format(Number.isFinite(n) ? n : 0);
+        };
+      %>
+
+      <% grupos.forEach(grupo => { %>
         <div class="pedido-box">
           <div class="pedido-header">
             <div>
-              <p><strong>Pedido realizado:</strong> <%= new Date(pedido.data_pedido).toLocaleDateString() %></p>
-              <p><strong>Total:</strong> R$ <%= pedido.preco_total %></p>
+              <p>
+                <strong><%= grupo.codigo ? 'Código' : 'Pedido' %>:</strong>
+                <%= grupo.codigo || '—' %>
+              </p>
+              <p>
+                <strong>Pedido realizado:</strong>
+                <%= new Date(grupo.data).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' }) %>
+              </p>
             </div>
-            <div>
-              <p><strong>Pedido Nº:</strong> <%= pedido.id %></p>
-              <a href="#">Exibir detalhes do pedido</a> | <a href="#">Exibir recibo</a>
+
+            <div style="text-align:right;">
+              <p>
+                <strong>Total do grupo:</strong>
+                <%= Number(grupo.total || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }) %>
+              </p>
+              <p><strong>Status:</strong> <%= grupo.status %></p>
             </div>
           </div>
 
-          <div class="pedido-body">
-  <div class="pedido-img">
-    <% if (pedido.produto && pedido.produto.imagem_url) { %>
-      <img src="<%= pedido.produto.imagem_url.split(',')[0] %>" alt="Produto">
-    <% } else { %>
-      <div class="no-img">Sem imagem</div>
-    <% } %>
-  </div>
+          <%
+            // Detecta ENTREGUE de forma bem tolerante
+            const _rawGrp = (grupo.status || '').toString().trim();
+            const _normGrp = _rawGrp.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+            const _isEntregueGrp = _normGrp.includes('entregue') || _normGrp.includes('concluido') || _normGrp.includes('finalizado');
 
-  <div class="pedido-info">
-    <h3><%= pedido.produto?.nome || 'Produto indisponível' %></h3>
-    <p class="sub-info">Instrumento Musical</p> <!-- ajuste conforme tipo real -->
-    <p class="status-info">Status: <%= pedido.status %></p>
-  </div>
+            // PedidoId "fallback" do grupo, caso algum item não traga
+            let pedidoIdGrupo = grupo.pedido_id || grupo.pedidoId || null;
+            if (!pedidoIdGrupo && Array.isArray(grupo.itens) && grupo.itens.length > 0) {
+              const any = grupo.itens.find(i => i && (i.pedido_id || i.pedidoId));
+              pedidoIdGrupo = any ? (any.pedido_id || any.pedidoId) : null;
+            }
+          %>
+
+          <!-- Lista de itens do pedido (cada item vem de pedido_itens) -->
+          <div class="pedido-body" style="display:block">
+            <% (grupo.itens || []).forEach(item => { %>
+              <div class="pedido-item" style="display:flex; gap:12px; align-items:center; padding:10px 0; border-top:1px solid rgba(0,0,0,0.08);">
+                <div class="pedido-img" style="width:72px; flex:0 0 72px;">
+                  <% if (item.imagem_url) { %>
+                    <img
+                      src="<%= item.imagem_url %>"
+                      alt="<%= item.nome %>"
+                      style="width:72px; height:72px; object-fit:cover; border-radius:8px;"
+                      onerror="this.onerror=null;this.src='/images/placeholder.png';">
+                  <% } else { %>
+                    <div class="no-img" style="width:72px; height:72px; display:grid; place-items:center; background:#eee; color:#666; border-radius:8px;">
+                      Sem imagem
+                    </div>
+                  <% } %>
+                </div>
+
+                <div class="pedido-info" style="flex:1;">
+                  <h3 style="margin:0 0 4px 0;"><%= item.nome || 'Produto indisponível' %></h3>
+                  <p class="sub-info" style="margin:0 0 4px 0; color:#666;">
+                    Qtd: <%= Number(item.quantidade || 0) %>
+                  </p>
+                 <p class="status-info" style="margin:0; color:#666;">
+                  Unit.: <%= toBRL(item.unitario) %> |
+                  Subtotal: <%= toBRL(item.subtotal) %>
+                </p>
+                </div>
+
+                <div class="pedido-actions" style="display:flex; gap:8px; align-items:center;">
+  <a href="/item/<%= item.produto_id %>" class="btn-acao">Ver produto</a>
+
+  <%
+    // Normaliza status do grupo (se você tiver status por item, use-o aqui)
+    const _rawGrp = (grupo.status || '').toString().trim();
+    const _normGrp = _rawGrp.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+    const _isEntregueGrp = _normGrp.includes('entregue') || _normGrp.includes('concluido') || _normGrp.includes('finalizado');
+
+    // ID correto para avaliação: o UUID de pedido_itens
+    const pedidoItemId = item.pedido_item_id || item.id || null;
+
+    const podeAvaliar = Boolean(_isEntregueGrp && pedidoItemId);
+  %>
+
+  <% if (pedidoItemId) { %>
+    <form method="GET" action="/avaliar/<%= pedidoItemId %>" style="display:inline;">
+      <button
+        type="submit"
+        class="btn-acao btn-avaliar <%= podeAvaliar ? 'enabled' : 'disabled' %>"
+        <%= podeAvaliar ? '' : 'disabled title="Disponível após a entrega"' %>
+      >
+        Avaliar este produto
+      </button>
+    </form>
+  <% } else { %>
+    <button type="button" class="btn-acao btn-avaliar disabled" disabled title="Item sem ID (pedido_itens.id) para avaliação">
+      Avaliar este produto
+    </button>
+  <% } %>
 </div>
 
 
-            <div class="pedido-actions">
-              <button class="btn-acao">Ver produto</button>
-              <button class="btn-acao">Avaliar produto</button>
-            </div>
+              </div>
+            <% }) %>
           </div>
         </div>
       <% }) %>
-    <% } else { %>
-      <p class="no-pedidos">Você ainda não realizou nenhum pedido.</p>
     <% } %>
 
   </main>
-    <%- include('partials/footer.ejs') %>
 
+  <%- include('partials/footer.ejs') %>
 </body>
 </html>

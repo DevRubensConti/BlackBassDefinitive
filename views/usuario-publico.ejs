@@ -3,42 +3,166 @@
 <head>
   <meta charset="UTF-8">
   <title><%= usuario.nome %> - Perfil Público</title>
+  <!-- Reaproveita o mesmo CSS da loja para manter a “pegada” -->
+  <link rel="stylesheet" href="/css/loja.css">
+  <!-- Se quiser, pode manter um CSS específico também -->
   <link rel="stylesheet" href="/css/usuario-publico.css">
 </head>
 <body>
-  <%- include('partials/navbar') %>
+  <%- include('partials/navbar.ejs') %>
 
-  <main class="perfil-publico-container">
-    <section class="cabecalho-usuario">
-      <img src="<%= usuario.icone_url || '/images/default-user.png' %>" alt="Foto de perfil" class="foto-usuario">
-      <div class="dados-usuario">
-        <h2><%= usuario.nome %></h2>
-        <p><strong>Email:</strong> <%= usuario.email %></p>
-        <% if (usuario.telefone) { %>
-          <p><strong>Telefone:</strong> <%= usuario.telefone %></p>
-        <% } %>
-      </div>
-    </section>
+  <main class="listagem-container">
 
-    <section class="produtos-listados">
-      <h3>Produtos Anunciados</h3>
-      <div class="grid-produtos">
-        <% produtos.forEach(item => { %>
-          <div class="card-produto">
-            <a href="/item/<%= item.id %>">
-              <img src="<%= item.imagem_url?.split(',')[0] %>" alt="Imagem do produto">
-              <h4><%= item.nome %></h4>
-              <p>R$ <%= item.preco %></p>
-            </a>
+    <!-- FILTROS (mesma lateral da loja) -->
+    <aside class="filtros">
+      <h2>Filtrar por</h2>
+      <form method="GET">
+        <div class="filtro-box">
+          <label>Marca:</label>
+          <input type="text" name="marca" placeholder="Ex: Fender" value="<%= typeof marca !== 'undefined' ? marca : '' %>">
+        </div>
+
+        <div class="filtro-box">
+          <label>Tipo:</label>
+          <input type="text" name="tipo" placeholder="Ex: Guitarra" value="<%= typeof tipo !== 'undefined' ? tipo : '' %>">
+        </div>
+
+        <div class="filtro-box">
+          <label>Preço Mín:</label>
+          <input type="number" name="preco_min" value="<%= typeof preco_min !== 'undefined' ? preco_min : '' %>">
+        </div>
+
+        <div class="filtro-box">
+          <label>Preço Máx:</label>
+          <input type="number" name="preco_max" value="<%= typeof preco_max !== 'undefined' ? preco_max : '' %>">
+        </div>
+
+        <button type="submit">Filtrar</button>
+      </form>
+    </aside>
+
+    <!-- CONTEÚDO (produtos) -->
+    <section class="produtos">
+
+      <!-- Banner do “vendedor PF” com o mesmo layout da loja -->
+      <div class="banner-loja">
+        <!-- Esquerda: Foto + infos -->
+        <div class="banner-info">
+          <img src="<%= usuario.icone_url || '/images/default-user.png' %>" alt="Foto do Usuário" class="banner-logo">
+
+          <div class="banner-textos">
+            <h2><%= usuario.nome %></h2>
+
+            <p class="loja-descricao">
+              <%= (usuario.descricao && usuario.descricao.trim().length) ? usuario.descricao : 'Sem descrição disponível.' %>
+            </p>
+
+            <p class="loja-local">
+              <strong>Localização:</strong>
+              <%= [usuario.cidade, usuario.estado].filter(Boolean).join(' - ') || 'Não informado' %>
+            </p>
+
+            <% if (usuario.telefone) { %>
+              <p class="loja-telefone"><strong>Telefone:</strong> <%= usuario.telefone %></p>
+            <% } %>
+
+            <% if (usuario.email) { %>
+              <p class="loja-email"><strong>Email:</strong> <%= usuario.email %></p>
+            <% } %>
           </div>
-        <% }) %>
-        <% if (produtos.length === 0) { %>
-          <p>Este usuário ainda não possui anúncios.</p>
-        <% } %>
+        </div>
+
+        <!-- Direita: Avaliação agregada do vendedor PF -->
+        <div class="banner-avaliacao">
+          <p><strong>Nota do Vendedor</strong></p>
+          <div class="estrelas">
+            <% const mediaPF = Number(usuario?.nota_media || 0); %>
+            <% for (let i=1; i<=5; i++) { %>
+              <span class="star <%= i <= Math.round(mediaPF) ? 'filled' : '' %>">★</span>
+            <% } %>
+          </div>
+          <small>
+            <strong><%= mediaPF.toFixed(1) %>/5</strong>
+            · <%= usuario?.total_avaliacoes || 0 %> avaliações
+          </small>
+        </div>
       </div>
+
+      <!-- Lista de produtos (mesma grade/carrossel da loja) -->
+      <h3 style="margin: 16px 0;">Produtos Anunciados</h3>
+
+      <% if (produtos && produtos.length > 0) { %>
+        <div class="grid-produtos">
+          <% produtos.forEach(item => { 
+               const imagens = (item.imagem_url || '').split(',').filter(Boolean);
+          %>
+            <div class="card-produto">
+              <!-- Mini-galeria/carrossel -->
+              <div class="mini-galeria">
+                <div class="carousel">
+                  <% if (imagens.length) { %>
+                    <div class="carousel-wrapper">
+                      <% imagens.forEach((url, index) => { %>
+                        <img class="carousel-img <%= index === 0 ? 'active' : '' %>" src="<%= url.trim() %>" alt="Imagem <%= index + 1 %>">
+                      <% }) %>
+                    </div>
+
+                    <div class="carousel-controls">
+                      <button class="prev" type="button">&#10094;</button>
+                      <button class="next" type="button">&#10095;</button>
+                    </div>
+                  <% } else { %>
+                    <p style="color:#aaa; font-size:12px; margin:8px 0;">(sem imagens)</p>
+                  <% } %>
+                </div>
+              </div>
+
+              <h4><%= item.nome %></h4>
+              <p><strong>Preço:</strong> <%= Number(item.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></p>
+
+              <% if (item.tags) { %>
+                <p class="tags"><strong>Tags:</strong> <%= item.tags %></p>
+              <% } %>
+
+              <a href="/item/<%= item.id %>">
+                <button type="button">Ver mais</button>
+              </a>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p>Este usuário ainda não possui anúncios.</p>
+      <% } %>
+
     </section>
   </main>
 
-  <%- include('partials/footer') %>
+  <%- include('partials/footer.ejs') %>
+
+  <!-- Script do carrossel (mesmo da loja) -->
+  <script>
+    document.querySelectorAll('.carousel').forEach(carousel => {
+      const images = carousel.querySelectorAll('.carousel-img');
+      const nextBtn = carousel.querySelector('.next');
+      const prevBtn = carousel.querySelector('.prev');
+      let currentIndex = 0;
+
+      const showImage = index => {
+        images.forEach((img, i) => img.classList.toggle('active', i === index));
+      };
+
+      if (nextBtn && prevBtn && images.length > 0) {
+        nextBtn.addEventListener('click', () => {
+          currentIndex = (currentIndex + 1) % images.length;
+          showImage(currentIndex);
+        });
+        prevBtn.addEventListener('click', () => {
+          currentIndex = (currentIndex - 1 + images.length) % images.length;
+          showImage(currentIndex);
+        });
+      }
+      showImage(currentIndex);
+    });
+  </script>
 </body>
 </html>

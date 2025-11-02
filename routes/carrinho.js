@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../supabase');
+const supabaseDb = require('../supabase/supabaseDb');
 const { requireLogin } = require('../middlewares/auth');
 
-// GET: Exibir carrinho
+/**
+ * -------------------------------------------
+ *  ROTAS DE CARRINHO (VIEW baseada em sessão)
+ * -------------------------------------------
+ */
+
+// GET: Exibir carrinho (sessão)
 router.get('/carrinho', requireLogin, async (req, res) => {
   const carrinho = req.session.carrinho || [];
 
@@ -13,7 +19,7 @@ router.get('/carrinho', requireLogin, async (req, res) => {
 
   const ids = carrinho.map(i => i.id);
 
-  const { data: produtos, error } = await supabase
+  const { data: produtos, error } = await supabaseDb
     .from('produtos')
     .select('*')
     .in('id', ids);
@@ -25,19 +31,18 @@ router.get('/carrinho', requireLogin, async (req, res) => {
 
   const itens = produtos.map(produto => {
     const itemCarrinho = carrinho.find(i => String(i.id) === String(produto.id));
-
     return {
       ...produto,
       quantidade: itemCarrinho ? itemCarrinho.quantidade : 1
     };
   });
 
-  const total = itens.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+  const total = itens.reduce((acc, item) => acc + (Number(item.preco) * Number(item.quantidade)), 0);
 
   res.render('carrinho', { itens, total });
 });
 
-// POST: Adicionar ao carrinho
+// POST: Adicionar ao carrinho (sessão)
 router.post('/carrinho/adicionar/:id', requireLogin, (req, res) => {
   const produtoId = req.params.id;
 
@@ -45,7 +50,6 @@ router.post('/carrinho/adicionar/:id', requireLogin, (req, res) => {
     req.session.carrinho = [];
   }
 
-  // Garante que a comparação será confiável
   const itemExistente = req.session.carrinho.find(item => String(item.id) === String(produtoId));
 
   if (itemExistente) {
@@ -57,8 +61,7 @@ router.post('/carrinho/adicionar/:id', requireLogin, (req, res) => {
   res.redirect('/carrinho');
 });
 
-
-// POST: Remover do carrinho
+// POST: Remover do carrinho (sessão)
 router.post('/carrinho/remover/:id', requireLogin, (req, res) => {
   const produtoId = req.params.id;
 
@@ -67,15 +70,23 @@ router.post('/carrinho/remover/:id', requireLogin, (req, res) => {
   }
 
   req.session.carrinho = req.session.carrinho.filter(i => String(i.id) !== String(produtoId));
-
   res.redirect('/carrinho');
 });
 
-router.get('/api/carrinho', async (req, res) => {
+
+/**
+ * -------------------------------------------
+ *  ROTAS DE CARRINHO (API com Supabase)
+ *  Usadas pelo mini-cart no header
+ * -------------------------------------------
+ */
+
+// GET: Lista itens do carrinho do usuário logado
+router.get('/api/carrinho', requireLogin, async (req, res) => {
   const usuarioId = req.session.usuario.id;
   const tipoUsuario = req.session.usuario.tipo; // 'pf' ou 'pj'
 
-  const { data: itens, error } = await supabase
+  const { data: itens, error } = await supabaseDb
     .from('carrinho')
     .select(`
       *,
@@ -93,38 +104,41 @@ router.get('/api/carrinho', async (req, res) => {
     return res.status(500).json([]);
   }
 
-  res.json(itens);
+  res.json(itens || []);
 });
 
-router.post('/api/carrinho/adicionar/:id', async (req, res) => {
+// POST: Adiciona (ou incrementa) item no carrinho do usuário logado
+router.post('/api/carrinho/adicionar/:id', requireLogin, async (req, res) => {
   const produtoId = req.params.id;
   const usuarioId = req.session.usuario.id;
   const tipoUsuario = req.session.usuario.tipo; // 'pf' ou 'pj'
 
   // Verifica se já existe no carrinho
-  const { data: existente, error: erroExistente } = await supabase
+  const { data: existente, error: erroExistente } = await supabaseDb
     .from('carrinho')
     .select('*')
     .eq('usuario_id', usuarioId)
     .eq('tipo_usuario', tipoUsuario)
     .eq('produto_id', produtoId)
-    .single();
+    .maybeSingle();
 
-  if (erroExistente) console.error(erroExistente);
+  if (erroExistente) {
+    console.error(erroExistente);
+    return res.status(500).send('Erro ao verificar item no carrinho');
+  }
 
   if (existente) {
-    // Atualiza quantidade
-    const { error } = await supabase
+    const { error } = await supabaseDb
       .from('carrinho')
-      .update({ quantidade: existente.quantidade + 1 })
+      .update({ quantidade: Number(existente.quantidade || 0) + 1 })
       .eq('id', existente.id);
+
     if (error) {
       console.error(error);
       return res.status(500).send('Erro ao atualizar quantidade');
     }
   } else {
-    // Insere novo item
-    const { error } = await supabase
+    const { error } = await supabaseDb
       .from('carrinho')
       .insert([{
         usuario_id: usuarioId,
@@ -132,6 +146,7 @@ router.post('/api/carrinho/adicionar/:id', async (req, res) => {
         produto_id: produtoId,
         quantidade: 1
       }]);
+
     if (error) {
       console.error(error);
       return res.status(500).send('Erro ao adicionar ao carrinho');
@@ -141,40 +156,95 @@ router.post('/api/carrinho/adicionar/:id', async (req, res) => {
   res.status(200).send('Item adicionado ao carrinho');
 });
 
-
-// Incrementa ou decrementa quantidade no carrinho
-router.post('/api/carrinho/:id/:action', async (req, res) => {
+// POST: Incrementa ou decrementa quantidade (com remoção quando chegar a 0)
+router.post('/api/carrinho/:id/:action', requireLogin, async (req, res) => {
   const itemId = req.params.id;
-  const action = req.params.action;
+  const action = String(req.params.action || '').toLowerCase();
 
-  const { data: item, error: errorItem } = await supabase
+  const usuarioId = req.session.usuario.id;
+  const tipoUsuario = req.session.usuario.tipo;
+
+  if (!['plus', 'minus'].includes(action)) {
+    return res.status(400).send('Ação inválida. Use "plus" ou "minus".');
+  }
+
+  // Garante que o item pertence ao usuário logado
+  const { data: item, error: errorItem } = await supabaseDb
     .from('carrinho')
     .select('*')
     .eq('id', itemId)
-    .single();
+    .eq('usuario_id', usuarioId)
+    .eq('tipo_usuario', tipoUsuario)
+    .maybeSingle();
 
   if (errorItem || !item) {
-    console.error(errorItem);
+    if (errorItem) console.error(errorItem);
     return res.status(404).send('Item não encontrado');
   }
 
-  let novaQtd = item.quantidade;
-  if (action === 'plus') novaQtd++;
-  if (action === 'minus' && novaQtd > 1) novaQtd--;
+  const qtdAtual = Number(item.quantidade || 0);
 
-  const { error } = await supabase
+  if (action === 'plus') {
+    const { error } = await supabaseDb
+      .from('carrinho')
+      .update({ quantidade: qtdAtual + 1 })
+      .eq('id', itemId);
+
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Erro ao incrementar quantidade');
+    }
+    return res.status(200).json({ ok: true, quantidade: qtdAtual + 1 });
+  }
+
+  // action === 'minus'
+  if (qtdAtual <= 1) {
+    // Se iria para 0, remove o item
+    const { error } = await supabaseDb
+      .from('carrinho')
+      .delete()
+      .eq('id', itemId)
+      .eq('usuario_id', usuarioId)
+      .eq('tipo_usuario', tipoUsuario);
+
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Erro ao remover item');
+    }
+    return res.status(200).json({ ok: true, removed: true });
+  } else {
+    const { error } = await supabaseDb
+      .from('carrinho')
+      .update({ quantidade: qtdAtual - 1 })
+      .eq('id', itemId);
+
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Erro ao decrementar quantidade');
+    }
+    return res.status(200).json({ ok: true, quantidade: qtdAtual - 1 });
+  }
+});
+
+// DELETE: Remove item do carrinho explicitamente
+router.delete('/api/carrinho/:id', requireLogin, async (req, res) => {
+  const itemId = req.params.id;
+  const usuarioId = req.session.usuario.id;
+  const tipoUsuario = req.session.usuario.tipo;
+
+  const { error } = await supabaseDb
     .from('carrinho')
-    .update({ quantidade: novaQtd })
-    .eq('id', itemId);
+    .delete()
+    .eq('id', itemId)
+    .eq('usuario_id', usuarioId)
+    .eq('tipo_usuario', tipoUsuario);
 
   if (error) {
     console.error(error);
-    return res.status(500).send('Erro ao atualizar quantidade');
+    return res.status(500).send('Erro ao remover item');
   }
 
-  res.status(200).send('Quantidade atualizada');
+  res.status(200).json({ ok: true, removed: true });
 });
-
-
 
 module.exports = router;

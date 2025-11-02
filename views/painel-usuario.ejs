@@ -20,22 +20,52 @@
     <section class="produtos-listados">
       <h3>Seus Anúncios</h3>
       <a href="/cadastro-item" class="btn-novo-produto">+ Novo Produto</a>
-      <div class="grid-produtos">
-        <% produtos.forEach(item => { 
-             const imagemPrincipal = item.imagem_url ? item.imagem_url.split(',')[0].trim() : '/images/sem-imagem.png';
-        %>
-          <div class="card-produto">
-            <img src="<%= imagemPrincipal %>" alt="Imagem do produto">
-            <h4><%= item.nome %></h4>
-            <p>R$ <%= item.preco %></p>
-            <div class="botoes">
-              <a href="/painel/produto/<%= item.id %>/editar" class="btn-editar">Editar</a>
-              <form id="form-excluir-<%= item.id %>" action="/produto/<%= item.id %>/excluir" method="POST" style="display: none;"></form>
-              <button class="btn-excluir" onclick="confirmarExclusao('<%= item.id %>', '<%= item.nome %>')">Excluir Produto</button>
-            </div>
-          </div>
-        <% }) %>
-      </div>
+      <table class="tabela-produtos">
+  <thead>
+    <tr>
+      <th>Foto</th>
+      <th>Produto</th>
+      <th>Preço</th>
+      <th>Quantidade</th>
+      <th>Status</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% produtos.forEach(item => { 
+         const imagemPrincipal = item.imagem_url ? item.imagem_url.split(',')[0].trim() : '/images/sem-imagem.png';
+         const precoBRL = Number(item.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+         const qtd = item.quantidade ?? item.estoque ?? '-';
+         const status = item.status ?? (qtd > 0 ? 'Ativo' : 'Inativo');
+    %>
+      <tr>
+        <td data-label="Foto">
+          <img class="foto-produto" src="<%= imagemPrincipal %>" alt="Imagem do produto">
+        </td>
+        <td data-label="Produto">
+          <div class="produto-nome"><%= item.nome %></div>
+          <% if (item.marca || item.modelo) { %>
+            <small class="produto-sub"><%= [item.marca, item.modelo].filter(Boolean).join(' • ') %></small>
+          <% } %>
+        </td>
+        <td data-label="Preço"><%= precoBRL %></td>
+        <td data-label="Quantidade"><%= qtd %></td>
+        <td data-label="Status">
+          <span class="badge <%= status === 'Ativo' ? 'ok' : 'off' %>"><%= status %></span>
+        </td>
+        <td data-label="Ações" class="acoes">
+          <a href="/painel/produto/<%= item.id %>/editar" class="btn-editar">Editar</a>
+          <form id="form-excluir-<%= item.id %>" action="/produto/<%= item.id %>/excluir" method="POST" style="display:none;"></form>
+          <button type="button" class="btn-excluir" onclick="confirmarExclusao('<%= item.id %>', '<%= item.nome %>')">
+            Excluir
+          </button>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
     </section>
     <div id="popup-confirmacao" class="popup-modal" style="display: none;">
       <div class="popup-conteudo">

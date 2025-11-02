@@ -29,7 +29,12 @@
             <h4><%= item.nome %></h4>
             <p class="quantidade">Qtd: <%= item.quantidade %></p>
           </div>
-          <p class="preco">R$ <%= (item.preco * item.quantidade).toFixed(2) %></p>
+
+          <!-- Preço formatado -->
+          <p class="preco">
+            <%= (item.preco * item.quantidade).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+          </p>
+
           <form method="POST" action="/carrinho/remover/<%= item.id %>">
             <button class="remover-btn" type="submit">Remover</button>
           </form>
@@ -37,7 +42,9 @@
       <% }) %>
 
       <div class="total">
-        <strong>Total: R$ <%= total.toFixed(2) %></strong>
+        <strong>
+          Total: <%= total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+        </strong>
       </div>
 
       <form method="POST" action="/checkout">

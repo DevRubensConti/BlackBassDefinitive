@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Verifique seu e-mail</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/verifique-email.css" />
+</head>
+<body>
+
+  <%- include('partials/navbar.ejs') %>
+
+
+  <main class="ve-container">
+    <section class="ve-card">
+      <h1 class="ve-title">Quase lá! 🎸</h1>
+
+      <p class="ve-text">
+        Enviamos um e-mail de confirmação para:<br />
+        <span class="ve-email"><%= email %></span>
+      </p>
+
+      <p class="ve-text">
+        Clique no link que está na sua caixa de entrada para ativar sua conta.
+        Se não encontrar, verifique a pasta <strong>Spam</strong> ou <strong>Promoções</strong>.
+      </p>
+
+      <a href="/login" class="ve-btn">Voltar ao Login</a>
+    </section>
+  </main>
+
+
+  <%- include('partials/footer.ejs') %>
+
+</body>
+</html>

@@ -4,6 +4,19 @@
   <meta charset="UTF-8" />
   <title>Checkout</title>
   <link rel="stylesheet" href="/css/checkout.css">
+  <style>
+    /* Ajustes rápidos (opcional) */
+    .checkout-item { display:flex; gap:16px; padding:12px 0; border-bottom:1px solid #eee; }
+    .checkout-item img { width:96px; height:96px; object-fit:cover; border-radius:8px; border:1px solid #ddd; }
+    .checkout-item-info h3 { margin:0 0 6px; font-size:1.05rem; }
+    .qtd-row { display:flex; align-items:center; gap:8px; margin:6px 0; }
+    .btn-qtd { width:28px; height:28px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer; line-height:1; font-weight:700; }
+    .btn-qtd:disabled { opacity:.6; cursor:not-allowed; }
+    .qtd { min-width:24px; text-align:center; display:inline-block; }
+    .checkout-price { margin:2px 0; color:#333; }
+    .total-container { margin-top:16px; padding-top:12px; border-top:2px solid #eee; display:flex; justify-content:space-between; align-items:center; }
+    .empty { padding:24px 0; color:#666; }
+  </style>
 </head>
 <body>
   <%- include('partials/navbar.ejs') %>
@@ -11,34 +24,142 @@
   <main class="checkout-container">
     <h1>🛒 Checkout</h1>
 
-    <% if (itens.length > 0) { %>
+    <% if (itens && itens.length > 0) { %>
       <% let total = 0; %>
-      <% itens.forEach(item => { %>
-        <% total += item.quantidade * item.produtos.preco; %>
-        <div class="checkout-item">
-          <img src="<%= item.produtos.imagem_url.split(',')[0] %>" alt="Produto">
-          <div class="checkout-item-info">
-            <h3><%= item.produtos.nome %></h3>
-            <p>Quantidade: <%= item.quantidade %></p>
-            <p>Preço unitário: R$ <%= item.produtos.preco %></p>
-            <p>Subtotal: R$ <%= (item.quantidade * item.produtos.preco).toFixed(2) %></p>
-          </div>
-        </div>
-      <% }) %>
+      <div id="checkout-list">
+        <% itens.forEach(item => { %>
+          <% total += Number(item.quantidade) * Number(item.produtos.preco); %>
+          <div class="checkout-item" 
+               data-item-id="<%= item.id %>" 
+               data-preco="<%= Number(item.produtos.preco) %>">
+            <img src="<%= (item.produtos.imagem_url || '').split(',')[0] %>" alt="Produto"
+                 onerror="this.onerror=null;this.src='/images/placeholder.png';">
 
-      <div class="total-container">
-        <h2>Total: R$ <%= total.toFixed(2) %></h2>
+            <div class="checkout-item-info">
+              <h3><%= item.produtos.nome %></h3>
+
+              <div class="qtd-row">
+                <span>Quantidade:</span>
+                <button class="btn-qtd" type="button" data-action="minus" aria-label="Diminuir">−</button>
+                <span class="qtd"><%= Number(item.quantidade) %></span>
+                <button class="btn-qtd" type="button" data-action="plus" aria-label="Aumentar">+</button>
+              </div>
+
+              <p class="checkout-price">
+                Preço unitário:
+                <span class="unit">
+                  <%= Number(item.produtos.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+                </span>
+              </p>
+
+              <p class="checkout-price">
+                Subtotal:
+                <span class="subtotal">
+                  <%= Number(Number(item.quantidade) * Number(item.produtos.preco)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+                </span>
+              </p>
+            </div>
+          </div>
+        <% }) %>
       </div>
 
-      <form action="/checkout/finalizar" method="POST">
-        <button type="submit" class="btn-pagamento">Ir para pagamento</button>
-      </form>
-
+      <div class="total-container">
+        <h2>Total: <span id="total-geral"><%= Number(total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></span></h2>
+      </div>
+      <div>
+                <form action="/checkout/finalizar" method="POST" id="form-pagamento">
+          <button type="submit" class="btn-pagamento">Ir para pagamento</button>
+        </form>
+      </div>
     <% } else { %>
-      <p>Seu carrinho está vazio.</p>
+      <p class="empty">Seu carrinho está vazio.</p>
     <% } %>
   </main>
 
   <%- include('partials/footer.ejs') %>
+
+  <script>
+    // ---- Helpers BRL / DOM ----
+    const BRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    function recalculaTotalGeral() {
+      const list = document.getElementById('checkout-list');
+      let total = 0;
+      if (!list) return;
+
+      list.querySelectorAll('.checkout-item').forEach(node => {
+        const preco = Number(node.dataset.preco || 0);
+        const qtd = Number(node.querySelector('.qtd')?.textContent || 0);
+        total += preco * qtd;
+      });
+
+      const totalNode = document.getElementById('total-geral');
+      if (totalNode) totalNode.textContent = BRL(total);
+
+      // Se não há itens, mostrar vazio e desabilitar pagamento
+      if (list.querySelectorAll('.checkout-item').length === 0) {
+        const container = document.querySelector('.checkout-container');
+        const form = document.getElementById('form-pagamento');
+        if (form) form.remove();
+        const empty = document.createElement('p');
+        empty.className = 'empty';
+        empty.textContent = 'Seu carrinho está vazio.';
+        container.appendChild(empty);
+      }
+    }
+
+    function atualizaSubtotalDoItem(itemNode) {
+      const preco = Number(itemNode.dataset.preco || 0);
+      const qtd = Number(itemNode.querySelector('.qtd')?.textContent || 0);
+      const subtotalNode = itemNode.querySelector('.subtotal');
+      if (subtotalNode) subtotalNode.textContent = BRL(preco * qtd);
+    }
+
+    // ---- Listeners +/− ----
+    document.querySelectorAll('.checkout-item .btn-qtd').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const itemNode = e.target.closest('.checkout-item');
+        if (!itemNode) return;
+
+        const itemId = itemNode.dataset.itemId;
+        const action = e.target.getAttribute('data-action');
+        const qtdSpan = itemNode.querySelector('.qtd');
+        const qtdAtual = Number(qtdSpan?.textContent || 1);
+
+        // Evitar spam de clique
+        e.target.disabled = true;
+
+        try {
+          if (action === 'minus' && qtdAtual <= 1) {
+            // Remover o item
+            const resp = await fetch(`/api/carrinho/${itemId}`, { method: 'DELETE' });
+            if (!resp.ok) throw new Error('Falha ao remover item.');
+
+            // Remove do DOM e recalcula total
+            itemNode.remove();
+            recalculaTotalGeral();
+            return;
+          } else {
+            // Fluxo normal de +/-
+            const resp = await fetch(`/api/carrinho/${itemId}/${action}`, { method: 'POST' });
+            if (!resp.ok) throw new Error('Falha ao atualizar quantidade.');
+
+            // Ajusta quantidade localmente
+            const novaQtd = action === 'plus' ? (qtdAtual + 1) : (qtdAtual - 1);
+            qtdSpan.textContent = String(novaQtd);
+
+            // Atualiza subtotal do item e total geral
+            atualizaSubtotalDoItem(itemNode);
+            recalculaTotalGeral();
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Não foi possível atualizar este item agora. Tente novamente.');
+        } finally {
+          e.target.disabled = false;
+        }
+      });
+    });
+  </script>
 </body>
 </html>

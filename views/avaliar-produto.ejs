@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Avaliar compra</title>
+  <link rel="stylesheet" href="/css/avaliar.css" />
+</head>
+<body>
+  <%- include('partials/navbar.ejs') %>
+
+  <main class="item-container">
+    <a href="/meus-pedidos" class="btn-voltar-img" title="Voltar">
+      <img src="/images/return_listings.png" alt="Voltar">
+    </a>
+
+    <h1 class="item-title">Avaliar compra</h1>
+
+    <section class="item-main">
+      <!-- GALERIA / PRODUTO -->
+      <div class="item-gallery">
+        <img
+          src="<%= (produto?.imagem_url || '').split(',')[0] || '/images/no-image.png' %>"
+          class="item-img"
+          alt="Imagem do produto"
+        />
+        <div class="thumbnail-list">
+          <% (produto?.imagem_url || '').split(',').filter(Boolean).forEach(url => { %>
+            <img src="<%= url.trim() %>" alt="Thumb" onclick="document.querySelector('.item-img').src='<%= url.trim() %>'">
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- INFO / MÉDIAS / FORM PRODUTO -->
+      <div class="item-info">
+        <div class="price-rating">
+          <h2><%= produto?.nome %></h2>
+          <div class="rating">
+            <% const mp = Math.round((medias?.produto?.media || 0) * 10) / 10; %>
+            <span><strong><%= mp %>/5</strong> · <%= medias?.produto?.total || 0 %> avaliações</span>
+            <div class="stars">
+              <% for (let i=1;i<=5;i++){ %>
+                <span class="star <%= i <= Math.round(medias?.produto?.media || 0) ? 'filled':'' %>">★</span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <p class="description"><%= produto?.descricao || '' %></p>
+
+        <!-- Formulário: AVALIAÇÃO DO PRODUTO -->
+        <form action="/avaliacoes/produto" method="POST" class="form-avaliar">
+          <input type="hidden" name="produtoId" value="<%= produto.id %>">
+          <input type="hidden" name="back" value="/avaliar/<%= pedidoItemId %>"><!-- volta para este item -->
+
+          <label class="label">Sua nota para o produto</label>
+          <div class="rate">
+            <% const nProd = (minhasAvaliacoes?.produto?.nota || 0); %>
+            <% for (let i=5; i>=1; i--) { %>
+              <input
+                type="radio"
+                id="p<%= i %>"
+                name="nota"
+                value="<%= i %>"
+                <%= nProd === i ? 'checked' : '' %>
+                <%= !nProd && i === 1 ? 'required' : '' %>
+              >
+              <label for="p<%= i %>" aria-label="<%= i %> estrelas">★</label>
+            <% } %>
+          </div>
+
+          <label class="label">Comentário (opcional)</label>
+          <textarea name="comentario" rows="3" placeholder="Conte sua experiência..."><%= (minhasAvaliacoes?.produto?.comentario || '') %></textarea>
+
+          <div class="buttons">
+            <button type="submit" class="btn-buy">Enviar avaliação do produto</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- BLOCO EXTRA: VENDEDOR (PF/PJ) + FORM -->
+      <div class="item-specs">
+        <% if (loja && loja.id) { %>
+          <h3>Sobre o vendedor</h3>
+          <div class="loja">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <img class="banner-logo" src="<%= loja.icone_url || '/images/store-default.png' %>" alt="Vendedor">
+              <div>
+                <strong><%= loja.nomeFantasia %></strong><br>
+                <small><%= loja.cidade %>-<%= loja.estado %></small>
+              </div>
+            </div>
+
+            <div class="seller-rating" style="margin-top:8px;">
+              <% const ml = Math.round((medias?.loja?.media || 0) * 10) / 10; %>
+              <span class="rating-badge"><%= ml %>/5</span>
+              <div class="stars">
+                <% for (let i=1;i<=5;i++){ %>
+                  <span class="star <%= i <= Math.round(medias?.loja?.media || 0) ? 'filled':'' %>">★</span>
+                <% } %>
+              </div>
+              <small><%= medias?.loja?.total || 0 %> avaliações</small>
+            </div>
+
+            <!-- Formulário: AVALIAÇÃO DO VENDEDOR (PF/PJ) -->
+            <form action="/avaliacoes/loja" method="POST" class="form-avaliar" style="margin-top:12px;">
+              <input type="hidden" name="vendedor_tipo" value="<%= loja.tipo %>"><!-- 'pf' ou 'pj' -->
+              <input type="hidden" name="idRef" value="<%= loja.id %>">
+              <input type="hidden" name="back" value="/avaliar/<%= pedidoItemId %>"><!-- volta para este item -->
+
+              <label class="label">Sua nota para o vendedor</label>
+              <div class="rate">
+                <% const nLoja = (minhasAvaliacoes?.loja?.nota || 0); %>
+                <% for (let i=5; i>=1; i--) { %>
+                  <input
+                    type="radio"
+                    id="l<%= i %>"
+                    name="nota"
+                    value="<%= i %>"
+                    <%= nLoja === i ? 'checked' : '' %>
+                    <%= !nLoja && i === 1 ? 'required' : '' %>
+                  >
+                  <label for="l<%= i %>" aria-label="<%= i %> estrelas">★</label>
+                <% } %>
+              </div>
+
+              <label class="label">Comentário (opcional)</label>
+              <textarea name="comentario" rows="3" placeholder="Como foi sua experiência com o vendedor?"><%= (minhasAvaliacoes?.loja?.comentario || '') %></textarea>
+
+              <div class="buttons">
+                <button type="submit" class="btn-cart">Enviar avaliação do vendedor</button>
+              </div>
+            </form>
+          </div>
+        <% } else { %>
+          <h3>Vendedor</h3>
+          <p>Não foi possível carregar os dados do vendedor.</p>
+        <% } %>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer.ejs') %>
+</body>
+</html>
