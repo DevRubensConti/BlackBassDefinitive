@@ -137,39 +137,93 @@ router.get('/meus-pedidos', requireLogin, async (req, res) => {
 router.get('/minhas-vendas', requireLogin, async (req, res) => {
   const vendedorId = req.session.usuario.id;
 
-  // Atenção: este select com joins exige FKs configuradas no Supabase
-  const { data: vendas, error } = await supabaseDb
-    .from('pedidos')
-    .select(`
-      id,
-      status,
-      data_pedido,
-      preco_total,
-      produto:produtos (
-        id,
-        nome,
-        imagem_url
-      ),
-      comprador_pf:usuario_pf (
-        id,
-        nome
-      ),
-      comprador_pj:usuarios_pj (
-        id,
-        nomeFantasia
-      )
-    `)
-    .or(`vendedor_pf_id.eq.${vendedorId},vendedor_pj_id.eq.${vendedorId}`)
-    .order('data_pedido', { ascending: false });
+  try {
+    // 1) Buscar pedidos onde eu sou o vendedor (PF ou PJ)
+    const { data: pedidos, error: pedErr } = await supabaseDb
+      .from('pedidos')
+      .select('id, codigo, status, data_pedido, preco_total, vendedor_pf_id, vendedor_pj_id')
+      .or(`vendedor_pf_id.eq.${vendedorId},vendedor_pj_id.eq.${vendedorId}`)
+      .order('data_pedido', { ascending: false });
 
-  if (error) {
-    console.error('Erro ao buscar vendas:', error);
+    if (pedErr) {
+      console.error('Erro ao buscar pedidos do vendedor:', pedErr);
+      return res.status(500).send('Erro ao buscar suas vendas');
+    }
+    if (!pedidos?.length) {
+      return res.render('minhas-vendas', { vendas: [] });
+    }
+
+    const pedidoIds = pedidos.map(p => p.id);
+
+    // 2) Trazer os ITENS de cada pedido (com dados do produto)
+    const { data: itens, error: itensErr } = await supabaseDb
+      .from('pedido_itens')
+      .select(`
+        id,
+        pedido_id,
+        produto_id,
+        nome,
+        imagem_url,
+        quantidade,
+        unit_price_cents,
+        subtotal_cents,
+        produtos!inner (
+          id,
+          usuario_id,
+          tipo_usuario,
+          loja_id,
+          imagem_url
+        )
+      `)
+      .in('pedido_id', pedidoIds);
+
+    if (itensErr) {
+      console.error('Erro ao buscar itens das vendas:', itensErr);
+      return res.status(500).send('Erro ao buscar itens das vendas');
+    }
+
+    // 3) Manter só itens cujos produtos pertencem a este vendedor (por segurança)
+    const meusItens = (itens || []).filter(it => {
+      const dono = it.produtos?.usuario_id;
+      return String(dono) === String(vendedorId);
+    });
+
+    // 4) Agregar itens por pedido_id p/ exibição
+    const itensByPedido = {};
+    for (const it of meusItens) {
+      if (!itensByPedido[it.pedido_id]) itensByPedido[it.pedido_id] = [];
+      const img =
+        it.imagem_url ||
+        (it.produtos?.imagem_url || '').split(',')[0] ||
+        '/images/placeholder.png';
+
+      itensByPedido[it.pedido_id].push({
+        pedido_item_id: it.id,
+        produto_id: it.produto_id,
+        nome: it.nome || '(sem nome)',
+        imagem_url: img,
+        quantidade: Number(it.quantidade || 0),
+        unitario: Number(it.unit_price_cents || 0) / 100,
+        subtotal: Number(it.subtotal_cents || 0) / 100
+      });
+    }
+
+    // 5) Montar “vendas” (cabeçalho + itens)
+    const vendas = pedidos.map(p => ({
+      id: p.id,
+      codigo: p.codigo,
+      status: p.status,
+      data: p.data_pedido,
+      total: Number(p.preco_total || 0),
+      itens: itensByPedido[p.id] || []
+    }));
+
+    return res.render('minhas-vendas', { vendas });
+  } catch (err) {
+    console.error('Erro geral /minhas-vendas:', err);
     return res.status(500).send('Erro ao buscar suas vendas');
   }
-
-  res.render('minhas-vendas', { vendas });
 });
-
 // =============================
 // CHECKOUT (página)
 // =============================
