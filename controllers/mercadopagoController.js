@@ -1,4 +1,4 @@
-// controllers/mercadopagoController.js (SDK v2, PF/PJ + carrinho Supabase)
+// controllers/mercadopagoController.js (SDK v2, PF/PJ + carrinho Supabase + LOGS)
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const supabaseDb = require('../supabase/supabaseDb');
 
@@ -13,11 +13,17 @@ const mpClient = new MercadoPagoConfig({
 const onlyDigits = (s) => (s || '').toString().replace(/\D+/g, '');
 const isProd = (process.env.NODE_ENV || '').toLowerCase() === 'production';
 
+// Helper: cria um ID de correlação p/ logs
+function mkReqId() {
+  return 'mp-' + Math.random().toString(36).slice(2, 8) + '-' + Date.now().toString(36);
+}
+
 // =====================
 // Itens do carrinho (Supabase)
 // retorna [{ title, quantity, unit_price, currency_id }]
 // =====================
-async function carregarItensCarrinho(usuarioId, tipoUsuario) {
+async function carregarItensCarrinho(usuarioId, tipoUsuario, reqId) {
+  console.log(`[${reqId}] 🔎 Carregando carrinho Supabase`, { usuarioId, tipoUsuario });
   const { data: itens, error } = await supabaseDb
     .from('carrinho')
     .select(`
@@ -29,8 +35,14 @@ async function carregarItensCarrinho(usuarioId, tipoUsuario) {
     .eq('usuario_id', usuarioId)
     .eq('tipo_usuario', tipoUsuario);
 
-  if (error) throw new Error(`Erro ao carregar carrinho: ${error.message}`);
-  if (!itens || !itens.length) return [];
+  if (error) {
+    console.log(`[${reqId}] ❌ Erro Supabase (carrinho):`, error);
+    throw new Error(`Erro ao carregar carrinho: ${error.message}`);
+  }
+  if (!itens || !itens.length) {
+    console.log(`[${reqId}] 🟡 Carrinho vazio`);
+    return [];
+  }
 
   const mpItems = [];
   for (const row of itens) {
@@ -41,6 +53,7 @@ async function carregarItensCarrinho(usuarioId, tipoUsuario) {
 
     // validação simples de estoque (se a coluna existir)
     if (prod.quantidade != null && Number(prod.quantidade) < qtd) {
+      console.log(`[${reqId}] ⚠️ Estoque insuficiente`, { produtoId: prod.id, disponivel: prod.quantidade, solicitado: qtd });
       throw new Error(`Estoque insuficiente para o produto ${prod.id}`);
     }
 
@@ -52,13 +65,15 @@ async function carregarItensCarrinho(usuarioId, tipoUsuario) {
     });
   }
 
+  console.log(`[${reqId}] ✅ Carrinho carregado (${mpItems.length} itens)`);
   return mpItems;
 }
 
 // =====================
 // CPF/CNPJ do comprador (PF/PJ)
 // =====================
-async function carregarIdentificacaoComprador(usuarioId, tipoUsuario) {
+async function carregarIdentificacaoComprador(usuarioId, tipoUsuario, reqId) {
+  console.log(`[${reqId}] 🔎 Buscando identificação do comprador (PF/PJ)`);
   // PF -> "usuario_pf" (coluna cpf)
   // PJ -> "usuarios_pj" (coluna cnpj/cpnj)
   const table = (tipoUsuario === 'pj') ? 'usuarios_pj' : 'usuario_pf';
@@ -79,14 +94,17 @@ async function carregarIdentificacaoComprador(usuarioId, tipoUsuario) {
   }
 
   if (!row) {
+    console.log(`[${reqId}] 🟡 Registro PF/PJ não encontrado — seguindo sem doc`);
     return { type: (tipoUsuario === 'pj') ? 'CNPJ' : 'CPF', number: '' };
   }
 
   if (tipoUsuario === 'pj') {
     const cnpj = onlyDigits(row.cpnj || row.cnpj || '');
+    console.log(`[${reqId}] ✅ CNPJ encontrado?`, { hasCnpj: !!cnpj });
     return { type: 'CNPJ', number: cnpj };
   } else {
     const cpf = onlyDigits(row.cpf || '');
+    console.log(`[${reqId}] ✅ CPF encontrado?`, { hasCpf: !!cpf });
     return { type: 'CPF', number: cpf };
   }
 }
@@ -95,9 +113,21 @@ async function carregarIdentificacaoComprador(usuarioId, tipoUsuario) {
 // Cria preferência
 // =====================
 async function createPreference(req, res) {
+  const reqId = mkReqId();
+  console.log(`\n[${reqId}] ➡️ [MP] createPreference chamado @ ${new Date().toISOString()}`);
+  console.time(`[${reqId}] ⏱️ createPreference`);
+
   try {
     const usuario = req.session?.usuario || null;
+    console.log(`[${reqId}] Sessão`, {
+      hasSession: !!usuario,
+      userId: usuario?.id,
+      userTipo: usuario?.tipo
+    });
+
     if (!usuario || !usuario.id || !usuario.tipo) {
+      console.log(`[${reqId}] ❌ 401 - Sessão inválida`);
+      console.timeEnd(`[${reqId}] ⏱️ createPreference`);
       return res.status(401).json({ error: 'Sessão inválida. Faça login.' });
     }
 
@@ -105,19 +135,20 @@ async function createPreference(req, res) {
     const tipoUsuario = (usuario.tipo || '').toLowerCase(); // 'pf' | 'pj'
 
     // 1) Itens do carrinho
-    const items = await carregarItensCarrinho(usuarioId, tipoUsuario);
+    const items = await carregarItensCarrinho(usuarioId, tipoUsuario, reqId);
     if (!items.length) {
+      console.log(`[${reqId}] ❌ 400 - Carrinho vazio`);
+      console.timeEnd(`[${reqId}] ⏱️ createPreference`);
       return res.status(400).json({ error: 'Carrinho vazio.' });
     }
 
     // 2) Payer (sessão + CPF/CNPJ)
-    const identification = await carregarIdentificacaoComprador(usuarioId, tipoUsuario);
+    const identification = await carregarIdentificacaoComprador(usuarioId, tipoUsuario, reqId);
 
     // Se sandbox e sem doc, usa doc de teste
     if (!identification.number && !isProd) {
-      identification.number = (identification.type === 'CPF')
-        ? '12345678909'
-        : '11222333000181';
+      identification.number = (identification.type === 'CPF') ? '12345678909' : '11222333000181';
+      console.log(`[${reqId}] 🧪 Doc de teste inserido`, identification);
     }
 
     const payer = {
@@ -125,6 +156,7 @@ async function createPreference(req, res) {
       email: usuario.email || 'cliente@example.com',
       identification // { type: 'CPF'|'CNPJ', number: 'somente_digitos' }
     };
+    console.log(`[${reqId}] 👤 Payer montado`, { name: payer.name, email: payer.email, idType: payer.identification?.type, hasIdNumber: !!payer.identification?.number });
 
     // 3) URLs absolutas (HTTPS em Render)
     const base = (process.env.MP_BASE_URL || 'https://blackbass-marketplace.onrender.com/api/checkout').trim();
@@ -132,6 +164,8 @@ async function createPreference(req, res) {
     const notificationUrl = (process.env.MP_WEBHOOK_URL || `${base}/webhook`).trim();
 
     if (!/^https:\/\//i.test(resultUrl)) {
+      console.log(`[${reqId}] ❌ 500 - MP_RESULT_URL inválida`, { resultUrl });
+      console.timeEnd(`[${reqId}] ⏱️ createPreference`);
       return res.status(500).json({ error: 'MP_RESULT_URL inválida (precisa ser HTTPS absoluto).' });
     }
 
@@ -145,28 +179,32 @@ async function createPreference(req, res) {
       },
       notification_url: notificationUrl,
       external_reference: 'ORDER-' + Date.now(),
-      auto_return: 'approved' // agora com HTTPS, podemos habilitar
+      auto_return: 'approved'
     };
 
-    console.log('[MP createPreference] body:', preferenceBody);
+    console.log(`[${reqId}] 🧾 [MP createPreference] body:`, preferenceBody);
 
     // 4) Cria preferência (SDK v2)
     const pref = new Preference(mpClient);
     const resp = await pref.create({ body: preferenceBody });
 
     const initPoint = resp.init_point || resp.sandbox_init_point;
-    console.log('init_point:', initPoint);
+    console.log(`[${reqId}] ✅ init_point:`, initPoint);
     if (!initPoint) {
+      console.log(`[${reqId}] ❌ Preferência criada sem init_point`);
+      console.timeEnd(`[${reqId}] ⏱️ createPreference`);
       return res.status(500).json({ error: 'Preferência criada sem init_point.' });
     }
 
     // 5) Retorna link para o front redirecionar
+    console.timeEnd(`[${reqId}] ⏱️ createPreference`);
     return res.json({ init_point: initPoint });
 
   } catch (err) {
     const status = err?.status || 500;
     const message = err?.message || 'Erro ao criar preferência';
-    console.error('Erro ao criar preferência (MP v2):', err);
+    console.log(`[${reqId}] ❌ Erro ao criar preferência (MP v2):`, { status, message, err });
+    console.timeEnd(`[${reqId}] ⏱️ createPreference`);
     return res.status(status).json({ error: message });
   }
 }
@@ -175,21 +213,28 @@ async function createPreference(req, res) {
 // Webhook (notificações do MP)
 // =====================
 async function handleWebhook(req, res) {
+  const reqId = mkReqId();
+  console.log(`\n[${reqId}] 📩 Webhook recebido @ ${new Date().toISOString()}`);
+  console.time(`[${reqId}] ⏱️ webhook`);
+
   try {
     const raw = req.body?.toString('utf8') || '{}';
+    console.log(`[${reqId}] raw body:`, raw.slice(0, 500)); // evita log gigante
     const event = JSON.parse(raw); // { type: 'payment', data: { id: '...' } }
+    console.log(`[${reqId}] Event parsed:`, event);
 
     if (event?.type === 'payment' && event?.data?.id) {
+      console.log(`[${reqId}] 🔎 Consultando pagamento ${event.data.id}`);
       const payment = await new Payment(mpClient).get({ id: event.data.id });
 
-      console.log('MP Webhook:', {
+      console.log(`[${reqId}] 🧾 MP Webhook Payment`, {
         id: payment.id,
         status: payment.status,
         status_detail: payment.status_detail,
         external_reference: payment.external_reference
       });
 
-      // TODO: atualizar pedido no Supabase, ex.:
+      // TODO: atualizar pedido no Supabase
       // await supabaseDb
       //   .from('pedidos')
       //   .update({
@@ -198,11 +243,17 @@ async function handleWebhook(req, res) {
       //     mp_status_detail: payment.status_detail
       //   })
       //   .eq('codigo', payment.external_reference);
+    } else {
+      console.log(`[${reqId}] ℹ️ Webhook ignorado (tipo não suportado ou sem ID)`);
     }
 
+    console.timeEnd(`[${reqId}] ⏱️ webhook`);
     return res.sendStatus(200);
   } catch (err) {
-    console.error('Erro no webhook (MP v2):', err);
+    console.log(`[${reqId}] ❌ Erro no webhook (MP v2):`, err);
+    console.timeEnd(`[${reqId}] ⏱️ webhook`);
+    // Ainda devolvemos 200 pra evitar reentregas em loop,
+    // a menos que você queira que o MP reenvie
     return res.sendStatus(200);
   }
 }
