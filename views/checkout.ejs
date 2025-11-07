@@ -5,7 +5,6 @@
   <title>Checkout</title>
   <link rel="stylesheet" href="/css/checkout.css">
   <style>
-    /* Ajustes rápidos (opcional) */
     .checkout-item { display:flex; gap:16px; padding:12px 0; border-bottom:1px solid #eee; }
     .checkout-item img { width:96px; height:96px; object-fit:cover; border-radius:8px; border:1px solid #ddd; }
     .checkout-item-info h3 { margin:0 0 6px; font-size:1.05rem; }
@@ -16,6 +15,20 @@
     .checkout-price { margin:2px 0; color:#333; }
     .total-container { margin-top:16px; padding-top:12px; border-top:2px solid #eee; display:flex; justify-content:space-between; align-items:center; }
     .empty { padding:24px 0; color:#666; }
+    .btn-pagamento {
+      background: #0077cc;
+      color: #fff;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .btn-pagamento:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -40,9 +53,9 @@
 
               <div class="qtd-row">
                 <span>Quantidade:</span>
-                <button class="btn-qtd" type="button" data-action="minus" aria-label="Diminuir">−</button>
+                <button class="btn-qtd" type="button" data-action="minus">−</button>
                 <span class="qtd"><%= Number(item.quantidade) %></span>
-                <button class="btn-qtd" type="button" data-action="plus" aria-label="Aumentar">+</button>
+                <button class="btn-qtd" type="button" data-action="plus">+</button>
               </div>
 
               <p class="checkout-price">
@@ -55,7 +68,7 @@
               <p class="checkout-price">
                 Subtotal:
                 <span class="subtotal">
-                  <%= Number(Number(item.quantidade) * Number(item.produtos.preco)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+                  <%= Number(item.quantidade * item.produtos.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
                 </span>
               </p>
             </div>
@@ -64,10 +77,15 @@
       </div>
 
       <div class="total-container">
-        <h2>Total: <span id="total-geral"><%= Number(total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></span></h2>
+        <h2>Total: 
+          <span id="total-geral">
+            <%= Number(total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+          </span>
+        </h2>
       </div>
-      <div>
-<button id="btnPagarMP" class="btn-pagamento">Ir para pagamento</button>
+
+      <div style="margin-top: 20px;">
+        <button id="btnPagarMP" class="btn-pagamento">Ir para pagamento</button>
       </div>
     <% } else { %>
       <p class="empty">Seu carrinho está vazio.</p>
@@ -75,178 +93,134 @@
   </main>
 
   <%- include('partials/footer.ejs') %>
-<script>
-  // =========================
-  // Helpers BRL / DOM + buyer (injeção via EJS)
-  // =========================
-  const buyer = <%- JSON.stringify({
-    name: (usuario && (usuario.nome || usuario.apelido)) || 'Cliente',
-    email: (usuario && usuario.email) || 'teste@example.com'
-  }) %>;
 
-  const BRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  <script>
+    // ================
+    // Helper global
+    // ================
+    const buyer = <%- JSON.stringify({
+      name: (usuario && (usuario.nome || usuario.apelido)) || 'Cliente',
+      email: (usuario && usuario.email) || 'teste@example.com'
+    }) %>;
 
-  function recalculaTotalGeral() {
-    const list = document.getElementById('checkout-list');
-    let total = 0;
+    const BRL = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    if (!list) return;
+    // ================
+    // Soma total
+    // ================
+    function recalculaTotalGeral() {
+      const list = document.getElementById('checkout-list');
+      let total = 0;
+      if (!list) return;
 
-    list.querySelectorAll('.checkout-item').forEach(node => {
-      const preco = Number(node.dataset.preco || 0);
-      const qtd = Number(node.querySelector('.qtd')?.textContent || 0);
-      total += preco * qtd;
-    });
-
-    const totalNode = document.getElementById('total-geral');
-    if (totalNode) totalNode.textContent = BRL(total);
-
-    // Se não há itens, mostrar vazio e desabilitar pagamento
-    const isEmpty = list.querySelectorAll('.checkout-item').length === 0;
-    const pagarBtn = document.getElementById('btnPagarMP');
-
-    if (isEmpty) {
-      const container = document.querySelector('.checkout-container');
-      if (pagarBtn) pagarBtn.disabled = true;
-
-      // evita duplicar a mensagem
-      if (!document.querySelector('.checkout-container .empty')) {
-        const empty = document.createElement('p');
-        empty.className = 'empty';
-        empty.textContent = 'Seu carrinho está vazio.';
-        container.appendChild(empty);
-      }
-    } else {
-      if (pagarBtn) pagarBtn.disabled = false;
-    }
-  }
-
-  function atualizaSubtotalDoItem(itemNode) {
-    const preco = Number(itemNode.dataset.preco || 0);
-    const qtd = Number(itemNode.querySelector('.qtd')?.textContent || 0);
-    const subtotalNode = itemNode.querySelector('.subtotal');
-    if (subtotalNode) subtotalNode.textContent = BRL(preco * qtd);
-  }
-
-  // =========================
-  // Coleta itens do DOM p/ Mercado Pago
-  // =========================
-  function coletarItensDoDOM() {
-    const list = document.getElementById('checkout-list');
-    const itens = [];
-    if (!list) return itens;
-
-    list.querySelectorAll('.checkout-item').forEach(node => {
-      const title = node.querySelector('.checkout-item-info h3')?.textContent?.trim() || 'Item';
-      const quantity = Number(node.querySelector('.qtd')?.textContent || 1);
-      const unit_price = Number(node.dataset.preco || 0);
-
-      if (quantity > 0 && unit_price >= 0) {
-        itens.push({
-          title,
-          quantity,
-          unit_price,
-          currency_id: 'BRL'
-        });
-      }
-    });
-
-    return itens;
-  }
-
-  // =========================
-  // Inicia pagamento (Checkout Pro)
-  // =========================
-  async function pagarComMercadoPago() {
-    const btn = document.getElementById('btnPagarMP');
-    if (!btn) return;
-
-    btn.disabled = true;
-
-    try {
-      const items = coletarItensDoDOM();
-      if (!items.length) {
-        alert('Seu carrinho está vazio.');
-        btn.disabled = false;
-        return;
-      }
-
-      const resp = await fetch('/api/checkout/create-preference', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, buyer })
+      list.querySelectorAll('.checkout-item').forEach(node => {
+        const preco = Number(node.dataset.preco || 0);
+        const qtd = Number(node.querySelector('.qtd')?.textContent || 0);
+        total += preco * qtd;
       });
 
-      if (!resp.ok) throw new Error('Falha ao criar preferência.');
-
-      const { init_point } = await resp.json();
-      if (!init_point) throw new Error('Resposta inválida do servidor.');
-
-      // Redireciona para o Checkout do Mercado Pago
-      window.location.href = init_point;
-
-    } catch (err) {
-      console.error(err);
-      alert('Não foi possível iniciar o pagamento agora. Tente novamente.');
-      btn.disabled = false;
+      const totalNode = document.getElementById('total-geral');
+      if (totalNode) totalNode.textContent = BRL(total);
     }
-  }
 
-  // =========================
-  // Listeners +/− (mantidos)
-  // =========================
-  document.querySelectorAll('.checkout-item .btn-qtd').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const itemNode = e.target.closest('.checkout-item');
-      if (!itemNode) return;
+    // ================
+    // Gera itens para o backend
+    // ================
+    function coletarItensDoDOM() {
+      const list = document.getElementById('checkout-list');
+      const itens = [];
+      if (!list) return itens;
 
-      const itemId = itemNode.dataset.itemId;
-      const action = e.target.getAttribute('data-action');
-      const qtdSpan = itemNode.querySelector('.qtd');
-      const qtdAtual = Number(qtdSpan?.textContent || 1);
+      list.querySelectorAll('.checkout-item').forEach(node => {
+        const title = node.querySelector('h3')?.textContent?.trim() || 'Item';
+        const quantity = Number(node.querySelector('.qtd')?.textContent || 1);
+        const unit_price = Number(node.dataset.preco || 0);
 
-      e.target.disabled = true;
+        if (quantity > 0 && unit_price >= 0) {
+          itens.push({ title, quantity, unit_price, currency_id: 'BRL' });
+        }
+      });
+      return itens;
+    }
+
+    // ================
+    // Integração Mercado Pago
+    // ================
+    async function pagarComMercadoPago() {
+      const btn = document.getElementById('btnPagarMP');
+      btn.disabled = true;
 
       try {
-        if (action === 'minus' && qtdAtual <= 1) {
-          // Remover o item
-          const resp = await fetch(`/api/carrinho/${itemId}`, { method: 'DELETE' });
-          if (!resp.ok) throw new Error('Falha ao remover item.');
-
-          itemNode.remove();
-          recalculaTotalGeral();
+        const items = coletarItensDoDOM();
+        if (!items.length) {
+          alert('Seu carrinho está vazio.');
+          btn.disabled = false;
           return;
-        } else {
-          // Fluxo normal de +/- quantidade
-          const resp = await fetch(`/api/carrinho/${itemId}/${action}`, { method: 'POST' });
-          if (!resp.ok) throw new Error('Falha ao atualizar quantidade.');
-
-          const novaQtd = action === 'plus' ? (qtdAtual + 1) : (qtdAtual - 1);
-          qtdSpan.textContent = String(novaQtd);
-
-          atualizaSubtotalDoItem(itemNode);
-          recalculaTotalGeral();
         }
+
+        const resp = await fetch('/api/checkout/create-preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items, buyer })
+        });
+
+        if (!resp.ok) throw new Error('Falha ao criar preferência.');
+
+        const data = await resp.json();
+        console.log('✅ Preferência criada:', data);
+
+        if (!data.init_point) throw new Error('Resposta inválida do servidor.');
+
+        // Redireciona ao checkout do Mercado Pago
+        window.location.href = data.init_point;
+
       } catch (err) {
-        console.error(err);
-        alert('Não foi possível atualizar este item agora. Tente novamente.');
+        console.error('Erro ao iniciar pagamento:', err);
+        alert('Não foi possível iniciar o pagamento agora. Tente novamente.');
       } finally {
-        e.target.disabled = false;
+        btn.disabled = false;
       }
+    }
+
+    // ================
+    // Controle de quantidade
+    // ================
+    document.querySelectorAll('.btn-qtd').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        const itemNode = e.target.closest('.checkout-item');
+        if (!itemNode) return;
+
+        const itemId = itemNode.dataset.itemId;
+        const action = e.target.dataset.action;
+        const qtdSpan = itemNode.querySelector('.qtd');
+        const qtdAtual = Number(qtdSpan.textContent);
+
+        e.target.disabled = true;
+
+        try {
+          if (action === 'minus' && qtdAtual <= 1) {
+            await fetch(`/api/carrinho/${itemId}`, { method: 'DELETE' });
+            itemNode.remove();
+          } else {
+            await fetch(`/api/carrinho/${itemId}/${action}`, { method: 'POST' });
+            const novaQtd = action === 'plus' ? qtdAtual + 1 : qtdAtual - 1;
+            qtdSpan.textContent = novaQtd;
+          }
+          recalculaTotalGeral();
+        } catch (err) {
+          console.error(err);
+          alert('Não foi possível atualizar este item agora.');
+        } finally {
+          e.target.disabled = false;
+        }
+      });
     });
-  });
 
-  // =========================
-  // Bind do botão pagar + estado inicial
-  // =========================
-  const btnPagar = document.getElementById('btnPagarMP');
-  if (btnPagar) {
-    btnPagar.addEventListener('click', pagarComMercadoPago);
-  }
-  // garantir estado correto do botão ao carregar
-  recalculaTotalGeral();
-</script>
-
-
+    // ================
+    // Inicializa
+    // ================
+    document.getElementById('btnPagarMP')?.addEventListener('click', pagarComMercadoPago);
+    recalculaTotalGeral();
+  </script>
 </body>
 </html>

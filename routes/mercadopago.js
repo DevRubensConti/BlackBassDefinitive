@@ -11,15 +11,18 @@ const { Payment } = require('mercadopago');
 router.post('/create-preference', createPreference);
 
 // Webhook (notificações automáticas do Mercado Pago)
+// IMPORTANTE: somente aqui usamos express.raw
 router.post('/webhook', express.raw({ type: '*/*' }), handleWebhook);
 
 // ======================================
 // Rotas de retorno (back_urls)
+// Se você mantiver /sucesso, /pendente, /erro, beleza —
+// mas abaixo usamos uma rota única /resultado para simplificar
 // ======================================
 
 router.get('/sucesso', (req, res) => {
   const { payment_id, status, preference_id } = req.query;
-  res.render('sucesso', { 
+  res.render('sucesso', {
     titulo: 'Pagamento aprovado ✅',
     payment_id,
     status,
@@ -36,10 +39,9 @@ router.get('/erro', (req, res) => {
 });
 
 // ======================================
-// Nova rota: Diagnóstico / Resultado
-// (mostra status_detail e detalhes do pagamento)
+// Diagnóstico / Resultado (unificado)
+// Abre via back_url ou manualmente com ?payment_id=...
 // ======================================
-
 router.get('/resultado', async (req, res) => {
   try {
     const { payment_id, status, preference_id } = req.query;
@@ -53,28 +55,30 @@ router.get('/resultado', async (req, res) => {
     const info = {
       id: payment.id,
       status: payment.status,
-      status_detail: payment.status_detail, // ⚠️ Motivo exato da aprovação/rejeição
+      status_detail: payment.status_detail, // motivo exato
       payment_method: payment.payment_method_id,
       description: payment.description,
       transaction_amount: payment.transaction_amount,
       payer_email: payment.payer?.email,
-      external_reference: payment.external_reference
+      external_reference: payment.external_reference,
+      preference_id: preference_id || payment.preference_id || null,
+      raw_payer: payment.payer
     };
 
     console.log('🔍 Pagamento consultado:', info);
 
-    // Renderiza um resultado amigável (ou JSON, se preferir)
+    // Renderiza uma página simples (troque por EJS se preferir)
     res.status(200).send(`
       <h1>Resultado do Pagamento</h1>
+      <p><strong>Status:</strong> ${info.status}</p>
+      <p><strong>Detalhe:</strong> ${info.status_detail}</p>
       <pre>${JSON.stringify(info, null, 2)}</pre>
-      <a href="/">Voltar</a>
+      <p><a href="/meus-pedidos">Ir para Meus Pedidos</a> | <a href="/">Voltar</a></p>
     `);
-
   } catch (err) {
     console.error('Erro ao consultar pagamento:', err);
     res.status(500).send('Erro ao consultar pagamento.');
   }
 });
 
-// ======================================
 module.exports = router;

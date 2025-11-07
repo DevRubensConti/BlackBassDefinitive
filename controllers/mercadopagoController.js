@@ -1,17 +1,22 @@
-// controllers/mercadopagoController.js (SDK v2, seguro PF/PJ + carrinho Supabase)
+// controllers/mercadopagoController.js (SDK v2, PF/PJ + carrinho Supabase)
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const supabaseDb = require('../supabase/supabaseDb');
 
+// =====================
+// MP client (SDK v2)
+// =====================
 const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN, // TEST-xxx ou APP_USR-xxx
+  accessToken: process.env.MP_ACCESS_TOKEN, // TEST-xxx (sandbox) ou APP_USR-xxx (prod)
   options: { timeout: 5000 }
 });
 
 const onlyDigits = (s) => (s || '').toString().replace(/\D+/g, '');
 const isProd = (process.env.NODE_ENV || '').toLowerCase() === 'production';
 
-/* ========== Itens do carrinho (do banco) ========== */
-// Retorna [{ title, quantity, unit_price, currency_id: 'BRL' }]
+// =====================
+// Itens do carrinho (Supabase)
+// retorna [{ title, quantity, unit_price, currency_id }]
+// =====================
 async function carregarItensCarrinho(usuarioId, tipoUsuario) {
   const { data: itens, error } = await supabaseDb
     .from('carrinho')
@@ -50,13 +55,13 @@ async function carregarItensCarrinho(usuarioId, tipoUsuario) {
   return mpItems;
 }
 
-/* ========== CPF/CNPJ do comprador (PF/PJ) ========== */
+// =====================
+// CPF/CNPJ do comprador (PF/PJ)
+// =====================
 async function carregarIdentificacaoComprador(usuarioId, tipoUsuario) {
-  // PF -> tabela "usuario_pf" (coluna: cpf)
-  // PJ -> tabela "usuarios_pj" (coluna: cnpj/cpnj)
+  // PF -> "usuario_pf" (coluna cpf)
+  // PJ -> "usuarios_pj" (coluna cnpj/cpnj)
   const table = (tipoUsuario === 'pj') ? 'usuarios_pj' : 'usuario_pf';
-
-  // Tentamos por diferentes colunas de chave (ajuste conforme seu schema)
   const candidateIdCols = ['id', 'usuario_id', (tipoUsuario === 'pj' ? 'id_pj' : 'id_pf')];
 
   let row = null;
@@ -65,7 +70,7 @@ async function carregarIdentificacaoComprador(usuarioId, tipoUsuario) {
       .from(table)
       .select('*')
       .eq(col, usuarioId)
-      .maybeSingle(); // não falha se não achar
+      .maybeSingle();
 
     if (!error && data) {
       row = data;
@@ -86,7 +91,9 @@ async function carregarIdentificacaoComprador(usuarioId, tipoUsuario) {
   }
 }
 
-/* ========== Cria preferência ========== */
+// =====================
+// Cria preferência
+// =====================
 async function createPreference(req, res) {
   try {
     const usuario = req.session?.usuario || null;
@@ -97,20 +104,20 @@ async function createPreference(req, res) {
     const usuarioId = usuario.id;
     const tipoUsuario = (usuario.tipo || '').toLowerCase(); // 'pf' | 'pj'
 
-    // 1) Itens do carrinho (seguro: do banco)
+    // 1) Itens do carrinho
     const items = await carregarItensCarrinho(usuarioId, tipoUsuario);
     if (!items.length) {
       return res.status(400).json({ error: 'Carrinho vazio.' });
     }
 
-    // 2) Payer a partir da sessão + CPF/CNPJ buscado
+    // 2) Payer (sessão + CPF/CNPJ)
     const identification = await carregarIdentificacaoComprador(usuarioId, tipoUsuario);
 
-    // Fallback de sandbox: se vazio e não for produção, preenche doc de teste
+    // Se sandbox e sem doc, usa doc de teste
     if (!identification.number && !isProd) {
       identification.number = (identification.type === 'CPF')
-        ? '12345678909'     // CPF teste (APRO)
-        : '11222333000181'; // CNPJ teste
+        ? '12345678909'
+        : '11222333000181';
     }
 
     const payer = {
@@ -119,28 +126,26 @@ async function createPreference(req, res) {
       identification // { type: 'CPF'|'CNPJ', number: 'somente_digitos' }
     };
 
-    // 3) URLs absolutas (sem auto_return por enquanto)
-    const BASE = (process.env.MP_BASE_URL || 'http://localhost:3000/api/checkout').trim();
-    const successUrl = (process.env.MP_SUCCESS_URL || `${BASE}/sucesso`).trim();
-    const pendingUrl = (process.env.MP_PENDING_URL || `${BASE}/pendente`).trim();
-    const failureUrl = (process.env.MP_FAILURE_URL || `${BASE}/erro`).trim();
-    const notificationUrl = (process.env.MP_WEBHOOK_URL || 'http://localhost:3000/api/checkout/webhook').trim();
+    // 3) URLs absolutas (HTTPS em Render)
+    const base = (process.env.MP_BASE_URL || 'https://blackbass-marketplace.onrender.com/api/checkout').trim();
+    const resultUrl = (process.env.MP_RESULT_URL || `${base}/resultado`).trim();
+    const notificationUrl = (process.env.MP_WEBHOOK_URL || `${base}/webhook`).trim();
 
-    if (!/^https?:\/\//i.test(successUrl)) {
-      return res.status(500).json({ error: 'URL de sucesso inválida (use http/https absolutos).' });
+    if (!/^https:\/\//i.test(resultUrl)) {
+      return res.status(500).json({ error: 'MP_RESULT_URL inválida (precisa ser HTTPS absoluto).' });
     }
 
     const preferenceBody = {
       items,
       payer,
       back_urls: {
-        success: successUrl,
-        pending: pendingUrl,
-        failure: failureUrl
+        success: resultUrl,
+        pending: resultUrl,
+        failure: resultUrl
       },
       notification_url: notificationUrl,
-      external_reference: 'ORDER-' + Date.now()
-      // sem auto_return por enquanto (evita erro 400)
+      external_reference: 'ORDER-' + Date.now(),
+      auto_return: 'approved' // agora com HTTPS, podemos habilitar
     };
 
     console.log('[MP createPreference] body:', preferenceBody);
@@ -150,6 +155,7 @@ async function createPreference(req, res) {
     const resp = await pref.create({ body: preferenceBody });
 
     const initPoint = resp.init_point || resp.sandbox_init_point;
+    console.log('init_point:', initPoint);
     if (!initPoint) {
       return res.status(500).json({ error: 'Preferência criada sem init_point.' });
     }
@@ -165,6 +171,9 @@ async function createPreference(req, res) {
   }
 }
 
+// =====================
+// Webhook (notificações do MP)
+// =====================
 async function handleWebhook(req, res) {
   try {
     const raw = req.body?.toString('utf8') || '{}';
@@ -175,15 +184,20 @@ async function handleWebhook(req, res) {
 
       console.log('MP Webhook:', {
         id: payment.id,
-        status: payment.status,                 // approved | pending | rejected ...
+        status: payment.status,
+        status_detail: payment.status_detail,
         external_reference: payment.external_reference
       });
 
       // TODO: atualizar pedido no Supabase, ex.:
       // await supabaseDb
       //   .from('pedidos')
-      //   .update({ status_pagamento: payment.status, mp_payment_id: payment.id })
-      //   .eq('codigo', payment.external_reference); // ou .eq('id', ...) conforme seu schema
+      //   .update({
+      //     status_pagamento: payment.status,
+      //     mp_payment_id: payment.id,
+      //     mp_status_detail: payment.status_detail
+      //   })
+      //   .eq('codigo', payment.external_reference);
     }
 
     return res.sendStatus(200);
@@ -193,7 +207,6 @@ async function handleWebhook(req, res) {
   }
 }
 
-// Exporte tudo no final (evita problemas de ordem)
 module.exports = {
   createPreference,
   handleWebhook,
