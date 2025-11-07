@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const supabaseDb = require('../supabase/supabaseDb'); // caminho correto do seu client Supabase
-const { requireLogin } = require('../middlewares/auth'); // ajuste se o nome estiver diferente
-const { criarPedido } = require('../helpers/pedidos')
+const supabaseDb = require('../supabase/supabaseDb');
+const { requireLogin } = require('../middlewares/auth');
 
+// =============================
+// MEUS PEDIDOS (comprador)
+// =============================
 router.get('/meus-pedidos', requireLogin, async (req, res) => {
   try {
     const compradorId = req.session.usuario.id;
@@ -26,10 +28,9 @@ router.get('/meus-pedidos', requireLogin, async (req, res) => {
     const pedidoIds = pedidos.map(p => p.id);
 
     // 2) Itens dos pedidos (UMA LINHA POR PRODUTO)
-    //    >>> Inclui o ID do item (pedido_itens.id) <<<
     const { data: itens, error: itensErr } = await supabaseDb
       .from('pedido_itens')
-      .select('id, pedido_id, produto_id, nome, imagem_url, quantidade, unit_price_cents, subtotal_cents') // <-- id adicionado
+      .select('id, pedido_id, produto_id, nome, imagem_url, quantidade, unit_price_cents, subtotal_cents')
       .in('pedido_id', pedidoIds);
 
     if (itensErr) {
@@ -64,9 +65,9 @@ router.get('/meus-pedidos', requireLogin, async (req, res) => {
       const img = it.imagem_url || imgFallbackByProdId[it.produto_id] || '/images/placeholder.png';
 
       itensByPedido[it.pedido_id].push({
-        // >>> IDs essenciais para os botões/links <<<
-        pedido_item_id: it.id,          // <-- este é o UUID de pedido_itens usado em /avaliar/:id
-        pedido_id: it.pedido_id,        // útil como fallback
+        // IDs essenciais para botões/links
+        pedido_item_id: it.id,
+        pedido_id: it.pedido_id,
         produto_id: it.produto_id,
 
         // dados de exibição
@@ -96,7 +97,7 @@ router.get('/meus-pedidos', requireLogin, async (req, res) => {
 
       gruposMap[key].pedidos_ids.add(p.id);
 
-      // Anexa os itens DESTE pedido preservando pedido_item_id/pedido_id/produto_id
+      // Anexa itens deste pedido
       const itensDoPedido = itensByPedido[p.id] || [];
       gruposMap[key].itens.push(...itensDoPedido);
 
@@ -106,7 +107,7 @@ router.get('/meus-pedidos', requireLogin, async (req, res) => {
         gruposMap[key].status = p.status;
       }
 
-      // (Se quiser somar total de múltiplos cabeçalhos com mesmo código, descomente)
+      // Se quiser somar totals de múltiplos cabeçalhos com o mesmo código:
       // gruposMap[key].total += Number(p.preco_total || 0);
     }
 
@@ -130,12 +131,13 @@ router.get('/meus-pedidos', requireLogin, async (req, res) => {
   }
 });
 
-
-
-
+// =============================
+// MINHAS VENDAS (vendedor)
+// =============================
 router.get('/minhas-vendas', requireLogin, async (req, res) => {
   const vendedorId = req.session.usuario.id;
 
+  // Atenção: este select com joins exige FKs configuradas no Supabase
   const { data: vendas, error } = await supabaseDb
     .from('pedidos')
     .select(`
@@ -143,13 +145,12 @@ router.get('/minhas-vendas', requireLogin, async (req, res) => {
       status,
       data_pedido,
       preco_total,
-      quantidade,
       produto:produtos (
         id,
         nome,
         imagem_url
       ),
-      comprador_pf:usuarios_pf (
+      comprador_pf:usuario_pf (
         id,
         nome
       ),
@@ -158,7 +159,6 @@ router.get('/minhas-vendas', requireLogin, async (req, res) => {
         nomeFantasia
       )
     `)
-    // vendedor pode estar em uma das duas colunas
     .or(`vendedor_pf_id.eq.${vendedorId},vendedor_pj_id.eq.${vendedorId}`)
     .order('data_pedido', { ascending: false });
 
@@ -170,8 +170,10 @@ router.get('/minhas-vendas', requireLogin, async (req, res) => {
   res.render('minhas-vendas', { vendas });
 });
 
-
-router.get('/checkout',requireLogin, async (req, res) => {
+// =============================
+// CHECKOUT (página)
+// =============================
+router.get('/checkout', requireLogin, async (req, res) => {
   const usuarioId = req.session.usuario.id;
   const tipoUsuario = req.session.usuario.tipo;
 
@@ -196,7 +198,9 @@ router.get('/checkout',requireLogin, async (req, res) => {
   res.render('checkout', { itens });
 });
 
-
+// =============================
+// CHECKOUT (fluxos antigos/alternativos)
+// =============================
 router.post('/checkout', requireLogin, async (req, res) => {
   const usuarioId = req.session.usuario.id;        // COMPRADOR
   const tipoUsuario = req.session.usuario.tipo;    // 'pf' | 'pj'
@@ -221,62 +225,45 @@ router.post('/checkout', requireLogin, async (req, res) => {
     return res.status(400).send('Seu carrinho está vazio.');
   }
 
-  // 2) Gera um código por loja (no mesmo checkout)
   const codigosPorLoja = {};
   const gerarCodigoPedido = (lojaId) => {
     const d = new Date();
     const y = d.getFullYear();
     const m = String(d.getMonth()+1).padStart(2,'0');
     const day = String(d.getDate()).padStart(2,'0');
-    const rand = Math.floor(Math.random()*9000)+1000; // simples; troque por sequência se quiser
+    const rand = Math.floor(Math.random()*9000)+1000;
     return `L${(lojaId || '').toString().slice(0,4).toUpperCase()}-${y}${m}${day}-${rand}`;
   };
 
-  // 3) Processa itens um a um, mas usando o MESMO codigo para itens da mesma loja
   for (const row of itens) {
-    const prod = row.produtos; // atalho
+    const prod = row.produtos;
     if (!prod) continue;
 
-    // valida estoque
     const qtd = parseInt(row.quantidade, 10) || 1;
     if (prod.quantidade == null || prod.quantidade < qtd) {
       console.warn(`Estoque insuficiente para produto ${row.produto_id}. Em estoque: ${prod.quantidade}, pedido: ${qtd}`);
       continue;
     }
 
-    // define codigo por loja
     const lojaId = prod.loja_id ?? null;
     if (!codigosPorLoja[lojaId || 'SEM_LOJA']) {
       codigosPorLoja[lojaId || 'SEM_LOJA'] = gerarCodigoPedido(lojaId || '0000');
     }
     const codigo = codigosPorLoja[lojaId || 'SEM_LOJA'];
 
-    // monta payload
     const payloadPedido = {
-      // comprador
       ...(tipoUsuario === 'pj' ? { comprador_pj_id: usuarioId } : { comprador_pf_id: usuarioId }),
       tipo_usuario: tipoUsuario,
-
-      // vínculo com loja e produto
       loja_id: lojaId,
       produto_id: row.produto_id,
       quantidade: qtd,
-
-      // valores
       preco_total: (Number(prod.preco) || 0) * qtd,
-
-      // status e datas
       status: 'Em processamento',
       data_pedido: new Date(),
-
-      // vendedor (de acordo com o produto)
       ...(prod.tipo_usuario === 'pj' ? { vendedor_pj_id: prod.usuario_id } : { vendedor_pf_id: prod.usuario_id }),
-
-      // NOVO: mesmo codigo para itens da mesma loja
       codigo
     };
 
-    // insere pedido (uma linha por item, compartilhando o mesmo codigo por loja)
     const { error: pedidoError } = await supabaseDb
       .from('pedidos')
       .insert([payloadPedido]);
@@ -286,18 +273,15 @@ router.post('/checkout', requireLogin, async (req, res) => {
       continue;
     }
 
-    // decrementa estoque
     const { error: decErr } = await supabaseDb.rpc('decrementa_estoque', {
       p_id: row.produto_id,
       p_qtd: qtd
     });
     if (decErr) {
       console.error(`Erro ao decrementar estoque do produto ${row.produto_id}:`, decErr);
-      // opcional: rollback manual do pedido inserido
     }
   }
 
-  // 4) limpa carrinho
   const { error: delErr } = await supabaseDb
     .from('carrinho')
     .delete()
@@ -306,18 +290,18 @@ router.post('/checkout', requireLogin, async (req, res) => {
 
   if (delErr) console.error('Erro ao limpar carrinho:', delErr);
 
-  // 5) redireciona
   res.redirect('/meus-pedidos');
 });
 
-
+// =============================
+// CHECKOUT (RPC com itens)
+// =============================
 router.post('/checkout/finalizar', requireLogin, async (req, res) => {
   try {
     const usuarioId   = req.session.usuario.id;
     const tipoUsuario = (req.session.usuario.tipo || '').toLowerCase(); // 'pf' | 'pj'
     const isPF        = (tipoUsuario === 'pf');
 
-    // helper p/ código legível do pedido (L<4 chars loja>-AAAAMMDD-####)
     const gerarCodigoPedido = (lojaId) => {
       const d = new Date();
       const y = d.getFullYear();
@@ -328,7 +312,6 @@ router.post('/checkout/finalizar', requireLogin, async (req, res) => {
       return `L${lojaPrefix}-${y}${m}${day}-${rand}`;
     };
 
-    // 1) Carrega itens do carrinho + metadados do produto (precisamos de loja_id, tipo_usuario e usuario_id do VENDEDOR)
     const { data: itensCarrinho, error } = await supabaseDb
       .from('carrinho')
       .select(`
@@ -348,7 +331,6 @@ router.post('/checkout/finalizar', requireLogin, async (req, res) => {
       return res.status(400).send('Seu carrinho está vazio.');
     }
 
-    // 2) Agrupa itens por loja (um pedido por loja)
     const porLoja = new Map();
     for (const row of itensCarrinho) {
       const prod = row.produtos;
@@ -360,7 +342,6 @@ router.post('/checkout/finalizar', requireLogin, async (req, res) => {
         continue;
       }
 
-      // valida estoque básico (se a coluna existir e vier populada)
       const qtdCarrinho = Math.max(1, parseInt(row.quantidade, 10) || 1);
       if (prod.quantidade != null && Number(prod.quantidade) < qtdCarrinho) {
         console.warn('[CHECKOUT] Estoque insuficiente', {
@@ -373,7 +354,6 @@ router.post('/checkout/finalizar', requireLogin, async (req, res) => {
       porLoja.get(lojaId).push({
         produto_id: row.produto_id,
         quantidade: qtdCarrinho,
-        // pode omitir (a função busca do produto); enviar ajuda a evitar roundtrips
         preco: Number(prod.preco) || undefined,
         nome: prod.nome || undefined,
         imagem_url: (prod.imagem_url || '').split(',')[0] || undefined
@@ -384,16 +364,15 @@ router.post('/checkout/finalizar', requireLogin, async (req, res) => {
       return res.status(400).send('Não há itens válidos para finalizar.');
     }
 
-    // 3) Cria os pedidos (um por loja) via RPC
     const pedidosCriados = [];
     for (const [lojaId, itens] of porLoja.entries()) {
       const codigo = gerarCodigoPedido(lojaId);
 
       const { data: pid, error: rpcErr } = await supabaseDb.rpc('create_pedido_with_itens', {
         _loja: lojaId,
-        _status: 'criado',            // troque p/ 'em_processamento' se for seu fluxo
-        _tipo_usuario: tipoUsuario, // do COMPRADOR: 'pf' | 'pj'
-        _itens: itens,              // [{ produto_id, quantidade, preco?, nome?, imagem_url? }]
+        _status: 'criado',
+        _tipo_usuario: tipoUsuario,
+        _itens: itens,
         _comprador_pf_id: isPF ? usuarioId : null,
         _comprador_pj_id: !isPF ? usuarioId : null,
         _codigo: codigo
@@ -401,14 +380,12 @@ router.post('/checkout/finalizar', requireLogin, async (req, res) => {
 
       if (rpcErr) {
         console.error(`[CHECKOUT] Erro criando pedido (loja ${lojaId}):`, rpcErr);
-        // se quiser prosseguir com outras lojas, use "continue" aqui e acumule erros
         return res.status(500).send('Falha ao criar pedido. Tente novamente.');
       }
 
       pedidosCriados.push({ lojaId, pedidoId: pid, codigo });
     }
 
-    // 4) Decrementa estoque (um por item do carrinho)
     for (const row of itensCarrinho) {
       const qtd = Math.max(1, parseInt(row.quantidade, 10) || 1);
       const { error: decErr } = await supabaseDb.rpc('decrementa_estoque', {
@@ -417,11 +394,9 @@ router.post('/checkout/finalizar', requireLogin, async (req, res) => {
       });
       if (decErr) {
         console.error('[CHECKOUT] Erro decrementando estoque', row.produto_id, decErr);
-        // segue o fluxo; opcional: acumular e exibir aviso ao usuário
       }
     }
 
-    // 5) Limpa o carrinho do usuário
     const { error: delErr } = await supabaseDb
       .from('carrinho')
       .delete()
@@ -431,7 +406,6 @@ router.post('/checkout/finalizar', requireLogin, async (req, res) => {
       console.warn('[CHECKOUT] Carrinho não limpo (continuando mesmo assim):', delErr);
     }
 
-    // 6) Redireciona
     console.log('Pedidos criados:', pedidosCriados);
     return res.redirect('/meus-pedidos');
 
@@ -441,14 +415,11 @@ router.post('/checkout/finalizar', requireLogin, async (req, res) => {
   }
 });
 
-
-// Util: normaliza string de status
+// =============================
+// Avançar status do pedido
+// =============================
 function norm(v) { return String(v || '').trim().toLowerCase(); }
 
-/**
- * POST /pedidos/avancar-status
- * Avança o status do pedido identificado por 'codigo' seguindo a tabela 'pedido_status_ref'
- */
 router.post('/pedidos/avancar-status', requireLogin, async (req, res) => {
   try {
     const usuarioId = req.session?.usuario?.id;
@@ -459,7 +430,6 @@ router.post('/pedidos/avancar-status', requireLogin, async (req, res) => {
       return res.redirect(redirectTo + '?err=codigo_vazio');
     }
 
-    // 1) Busca o pedido pelo codigo
     const { data: pedido, error: errPedido } = await supabaseDb
       .from('pedidos')
       .select('id, codigo, status, comprador_pf_id, comprador_pj_id')
@@ -474,12 +444,10 @@ router.post('/pedidos/avancar-status', requireLogin, async (req, res) => {
       return res.redirect(redirectTo + '?err=pedido_nao_encontrado');
     }
 
-    // 2) (Segurança simples) — apenas o comprador pode avançar neste fluxo de TCC
     if (!(pedido.comprador_pf_id === usuarioId || pedido.comprador_pj_id === usuarioId)) {
       return res.redirect(redirectTo + '?err=sem_permissao');
     }
 
-    // 3) Carrega o funil de status (pedido_status_ref), ordenado
     const { data: refs, error: errRefs } = await supabaseDb
       .from('pedido_status_ref')
       .select('status, rotulo, ordem_funnel')
@@ -490,7 +458,6 @@ router.post('/pedidos/avancar-status', requireLogin, async (req, res) => {
       return res.redirect(redirectTo + '?err=refs_indisponiveis');
     }
 
-    // 4) Encontra o próximo status
     const curr = norm(pedido.status);
     const list = refs
       .map(r => ({ status: norm(r.status), ordem: Number(r.ordem_funnel), rotulo: r.rotulo }))
@@ -499,7 +466,6 @@ router.post('/pedidos/avancar-status', requireLogin, async (req, res) => {
     const currIdx = list.findIndex(s => s.status === curr);
 
     if (currIdx === -1) {
-      // Status atual não faz parte do funil -> define como primeiro válido do funil
       const next = list[0];
       const { error: errUpd } = await supabaseDb
         .from('pedidos')
@@ -513,20 +479,17 @@ router.post('/pedidos/avancar-status', requireLogin, async (req, res) => {
       return res.redirect(redirectTo + '?ok=resetado_para_primeiro');
     }
 
-    // Se já está no último status do funil, não avança
     if (currIdx >= list.length - 1) {
       return res.redirect(redirectTo + '?warn=ultimo_status');
     }
 
     const next = list[currIdx + 1];
 
-    // (Opcional) bloqueios — ex.: não avançar para 'cancelado', 'estornado', 'chargeback' via este botão
     const bloqueados = new Set(['cancelado', 'estornado', 'chargeback']);
     if (bloqueados.has(next.status)) {
       return res.redirect(redirectTo + '?warn=bloqueado');
     }
 
-    // 5) Atualiza status
     const { error: errUpd2 } = await supabaseDb
       .from('pedidos')
       .update({
@@ -548,7 +511,3 @@ router.post('/pedidos/avancar-status', requireLogin, async (req, res) => {
 });
 
 module.exports = router;
-
-
-
-module.exports = router
