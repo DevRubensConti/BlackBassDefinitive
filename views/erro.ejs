@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento não concluído ❌</title>
+  <link rel="stylesheet" href="/css/checkout.css">
+  <style>
+    main { text-align:center; margin:80px auto; max-width:600px; }
+    h1 { color:#c62828; font-size:2rem; margin-bottom:20px; }
+    p  { color:#444; margin-bottom:30px; }
+    a.btn-voltar {
+      display:inline-block; padding:10px 20px; border-radius:8px;
+      background:#c62828; color:#fff; text-decoration:none; font-weight:600;
+      transition:.2s;
+    }
+    a.btn-voltar:hover { background:#8e0000; }
+  </style>
+</head>
+<body>
+  <%- include('partials/navbar.ejs') %>
+
+  <main>
+    <h1>❌ Pagamento não concluído</h1>
+    <p>Ocorreu um problema com o pagamento ou ele foi cancelado. Nenhum valor foi cobrado.</p>
+    <a href="/checkout" class="btn-voltar">Tentar novamente</a>
+  </main>
+
+  <%- include('partials/footer.ejs') %>
+</body>
+</html>

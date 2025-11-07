@@ -12,17 +12,17 @@
 
   <main class="listagem-container">
 
-        <% const selected = {
-          marca: Array.isArray(query.marca) ? query.marca : query.marca ? [query.marca] : [],
-          tipo: Array.isArray(query.tipo) ? query.tipo : query.tipo ? [query.tipo] : [],
-          categoria: Array.isArray(query.categoria) ? query.categoria : query.categoria ? [query.categoria] : [],
-          shape: Array.isArray(query.shape) ? query.shape : query.shape ? [query.shape] : [],
-          condicao: query.condicao || '',
-          preco_min: query.preco_min || '0',
-          preco_max: query.preco_max || '100000',
-          acabamento: query.acabamento || ''
-        }; %>
-
+   <% const selected = {
+  marca: Array.isArray(query.marca) ? query.marca : query.marca ? [query.marca] : [],
+  tipo: Array.isArray(query.tipo) ? query.tipo : query.tipo ? [query.tipo] : [],
+  categoria: Array.isArray(query.categoria) ? query.categoria : query.categoria ? [query.categoria] : [],
+  shape: Array.isArray(query.shape) ? query.shape : query.shape ? [query.shape] : [],
+  condicao: query.condicao || '',
+  preco_min: query.preco_min || '0',
+  preco_max: query.preco_max || '100000',
+  acabamento: query.acabamento || '',
+  preco_enabled: (query.preco_enabled === '1') // << NOVO
+}; %>
         <% if (mensagens.length > 0) { %>
       <div class="flash-message">
         <%= mensagens[0] %>
@@ -43,16 +43,30 @@
   name="pesquisa"
   value="<%= (query.pesquisa || '') %>"
 />
-        <script>
-  document.getElementById('pesquisa')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') e.target.form?.submit();
+<script>
+  const inp = document.getElementById('pesquisa');
+  inp?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form;
+      if (form?.requestSubmit) form.requestSubmit();
+      else form?.submit(); // fallback antigo
+    }
   });
 </script>
       </div>
 
-      <div class="filtro-box">
-  <h3>Preço (R$)</h3>
-  <div class="slider-preco">
+<div class="filtro-box">
+  <h3 style="display:flex; align-items:center; gap:10px; justify-content:space-between;">
+    <span>Preço (R$)</span>
+    <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:.95rem;">
+      <input type="checkbox" id="chk-preco-enabled" name="preco_enabled" value="1"
+             <%= selected.preco_enabled ? 'checked' : '' %> />
+      Habilitar
+    </label>
+  </h3>
+
+  <div class="slider-preco" id="wrap-preco">
     <span>Mín: <span id="preco-min">
       <%= Number(query.preco_min || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) %>
     </span></span>
@@ -82,7 +96,13 @@
       value="<%= Math.max(0, Math.min(Number(query.preco_max || priceMaxBound), priceMaxBound)) %>"
     >
   </div>
+
+  <style>
+    /* Apenas um visual "desabilitado" quando o filtro não estiver ativo */
+    .slider-preco.disabled { opacity:.5; pointer-events:none; filter: grayscale(0.2); }
+  </style>
 </div>
+
 
       <div class="filtro-box">
         <label><input type="checkbox" name="promo"/> Produtos em Promoção</label>
@@ -123,18 +143,19 @@
     </div>
 
       <!-- Cor -->
-      <div class="filtro-box">
-        <h3>Cor</h3>
-        <select class="select-cor" name="cor">
-          <option value="">Todas</option>
-          <option value="Preto">Preto</option>
-          <option value="Branco">Branco</option>
-          <option value="Vermelho">Vermelho</option>
-          <option value="Azul">Azul</option>
-          <option value="Natural">Natural</option>
-          <option value="Sunburst">Sunburst</option>
-        </select>
-      </div>
+<div class="filtro-box">
+  <h3>Cor</h3>
+  <select class="select-cor" name="cor">
+    <option value="">Todas</option>
+    <option value="Preto"    <%= (query.cor === 'Preto')    ? 'selected' : '' %>>Preto</option>
+    <option value="Branco"   <%= (query.cor === 'Branco')   ? 'selected' : '' %>>Branco</option>
+    <option value="Vermelho" <%= (query.cor === 'Vermelho') ? 'selected' : '' %>>Vermelho</option>
+    <option value="Azul"     <%= (query.cor === 'Azul')     ? 'selected' : '' %>>Azul</option>
+    <option value="Natural"  <%= (query.cor === 'Natural')  ? 'selected' : '' %>>Natural</option>
+    <option value="Sunburst" <%= (query.cor === 'Sunburst') ? 'selected' : '' %>>Sunburst</option>
+  </select>
+</div>
+
 
       <!-- Condição -->
       <div class="filtro-box">
@@ -284,6 +305,8 @@
   const rangeMax = document.getElementById('range-max');
   const precoMinLabel = document.getElementById('preco-min');
   const precoMaxLabel = document.getElementById('preco-max');
+  const chkPreco = document.getElementById('chk-preco-enabled');
+  const wrapPreco = document.getElementById('wrap-preco');
 
   function formatarValor(valor) {
     return Number(valor).toLocaleString('pt-BR', {
@@ -306,17 +329,51 @@
     precoMaxLabel.textContent = formatarValor(rangeMax.value);
   }
 
-  // inicia labels corretas
-  syncLabels();
+  function aplicarEstadoPreco(enabled) {
+    // Visual
+    wrapPreco.classList.toggle('disabled', !enabled);
 
-  rangeMin.addEventListener('input', () => {
-    clampRanges();
-    syncLabels();
+    // Ativa/desativa inputs
+    rangeMin.disabled = !enabled;
+    rangeMax.disabled = !enabled;
+
+    // Se desabilitar, removemos os "name" para NÃO enviar na URL
+    if (!enabled) {
+      rangeMin.setAttribute('data-name', 'preco_min');
+      rangeMax.setAttribute('data-name', 'preco_max');
+      rangeMin.removeAttribute('name');
+      rangeMax.removeAttribute('name');
+    } else {
+      // Recoloca os "name" se voltarmos a habilitar
+      if (!rangeMin.name && rangeMin.getAttribute('data-name')) {
+        rangeMin.name = rangeMin.getAttribute('data-name');
+      }
+      if (!rangeMax.name && rangeMax.getAttribute('data-name')) {
+        rangeMax.name = rangeMax.getAttribute('data-name');
+      }
+    }
+  }
+
+  // Estado inicial
+  syncLabels();
+  aplicarEstadoPreco(!!chkPreco?.checked);
+
+  // Eventos
+  rangeMin?.addEventListener('input', () => { clampRanges(); syncLabels(); });
+  rangeMax?.addEventListener('input', () => { clampRanges(); syncLabels(); });
+
+  chkPreco?.addEventListener('change', () => {
+    aplicarEstadoPreco(chkPreco.checked);
   });
 
-  rangeMax.addEventListener('input', () => {
-    clampRanges();
-    syncLabels();
+  // Garante que, se estiver desabilitado na hora do submit, os campos não vão com "name"
+  // (extra de segurança caso algum script reative)
+  const form = document.querySelector('form[action="/produtos"]');
+  form?.addEventListener('submit', () => {
+    if (!chkPreco.checked) {
+      rangeMin.removeAttribute('name');
+      rangeMax.removeAttribute('name');
+    }
   });
 </script>
 

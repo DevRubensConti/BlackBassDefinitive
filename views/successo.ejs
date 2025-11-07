@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento aprovado ✅</title>
+  <link rel="stylesheet" href="/css/checkout.css">
+  <style>
+    main { text-align:center; margin:80px auto; max-width:600px; }
+    h1 { color:#2e7d32; font-size:2rem; margin-bottom:20px; }
+    p  { color:#444; margin-bottom:30px; }
+    a.btn-voltar {
+      display:inline-block; padding:10px 20px; border-radius:8px;
+      background:#2e7d32; color:#fff; text-decoration:none; font-weight:600;
+      transition:.2s;
+    }
+    a.btn-voltar:hover { background:#256428; }
+  </style>
+</head>
+<body>
+  <%- include('partials/navbar.ejs') %>
+
+  <main>
+    <h1>✅ Pagamento aprovado!</h1>
+    <p>Seu pedido foi confirmado e está sendo processado.</p>
+    <a href="/meus-pedidos" class="btn-voltar">Ver meus pedidos</a>
+  </main>
+
+  <%- include('partials/footer.ejs') %>
+</body>
+</html>

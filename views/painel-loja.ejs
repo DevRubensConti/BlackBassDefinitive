@@ -104,30 +104,44 @@
     <!-- ===================== MINHAS VENDAS ===================== -->
     <section id="tab-vendas" class="tab-pane">
       <div class="card" style="margin-bottom:12px;">
-        <div class="toolbar" style="margin:0 0 8px; gap:10px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <strong>Análise:</strong>
-            <select id="selAnaliseVendas" class="btn-ghost" style="min-height:38px;">
-              <option value="marca">por Marca</option>
-              <option value="categoria">por Categoria</option>
-              <option value="shape">por Shape</option>
-            </select>
-          </div>
-          <div class="toolbar-actions" style="margin-left:auto; gap:12px;">
-            <span id="analiseResumo" class="subtle"></span>
-          </div>
-        </div>
+  <div class="toolbar" style="margin:0 0 8px; gap:10px; flex-wrap:wrap;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <strong>Análise:</strong>
+      <select id="selAnaliseVendas" class="btn-ghost" style="min-height:38px;">
+        <option value="marca">por Marca</option>
+        <option value="categoria">por Categoria</option>
+        <option value="shape">por Shape</option>
+      </select>
+    </div>
 
-        <div style="display:grid; grid-template-columns: 1.1fr .9fr; gap:12px; align-items:center;">
-          <div><canvas id="vendasRosca" height="180"></canvas></div>
-          <div>
-            <table class="tabela elegante">
-              <thead><tr><th>Grupo</th><th>Valor Total de Vendas</th><th>%</th></tr></thead>
-              <tbody id="tblAnaliseBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+    <!-- NOVO: filtro de datas só para o gráfico -->
+<form id="filtroAnaliseVendas" class="filters" style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+  <input type="hidden" name="tab" value="vendas"> <!-- garante ?tab=vendas na URL -->
+<label>De
+  <input type="date" lang="pt-BR" name="de"  value="<%= finDe %>" required>
+</label>
+<label>Até
+  <input type="date" lang="pt-BR" name="ate" value="<%= finAte %>" required>
+</label>
+  <button class="btn-ghost" type="submit">Aplicar</button>
+</form>
+
+    <div class="toolbar-actions" style="gap:12px;">
+      <span id="analiseResumo" class="subtle"></span>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1.1fr .9fr; gap:12px; align-items:center;">
+    <div><canvas id="vendasRosca" height="180"></canvas></div>
+    <div>
+      <table class="tabela elegante">
+        <thead><tr><th>Grupo</th><th>Valor Total de Vendas</th><th>%</th></tr></thead>
+        <tbody id="tblAnaliseBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 
       <div class="kpis">
         <div class="kpi"><span>Total de pedidos (30d)</span><strong><%= kpisSafe.pedidos30 || 0 %></strong></div>
@@ -138,19 +152,16 @@
       <div class="toolbar">
         <form class="filters" method="GET" action="">
           <input type="hidden" name="tab" value="vendas">
-          <input type="date" name="inicio" value="<%= filtrosV.inicio || '' %>">
-          <input type="date" name="fim" value="<%= filtrosV.fim || '' %>">
+        <input type="date" lang="pt-BR" name="inicio" value="<%= filtrosV.inicio || '' %>">
+<input type="date" lang="pt-BR" name="fim"    value="<%= filtrosV.fim || '' %>">
           <select name="status_pedido">
             <option value="">Status do pedido</option>
             <option value="pago"      <%= filtrosV.status_pedido==='pago' ? 'selected':'' %>>Pago</option>
-            <option value="enviado"   <%= filtrosV.status_pedido==='enviado' ? 'selected':'' %>>Enviado</option>
-            <option value="cancelado" <%= filtrosV.status_pedido==='cancelado' ? 'selected':'' %>>Cancelado</option>
+            <option value="entregue"   <%= filtrosV.status_pedido==='entregue' ? 'selected':'' %>>Entregue</option>
           </select>
           <button class="btn-ghost" type="submit">Filtrar</button>
         </form>
-        <div class="toolbar-actions">
-          <a href="/painel/vendas/exportar?formato=csv" class="btn-primary">Exportar CSV</a>
-        </div>
+     
       </div>
 
       <table class="tabela elegante">
@@ -203,24 +214,26 @@
 
     </section>
 
-    <!-- ===================== RELATÓRIOS FINANCEIROS (novo) ===================== -->
+    <!-- ===================== RELATÓRIOS FINANCEIROS ===================== -->
 <section id="tab-relatorios" class="tab-pane">
   <% const brl = n => Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); %>
 
   <div class="toolbar" style="gap:12px; align-items:center;">
     <form class="filters" method="GET" action="">
       <input type="hidden" name="tab" value="relatorios">
-      <label>De <input type="date" name="de" value="<%= finDe %>" required></label>
-      <label>Até <input type="date" name="ate" value="<%= finAte %>" required></label>
+<label>De
+  <input type="date" lang="pt-BR" name="de"  value="<%= finDe %>" required>
+</label>
+<label>Até
+  <input type="date" lang="pt-BR" name="ate" value="<%= finAte %>" required>
+</label>
+
       <input type="hidden" name="tab" value="relatorios">
       <button class="btn-ghost" type="submit">Aplicar</button>
     </form>
 
     <div class="toolbar-actions" style="margin-left:auto;">
-    <a class="btn-primary"
-      href="/api/minha-loja/financeiro/export.csv?<%= new URLSearchParams({ de:finDe, ate:finAte, tab:'relatorios' }).toString() %>">
-      Exportar CSV
-    </a>
+
     </div>
   </div>
 
@@ -521,77 +534,7 @@
       }
     });
   </script>
-  <script>
-(function(){
-  const $sel   = document.getElementById('selAnaliseVendas');
-  const $tbl   = document.getElementById('tblAnaliseBody');
-  const $sum   = document.getElementById('analiseResumo');
-  const ctx    = document.getElementById('vendasRosca');
-  const btnTab = document.querySelector('.tabs .tab[data-target="tab-vendas"]');
 
-  // pega período atual (reutiliza finDe/finAte, que já vêm do servidor)
-  const de  = '<%= finDe %>';
-  const ate = '<%= finAte %>';
-
-  let chart = null;
-
-  async function carregar(){
-    const group = $sel.value;
-    const url = `/api/minha-loja/vendas/analise?group=${encodeURIComponent(group)}&de=${encodeURIComponent(de)}&ate=${encodeURIComponent(ate)}`;
-    const r = await fetch(url);
-    const j = await r.json();
-
-    const labels = (j.series||[]).map(s => s.label);
-    const valores = (j.series||[]).map(s => s.gmv); // mantém estrutura do backend
-    const pcts = (j.series||[]).map(s => s.pct);
-
-    // resumo
-    const fmt = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-    $sum.textContent = `Valor Total de Vendas no período: ${fmt(j.total_gmv)} | Pedidos: ${j.total_pedidos}`;
-
-    // tabela lateral
-    $tbl.innerHTML = (j.series||[]).map(s => `
-      <tr>
-        <td>${s.label}</td>
-        <td>${fmt(s.gmv)}</td>
-        <td>${(s.pct||0).toFixed(2)}%</td>
-      </tr>
-    `).join('') || `<tr><td colspan="3">Sem dados para o período.</td></tr>`;
-
-    // gráfico
-    if (ctx && window.Chart) {
-      if (chart) chart.destroy();
-      chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels, datasets: [{ data: valores }] },
-        options: {
-          responsive: true,
-          cutout: '55%',
-          plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 14 } },
-            tooltip: {
-              callbacks: {
-                label: (c) => `${c.label}: ${fmt(c.parsed)} (${(pcts[c.dataIndex]||0).toFixed(2)}%)`
-              }
-            }
-          }
-        }
-      });
-    }
-  }
-
-  // troca de análise
-  $sel?.addEventListener('change', carregar);
-
-  // quando a aba "Minhas Vendas" abrir, carrega
-  btnTab?.addEventListener('click', carregar);
-
-  // se a aba já vier ativa ao carregar a página
-  if (document.getElementById('tab-vendas')?.classList.contains('active')) {
-    carregar();
-  }
-})();
-</script>
 <script>
   // ativa a aba de acordo com ?tab=<alvo>
   (function(){
@@ -612,6 +555,121 @@
     });
   })();
 </script>
+<script>
+(function(){
+  const $sel   = document.getElementById('selAnaliseVendas');
+  const $tbl   = document.getElementById('tblAnaliseBody');
+  const $sum   = document.getElementById('analiseResumo');
+  const ctx    = document.getElementById('vendasRosca');
+  const btnTabVendas = document.querySelector('.tabs .tab[data-target="tab-vendas"]');
+
+  // NOVO: inputs do form do gráfico
+  const $form = document.getElementById('filtroAnaliseVendas');
+  const $de   = $form?.querySelector('input[name="de"]');
+  const $ate  = $form?.querySelector('input[name="ate"]');
+
+  const finDe  = '<%= finDe %>';
+  const finAte = '<%= finAte %>';
+
+  const isYmd = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v||''));
+  const fmtBRL = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+  let chart = null;
+
+  // NOVO: função para ativar a aba "Minhas Vendas"
+  function goToVendasTab(){
+    if (!document.getElementById('tab-vendas')?.classList.contains('active')) {
+      btnTabVendas?.click();
+    }
+  }
+
+  function getPeriodo(){
+    const de  = ($de?.value || '').trim();
+    const ate = ($ate?.value || '').trim();
+    return {
+      de:  isYmd(de)  ? de  : finDe,
+      ate: isYmd(ate) ? ate : finAte
+    };
+  }
+
+  function persistPeriodoInURL(de, ate){
+    try {
+      const url = new URL(location.href);
+      url.searchParams.set('tab', 'vendas');         // <-- sempre vendas
+      if (isYmd(de))  url.searchParams.set('de',  de);  else url.searchParams.delete('de');
+      if (isYmd(ate)) url.searchParams.set('ate', ate); else url.searchParams.delete('ate');
+      history.replaceState(null, '', url);
+    } catch(e){}
+  }
+
+  async function carregar(){
+    // sempre garante que a aba correta está ativa
+    goToVendasTab();
+
+    const group = $sel?.value || 'marca';
+    const { de, ate } = getPeriodo();
+
+    persistPeriodoInURL(de, ate);
+
+    const url = `/api/minha-loja/vendas/analise?group=${encodeURIComponent(group)}&de=${encodeURIComponent(de)}&ate=${encodeURIComponent(ate)}`;
+    const r = await fetch(url);
+    const j = await r.json();
+
+    const labels  = (j.series||[]).map(s => s.label);
+    const valores = (j.series||[]).map(s => s.gmv);
+    const pcts    = (j.series||[]).map(s => s.pct);
+
+    $sum.textContent = `Valor Total de Vendas no período: ${fmtBRL(j.total_gmv)}`;
+
+    $tbl.innerHTML = (j.series||[]).map(s => `
+      <tr>
+        <td>${s.label}</td>
+        <td>${fmtBRL(s.gmv)}</td>
+        <td>${(s.pct||0).toFixed(2)}%</td>
+      </tr>
+    `).join('') || `<tr><td colspan="3">Sem dados para o período.</td></tr>`;
+
+    if (ctx && window.Chart) {
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: valores }] },
+        options: {
+          responsive: true,
+          cutout: '55%',
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 14 } },
+            tooltip: {
+              callbacks: {
+                label: (c) => `${c.label}: ${fmtBRL(c.parsed)} (${(pcts[c.dataIndex]||0).toFixed(2)}%)`
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // eventos
+  $sel?.addEventListener('change', carregar);
+
+  // Ao aplicar no form do gráfico: ativa a aba e recarrega dados sem refresh
+  $form?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    goToVendasTab();
+    carregar();
+  });
+
+  // quando a aba "Minhas Vendas" abrir, carrega
+  btnTabVendas?.addEventListener('click', carregar);
+
+  // se a aba já vier ativa ao carregar a página
+  if (document.getElementById('tab-vendas')?.classList.contains('active')) {
+    carregar();
+  }
+})();
+</script>
+
 
 </body>
 </html>

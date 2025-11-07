@@ -1,3 +1,6 @@
+// ===========================
+//  Inicialização e imports
+// ===========================
 require('dotenv').config();
 
 const express = require('express');
@@ -8,16 +11,25 @@ const http = require('http');
 const { Server } = require('socket.io');
 const supabaseDb = require('./supabase/supabaseDb');
 
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// ---------- Middlewares globais ----------
+// ===========================
+//  Webhook do Mercado Pago
+// ===========================
+// ⚠️ Este middleware deve vir ANTES do bodyParser.
+// Garante que o corpo do webhook chegue cru (Buffer),
+// para validações e parsing corretos no controller.
+app.use('/api/checkout/webhook', express.raw({ type: '*/*' }));
+
+// ===========================
+//  Middlewares globais
+// ===========================
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// usamos UMA instância de session p/ compartilhar com o Socket.io
+// Sessão compartilhada com o Socket.io
 const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -25,22 +37,24 @@ const sessionMiddleware = session({
   cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 dia
 });
 app.use(sessionMiddleware);
-
-// Compartilha a sessão do Express com o Socket.io
 io.engine.use(sessionMiddleware);
 
-// Deixa o usuário disponível em todas as views
+// Usuário disponível globalmente nas views EJS
 app.use((req, res, next) => {
   res.locals.usuario = req.session.usuario || null;
   next();
 });
 
-// ---------- EJS e estáticos ----------
+// ===========================
+//  EJS e arquivos estáticos
+// ===========================
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---------- Rotas ----------
+// ===========================
+//  Rotas principais
+// ===========================
 app.use('/', require('./routes/index'));
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/produtos'));
@@ -55,14 +69,19 @@ app.use('/', require('./routes/avaliacoes'));
 app.use('/', require('./routes/financeiro'));
 app.use('/', require('./routes/ofertas'));
 
+// ===========================
+//  Rotas do Mercado Pago
+// ===========================
+//  Inclui: /create-preference, /webhook, /sucesso, /pendente, /erro
+app.use('/api/checkout', require('./routes/mercadopago'));
 
-
-// ---------- Socket.io ----------
+// ===========================
+//  Socket.io
+// ===========================
 io.on('connection', (socket) => {
   const usuarioAtual = socket.request?.session?.usuario?.id;
 
   if (!usuarioAtual) {
-    // sem sessão válida? não deixa enviar/entrar em salas
     console.log('Socket sem sessão válida — desconectando.');
     socket.disconnect(true);
     return;
@@ -70,19 +89,15 @@ io.on('connection', (socket) => {
 
   console.log(`Socket conectado: user=${usuarioAtual}`);
 
-  // Entrar na sala do CHAT (usa o chat_id como nome da sala)
   socket.on('joinRoom', (chatId) => {
     if (!chatId) return;
     socket.join(chatId);
-    // opcional: console.log(`user=${usuarioAtual} entrou na sala ${chatId}`);
   });
 
-  // Enviar mensagem (tempo real + persistência)
   socket.on('send_message', async ({ chatId, mensagem }) => {
     try {
       if (!chatId || !mensagem || !mensagem.trim()) return;
 
-      // Salva no Supabase conforme nova estrutura
       const { data, error } = await supabaseDb
         .from('mensagens')
         .insert([{
@@ -98,7 +113,6 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Emite para todos da sala (incluindo quem enviou)
       io.to(chatId).emit('mensagemRecebida', data);
     } catch (err) {
       console.error('Erro inesperado ao salvar/enviar mensagem:', err);
@@ -106,12 +120,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    // opcional: console.log(`Socket user=${usuarioAtual} desconectou`);
+    // console.log(`Socket user=${usuarioAtual} desconectou`);
   });
 });
 
-// ---------- Inicializa o servidor ----------
+// ===========================
+//  Inicializa o servidor
+// ===========================
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+  console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
 });

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento pendente ⏳</title>
+  <link rel="stylesheet" href="/css/checkout.css">
+  <style>
+    main { text-align:center; margin:80px auto; max-width:600px; }
+    h1 { color:#f57f17; font-size:2rem; margin-bottom:20px; }
+    p  { color:#444; margin-bottom:30px; }
+    a.btn-voltar {
+      display:inline-block; padding:10px 20px; border-radius:8px;
+      background:#f57f17; color:#fff; text-decoration:none; font-weight:600;
+      transition:.2s;
+    }
+    a.btn-voltar:hover { background:#e65100; }
+  </style>
+</head>
+<body>
+  <%- include('partials/navbar.ejs') %>
+
+  <main>
+    <h1>⏳ Pagamento pendente</h1>
+    <p>Seu pagamento ainda não foi confirmado. Assim que o Mercado Pago confirmar, atualizaremos o status do seu pedido.</p>
+    <a href="/meus-pedidos" class="btn-voltar">Voltar para meus pedidos</a>
+  </main>
+
+  <%- include('partials/footer.ejs') %>
+</body>
+</html>
