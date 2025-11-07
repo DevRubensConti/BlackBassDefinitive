@@ -68,12 +68,8 @@ app.use('/', require('./routes/descricao'));
 app.use('/', require('./routes/avaliacoes'));
 app.use('/', require('./routes/financeiro'));
 app.use('/', require('./routes/ofertas'));
-
-// ===========================
-//  Rotas do Mercado Pago
-// ===========================
-//  Inclui: /create-preference, /webhook, /sucesso, /pendente, /erro
 app.use('/api/checkout', require('./routes/mercadopago'));
+
 
 // ===========================
 //  Socket.io

@@ -73,6 +73,9 @@
          <% const esgotado = Number(item.quantidade || 0) <= 0; %>
          <% const proprioItem = !!(usuario && String(usuario.id) === String(item.usuario_id)); %>
 <div class="buttons">
+  <form action="/api/checkout/create-preference" method="POST">
+  <button type="submit">Pagar com Mercado Pago 💳</button>
+</form>
   <% if (proprioItem) { %>
     <div class="action-row">
       <div class="meu-anuncio-alert">Este anúncio é seu.</div>
