@@ -85,6 +85,18 @@ function getClientIp(req) {
   return req.socket?.remoteAddress || req.ip || '';
 }
 
+function onlyDigits(s) {
+  return (s || '').toString().replace(/\D+/g, '');
+}
+function splitPhone(brPhone) {
+  const d = onlyDigits(brPhone);
+  // tenta DDD + número (8-9 dígitos)
+  if (d.length >= 10) {
+    return { area_code: d.slice(0,2), number: d.slice(2) };
+  }
+  return { area_code: '', number: d };
+}
+
 // ===========================
 //  Criar preferência (Checkout Pro)
 // ===========================
@@ -113,29 +125,69 @@ router.post('/create-preference', async (req, res) => {
 
     const env = getEnvFromToken(process.env.MP_ACCESS_TOKEN);
 
-    // ===== Antifraude: tentar preencher o máximo que houver na sessão =====
-    // Campos comuns de sessão que você pode ter:
-    // usr.cpf, usr.telefone, usr.endereco = { cep, rua, numero, cidade, uf, complemento }
-    const cpfNum = usr?.cpf ? String(usr.cpf).replace(/\D/g, '') : undefined;
-    const phoneNum = usr?.telefone ? String(usr.telefone).replace(/\D/g, '') : undefined;
+    // ========= Buscar dados reais do comprador no Supabase =========
+    let perfil = null;
+    if (tipoUsuario === 'pf') {
+      const { data, error } = await supabaseDb
+        .from('usuarios_pf')
+        .select('nome, email, cpf, telefone, cep, endereco, numero, cidade, estado, bairro, complemento')
+        .eq('id', compradorId)
+        .maybeSingle();
+      if (error) throw new Error('Erro carregando usuarios_pf: ' + JSON.stringify(error));
+      perfil = data || {};
+    } else {
+      // PJ — opcional: você pode enviar CNPJ como identification.type='CNPJ'
+      const { data, error } = await supabaseDb
+        .from('usuarios_pj')
+        .select('nomeFantasia, email, cnpj, telefone, cep, endereco, numero, cidade, estado, bairro, complemento')
+        .eq('id', compradorId)
+        .maybeSingle();
+      if (error) throw new Error('Erro carregando usuarios_pj: ' + JSON.stringify(error));
+      perfil = data || {};
+    }
+
+    // Monta payer com base no perfil do banco (não da sessão)
+    const nome = buyer?.name
+      || perfil?.nome
+      || perfil?.nomeFantasia
+      || usr?.nome
+      || usr?.apelido
+      || 'Cliente';
+
+    const email = buyer?.email
+      || perfil?.email
+      || usr?.email
+      || 'cliente@example.com';
+
+    const tel = splitPhone(perfil?.telefone || usr?.telefone);
+    const cep = onlyDigits(perfil?.cep);
+    const numero = perfil?.numero != null ? String(perfil.numero) : undefined;
 
     const payer = {
-      name: buyer?.name || usr?.nome || usr?.apelido || 'Cliente',
-      email: buyer?.email || usr?.email || 'cliente@example.com',
-      identification: cpfNum ? { type: 'CPF', number: cpfNum } : undefined,
-      phone: phoneNum ? { area_code: '', number: phoneNum } : undefined,
-      address: usr?.endereco ? {
-        zip_code: usr.endereco.cep ? String(usr.endereco.cep).replace(/\D/g, '') : undefined,
-        street_name: usr.endereco.rua,
-        street_number: usr.endereco.numero ? String(usr.endereco.numero) : undefined,
+      name: nome,
+      email,
+      identification: (() => {
+        if (tipoUsuario === 'pf' && perfil?.cpf) {
+          return { type: 'CPF', number: onlyDigits(perfil.cpf) };
+        }
+        if (tipoUsuario === 'pj' && perfil?.cnpj) {
+          return { type: 'CNPJ', number: onlyDigits(perfil.cnpj) };
+        }
+        return undefined; // o MP coleta no checkout se faltar
+      })(),
+      phone: tel.number ? { area_code: tel.area_code, number: tel.number } : undefined,
+      address: (cep || perfil?.endereco) ? {
+        zip_code: cep || undefined,
+        street_name: perfil?.endereco || undefined,
+        street_number: numero,
       } : undefined
     };
 
+    // additional_info p/ antifraude
     const additional_info = {
       ip_address: getClientIp(req),
       payer: {
         first_name: payer.name,
-        registration_date: usr?.created_at || undefined,
         phone: payer.phone,
         address: payer.address
       },
@@ -145,32 +197,26 @@ router.post('/create-preference', async (req, res) => {
         quantity: it.quantity,
         unit_price: it.unit_price
       })),
-      shipments: usr?.endereco ? {
+      shipments: (cep || perfil?.endereco) ? {
         receiver_address: {
           zip_code: payer.address?.zip_code,
           street_name: payer.address?.street_name,
           street_number: payer.address?.street_number,
-          city_name: usr.endereco.cidade,
-          state_name: usr.endereco.uf,
-          floor: null,
-          apartment: null
+          city_name: perfil?.cidade || undefined,
+          state_name: perfil?.estado || undefined,
+          apartment: perfil?.complemento || undefined
         }
       } : undefined
     };
 
-    // Oferecer PIX e limitar parcelas (ajuda em risco)
+    // === PIX disponível sem forçar (remove default_payment_method_id)
     const payment_methods = {
-      // Você pode excluir métodos se quiser:
-      // excluded_payment_types: [{ id: 'ticket' }],
-      // Priorizar PIX (opcional):
-      default_payment_method_id: 'pix',
+      excluded_payment_types: [],
+      excluded_payment_methods: [],
       installments: 1
     };
 
-    // Cliente Preference
     const preference = new Preference(mpClient);
-
-    // Referência única p/ rastrear esta intenção (idempotência/relatos)
     const externalRef = `chk_${compradorId}_${Date.now()}`;
 
     const body = {
@@ -184,23 +230,19 @@ router.post('/create-preference', async (req, res) => {
       notification_url: 'https://blackbass-marketplace.onrender.com/api/checkout/webhook',
       statement_descriptor: 'BLACKBASS',
       payer,
-
-      // antifraude
       additional_info,
       payment_methods,
-      // binary_mode: true, // opcional: só approved ou rejected (sem in_process)
-
       external_reference: externalRef,
       metadata: {
         buyer_email: payer.email,
         mp_env: env,
-        comprador_id: compradorId,   // usado pelo webhook
-        tipo_usuario: tipoUsuario,   // 'pf' | 'pj'
+        comprador_id: compradorId,
+        tipo_usuario: tipoUsuario,
         debug_ts: new Date().toISOString()
       }
     };
 
-    // Log de entrada
+    // Log
     console.log('[MP][CREATE_PREF] IN', {
       env,
       tokenPrefix: String(process.env.MP_ACCESS_TOKEN || '').slice(0, 10) + '…',
@@ -214,28 +256,23 @@ router.post('/create-preference', async (req, res) => {
 
     const result = await preference.create({ body });
 
-    // Log de saída
     const usedUrl = result.init_point || result.sandbox_init_point;
     console.log('[MP][CREATE_PREF] OUT', {
       id: result.id,
-      usedUrl, // qual link será usado
+      usedUrl,
       init_point: result.init_point,
       sandbox_init_point: result.sandbox_init_point,
       date_created: result.date_created,
-      live_mode: result.live_mode // true=produção, false=sandbox (pode vir undefined)
+      live_mode: result.live_mode
     });
 
-    const initPoint = usedUrl;
-    if (!initPoint) {
+    if (!usedUrl) {
       console.error('[MP][CREATE_PREF] Sem init_point:', result);
       return res.status(500).json({ error: 'Sem init_point retornado pelo MP.' });
     }
 
-    if (debug) {
-      return res.json({ init_point: initPoint, result, request_body: body });
-    }
-
-    return res.json({ init_point: initPoint });
+    if (debug) return res.json({ init_point: usedUrl, result, request_body: body });
+    return res.json({ init_point: usedUrl });
 
   } catch (error) {
     console.error('[MP][CREATE_PREF] ERROR', error);
