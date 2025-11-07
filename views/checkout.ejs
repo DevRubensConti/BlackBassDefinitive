@@ -94,133 +94,158 @@
 
   <%- include('partials/footer.ejs') %>
 
-  <script>
-    // ================
-    // Helper global
-    // ================
-    const buyer = <%- JSON.stringify({
-      name: (usuario && (usuario.nome || usuario.apelido)) || 'Cliente',
-      email: (usuario && usuario.email) || 'teste@example.com'
-    }) %>;
+<script>
+  // =========================
+  // Helpers / buyer
+  // =========================
+  const usuario = typeof window !== 'undefined' ? null : null; // só para não quebrar minificadores
+  const buyer = <%- JSON.stringify({
+    name: (typeof usuario !== 'undefined' && usuario && (usuario.nome || usuario.apelido)) ? (usuario.nome || usuario.apelido) : (res.locals.usuario?.nome || res.locals.usuario?.apelido || 'Cliente'),
+    email: (typeof usuario !== 'undefined' && usuario && usuario.email) ? usuario.email : (res.locals.usuario?.email || 'teste@example.com')
+  }) %>;
 
-    const BRL = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const BRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    // ================
-    // Soma total
-    // ================
-    function recalculaTotalGeral() {
-      const list = document.getElementById('checkout-list');
-      let total = 0;
-      if (!list) return;
+  function atualizaSubtotalDoItem(itemNode) {
+    const preco = Number(itemNode.dataset.preco || 0);
+    const qtd = Number(itemNode.querySelector('.qtd')?.textContent || 0);
+    const subtotalNode = itemNode.querySelector('.subtotal');
+    if (subtotalNode) subtotalNode.textContent = BRL(preco * qtd);
+  }
 
-      list.querySelectorAll('.checkout-item').forEach(node => {
-        const preco = Number(node.dataset.preco || 0);
-        const qtd = Number(node.querySelector('.qtd')?.textContent || 0);
-        total += preco * qtd;
-      });
+  function marcarCarrinhoVazioSePrecisar() {
+    const list = document.getElementById('checkout-list');
+    const pagarBtn = document.getElementById('btnPagarMP');
+    if (!list) return;
 
-      const totalNode = document.getElementById('total-geral');
-      if (totalNode) totalNode.textContent = BRL(total);
-    }
-
-    // ================
-    // Gera itens para o backend
-    // ================
-    function coletarItensDoDOM() {
-      const list = document.getElementById('checkout-list');
-      const itens = [];
-      if (!list) return itens;
-
-      list.querySelectorAll('.checkout-item').forEach(node => {
-        const title = node.querySelector('h3')?.textContent?.trim() || 'Item';
-        const quantity = Number(node.querySelector('.qtd')?.textContent || 1);
-        const unit_price = Number(node.dataset.preco || 0);
-
-        if (quantity > 0 && unit_price >= 0) {
-          itens.push({ title, quantity, unit_price, currency_id: 'BRL' });
-        }
-      });
-      return itens;
-    }
-
-    // ================
-    // Integração Mercado Pago
-    // ================
-    async function pagarComMercadoPago() {
-      const btn = document.getElementById('btnPagarMP');
-      btn.disabled = true;
-
-      try {
-        const items = coletarItensDoDOM();
-        if (!items.length) {
-          alert('Seu carrinho está vazio.');
-          btn.disabled = false;
-          return;
-        }
-
-        const resp = await fetch('/api/checkout/create-preference', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items, buyer })
-        });
-
-        if (!resp.ok) throw new Error('Falha ao criar preferência.');
-
-        const data = await resp.json();
-        console.log('✅ Preferência criada:', data);
-
-        if (!data.init_point) throw new Error('Resposta inválida do servidor.');
-
-        // Redireciona ao checkout do Mercado Pago
-        window.location.href = data.init_point;
-
-      } catch (err) {
-        console.error('Erro ao iniciar pagamento:', err);
-        alert('Não foi possível iniciar o pagamento agora. Tente novamente.');
-      } finally {
-        btn.disabled = false;
+    const itens = list.querySelectorAll('.checkout-item').length;
+    if (itens === 0) {
+      if (pagarBtn) pagarBtn.disabled = true;
+      const container = document.querySelector('.checkout-container');
+      if (!document.querySelector('.checkout-container .empty')) {
+        const empty = document.createElement('p');
+        empty.className = 'empty';
+        empty.textContent = 'Seu carrinho está vazio.';
+        container.appendChild(empty);
       }
     }
+  }
 
-    // ================
-    // Controle de quantidade
-    // ================
-    document.querySelectorAll('.btn-qtd').forEach(btn => {
-      btn.addEventListener('click', async e => {
-        const itemNode = e.target.closest('.checkout-item');
-        if (!itemNode) return;
+  function recalculaTotalGeral() {
+    const list = document.getElementById('checkout-list');
+    if (!list) return;
 
-        const itemId = itemNode.dataset.itemId;
-        const action = e.target.dataset.action;
-        const qtdSpan = itemNode.querySelector('.qtd');
-        const qtdAtual = Number(qtdSpan.textContent);
-
-        e.target.disabled = true;
-
-        try {
-          if (action === 'minus' && qtdAtual <= 1) {
-            await fetch(`/api/carrinho/${itemId}`, { method: 'DELETE' });
-            itemNode.remove();
-          } else {
-            await fetch(`/api/carrinho/${itemId}/${action}`, { method: 'POST' });
-            const novaQtd = action === 'plus' ? qtdAtual + 1 : qtdAtual - 1;
-            qtdSpan.textContent = novaQtd;
-          }
-          recalculaTotalGeral();
-        } catch (err) {
-          console.error(err);
-          alert('Não foi possível atualizar este item agora.');
-        } finally {
-          e.target.disabled = false;
-        }
-      });
+    let total = 0;
+    list.querySelectorAll('.checkout-item').forEach(node => {
+      const preco = Number(node.dataset.preco || 0);
+      const qtd = Number(node.querySelector('.qtd')?.textContent || 0);
+      total += preco * qtd;
     });
 
-    // ================
-    // Inicializa
-    // ================
-    document.getElementById('btnPagarMP')?.addEventListener('click', pagarComMercadoPago);
-    recalculaTotalGeral();
-  </script>
+    const totalNode = document.getElementById('total-geral');
+    if (totalNode) totalNode.textContent = BRL(total);
+
+    // habilita/desabilita botão conforme houver itens
+    const pagarBtn = document.getElementById('btnPagarMP');
+    if (pagarBtn) pagarBtn.disabled = (list.querySelectorAll('.checkout-item').length === 0);
+  }
+
+  function coletarItensDoDOM() {
+    const list = document.getElementById('checkout-list');
+    const itens = [];
+    if (!list) return itens;
+
+    list.querySelectorAll('.checkout-item').forEach(node => {
+      const title = node.querySelector('h3')?.textContent?.trim() || 'Item';
+      const quantity = Number(node.querySelector('.qtd')?.textContent || 1);
+      const unit_price = Number(node.dataset.preco || 0);
+      if (quantity > 0 && unit_price >= 0) {
+        itens.push({ title, quantity, unit_price, currency_id: 'BRL' });
+      }
+    });
+    return itens;
+  }
+
+  async function pagarComMercadoPago() {
+    const btn = document.getElementById('btnPagarMP');
+    if (!btn) return;
+
+    btn.disabled = true;
+    try {
+      const items = coletarItensDoDOM();
+      if (!items.length) {
+        alert('Seu carrinho está vazio.');
+        btn.disabled = false;
+        return;
+      }
+
+      const resp = await fetch('/api/checkout/create-preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, buyer })
+      });
+
+      let data = {};
+      try { data = await resp.json(); } catch {}
+
+      console.log('🧾 Resposta /create-preference:', { ok: resp.ok, status: resp.status, data });
+
+      if (!resp.ok || !data?.init_point) {
+        alert('Erro ao criar preferência. Tente novamente.');
+        btn.disabled = false;
+        return;
+      }
+
+      // Redireciona ao checkout do Mercado Pago
+      window.location.assign(data.init_point);
+
+    } catch (err) {
+      console.error('❌ Erro no pagamento:', err);
+      alert('Não foi possível iniciar o pagamento agora. Tente novamente.');
+    } finally {
+      // se preferir manter desabilitado até o redirect concluir, remova a linha abaixo
+      btn.disabled = false;
+    }
+  }
+
+  // Listeners de +/- quantidade
+  document.querySelectorAll('.btn-qtd').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const itemNode = e.target.closest('.checkout-item');
+      if (!itemNode) return;
+
+      const itemId = itemNode.dataset.itemId;
+      const action = e.target.dataset.action;
+      const qtdSpan = itemNode.querySelector('.qtd');
+      const qtdAtual = Number(qtdSpan.textContent);
+
+      e.target.disabled = true;
+      try {
+        if (action === 'minus' && qtdAtual <= 1) {
+          const resp = await fetch(`/api/carrinho/${itemId}`, { method: 'DELETE' });
+          if (!resp.ok) throw new Error('Falha ao remover item.');
+          itemNode.remove();
+          marcarCarrinhoVazioSePrecisar();
+        } else {
+          const resp = await fetch(`/api/carrinho/${itemId}/${action}`, { method: 'POST' });
+          if (!resp.ok) throw new Error('Falha ao atualizar quantidade.');
+          const novaQtd = action === 'plus' ? (qtdAtual + 1) : (qtdAtual - 1);
+          qtdSpan.textContent = String(novaQtd);
+          atualizaSubtotalDoItem(itemNode);
+        }
+        recalculaTotalGeral();
+      } catch (err) {
+        console.error(err);
+        alert('Não foi possível atualizar este item agora.');
+      } finally {
+        e.target.disabled = false;
+      }
+    });
+  });
+
+  // Bind do botão e estado inicial
+  document.getElementById('btnPagarMP')?.addEventListener('click', pagarComMercadoPago);
+  recalculaTotalGeral();
+</script>
 </body>
 </html>
