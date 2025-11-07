@@ -179,11 +179,11 @@
         return;
       }
 
-      const resp = await fetch('/api/checkout/create-preference', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, buyer })
-      });
+    const resp = await fetch('/api/checkout/create-preference', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ items, buyer, debug: true }) // <— ATIVAR DEBUG TEMPORARIAMENTE
+});
 
       let data = {};
       try { data = await resp.json(); } catch {}

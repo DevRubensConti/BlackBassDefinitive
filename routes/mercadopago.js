@@ -20,13 +20,11 @@ function getEnvFromToken(token) {
 // Recebe { items, buyer } do checkout.ejs e devolve { init_point }
 router.post('/create-preference', async (req, res) => {
   try {
-    const { items, buyer } = req.body || {};
+    const { items, buyer, debug } = req.body || {};
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Carrinho vazio.' });
     }
 
-    // Normaliza itens vindos do front
-    // (Checkout Pro aceita currency_id por item; manteremos BRL)
     const normItems = items.map(it => ({
       title: String(it.title || 'Item'),
       quantity: Number(it.quantity || 1),
@@ -34,20 +32,10 @@ router.post('/create-preference', async (req, res) => {
       currency_id: it.currency_id || 'BRL'
     })).filter(x => x.quantity > 0 && x.unit_price >= 0);
 
-    if (!normItems.length) {
-      return res.status(400).json({ error: 'Itens inválidos.' });
-    }
-
-    // Payer básico (opcional, ajuda no preenchimento do MP)
     const payer = {
       name: (buyer && buyer.name) || 'Cliente',
       email: (buyer && buyer.email) || 'teste@example.com',
-      // Identificação opcional (útil para boleto/Pix no BR)
-      // Se quiser forçar um CPF de teste padrão:
-      identification: {
-        type: 'CPF',
-        number: process.env.MP_DEFAULT_CPF || '12345678909'
-      }
+      identification: { type: 'CPF', number: process.env.MP_DEFAULT_CPF || '12345678909' }
     };
 
     const preference = new Preference(mpClient);
@@ -65,27 +53,51 @@ router.post('/create-preference', async (req, res) => {
       statement_descriptor: 'BLACKBASS',
       metadata: {
         buyerEmail: payer.email,
-        mp_env: getEnvFromToken(process.env.MP_ACCESS_TOKEN)
+        mp_env: getEnvFromToken(process.env.MP_ACCESS_TOKEN),
+        debug_ts: new Date().toISOString()
       }
     };
 
+    // 🌶️ LOG COMPLETO DE ENTRADA
+    console.log('[MP][CREATE_PREF] IN', {
+      env: getEnvFromToken(process.env.MP_ACCESS_TOKEN),
+      tokenPrefix: String(process.env.MP_ACCESS_TOKEN || '').slice(0, 10) + '…',
+      items: normItems,
+      payer,
+      ip: req.ip,
+      ua: req.get('user-agent')
+    });
+
     const result = await preference.create({ body });
 
-    // Para SDK v2, ambos podem existir; priorize o de produção, senão sandbox
+    // 🌶️ LOG COMPLETO DE SAÍDA
+    console.log('[MP][CREATE_PREF] OUT', {
+      id: result.id,
+      init_point: result.init_point,
+      sandbox_init_point: result.sandbox_init_point,
+      date_created: result.date_created
+    });
+
     const initPoint = result.init_point || result.sandbox_init_point;
     if (!initPoint) {
-      console.error('Preferência criada sem init_point:', result);
+      console.error('[MP][CREATE_PREF] Sem init_point:', result);
       return res.status(500).json({ error: 'Sem init_point retornado pelo MP.' });
     }
 
-    // 🔙 Retorna JSON (o seu front faz window.location.assign(init_point))
+    // 👉 Se vier debug=true no body, devolve TUDO pra inspecionar no navegador
+    if (debug) {
+      return res.json({ init_point: initPoint, result, request_body: body });
+    }
+
+    // Normal: devolve só o link pro front redirecionar
     return res.json({ init_point: initPoint });
 
   } catch (error) {
-    console.error('Erro ao criar preferência:', error);
-    return res.status(500).json({ error: 'Erro ao criar preferência' });
+    console.error('[MP][CREATE_PREF] ERROR', error);
+    return res.status(500).json({ error: 'Erro ao criar preferência', details: String(error?.message || error) });
   }
 });
+
 
 // 🔔 Webhook (você já setou express.raw no app.js antes dos parsers)
 router.post('/webhook', async (req, res) => {
@@ -111,5 +123,15 @@ router.post('/webhook', async (req, res) => {
 router.get('/sucesso', (req, res) => res.render('sucesso'));
 router.get('/pendente', (req, res) => res.render('pendente'));
 router.get('/erro', (req, res) => res.render('erro'));
+
+router.get('/debug', (req, res) => {
+  const token = process.env.MP_ACCESS_TOKEN || '';
+  const mode = getEnvFromToken(token); // 'SANDBOX' | 'PRODUCAO'
+  res.json({
+    mode,
+    tokenPrefix: token.slice(0, 10) + '…',
+    now: new Date().toISOString()
+  });
+});
 
 module.exports = router;
