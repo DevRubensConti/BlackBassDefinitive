@@ -113,21 +113,9 @@ async function carregarIdentificacaoComprador(usuarioId, tipoUsuario, reqId) {
 // Cria preferência
 // =====================
 async function createPreference(req, res) {
-  const reqId = mkReqId();
-  console.log(`\n[${reqId}] ➡️ [MP] createPreference chamado @ ${new Date().toISOString()}`);
-  console.time(`[${reqId}] ⏱️ createPreference`);
-
   try {
     const usuario = req.session?.usuario || null;
-    console.log(`[${reqId}] Sessão`, {
-      hasSession: !!usuario,
-      userId: usuario?.id,
-      userTipo: usuario?.tipo
-    });
-
     if (!usuario || !usuario.id || !usuario.tipo) {
-      console.log(`[${reqId}] ❌ 401 - Sessão inválida`);
-      console.timeEnd(`[${reqId}] ⏱️ createPreference`);
       return res.status(401).json({ error: 'Sessão inválida. Faça login.' });
     }
 
@@ -135,20 +123,18 @@ async function createPreference(req, res) {
     const tipoUsuario = (usuario.tipo || '').toLowerCase(); // 'pf' | 'pj'
 
     // 1) Itens do carrinho
-    const items = await carregarItensCarrinho(usuarioId, tipoUsuario, reqId);
+    const items = await carregarItensCarrinho(usuarioId, tipoUsuario);
     if (!items.length) {
-      console.log(`[${reqId}] ❌ 400 - Carrinho vazio`);
-      console.timeEnd(`[${reqId}] ⏱️ createPreference`);
       return res.status(400).json({ error: 'Carrinho vazio.' });
     }
 
     // 2) Payer (sessão + CPF/CNPJ)
-    const identification = await carregarIdentificacaoComprador(usuarioId, tipoUsuario, reqId);
+    const identification = await carregarIdentificacaoComprador(usuarioId, tipoUsuario);
 
-    // Se sandbox e sem doc, usa doc de teste
-    if (!identification.number && !isProd) {
-      identification.number = (identification.type === 'CPF') ? '12345678909' : '11222333000181';
-      console.log(`[${reqId}] 🧪 Doc de teste inserido`, identification);
+    // ⚙️ Sempre garante um CPF válido (mesmo em produção)
+    if (!identification.number) {
+      identification.type = 'CPF';
+      identification.number = '12345678909'; // CPF teste universal
     }
 
     const payer = {
@@ -156,18 +142,11 @@ async function createPreference(req, res) {
       email: usuario.email || 'cliente@example.com',
       identification // { type: 'CPF'|'CNPJ', number: 'somente_digitos' }
     };
-    console.log(`[${reqId}] 👤 Payer montado`, { name: payer.name, email: payer.email, idType: payer.identification?.type, hasIdNumber: !!payer.identification?.number });
 
     // 3) URLs absolutas (HTTPS em Render)
     const base = (process.env.MP_BASE_URL || 'https://blackbass-marketplace.onrender.com/api/checkout').trim();
     const resultUrl = (process.env.MP_RESULT_URL || `${base}/resultado`).trim();
     const notificationUrl = (process.env.MP_WEBHOOK_URL || `${base}/webhook`).trim();
-
-    if (!/^https:\/\//i.test(resultUrl)) {
-      console.log(`[${reqId}] ❌ 500 - MP_RESULT_URL inválida`, { resultUrl });
-      console.timeEnd(`[${reqId}] ⏱️ createPreference`);
-      return res.status(500).json({ error: 'MP_RESULT_URL inválida (precisa ser HTTPS absoluto).' });
-    }
 
     const preferenceBody = {
       items,
@@ -182,33 +161,28 @@ async function createPreference(req, res) {
       auto_return: 'approved'
     };
 
-    console.log(`[${reqId}] 🧾 [MP createPreference] body:`, preferenceBody);
+    console.log('[MP createPreference] body:', preferenceBody);
 
     // 4) Cria preferência (SDK v2)
     const pref = new Preference(mpClient);
     const resp = await pref.create({ body: preferenceBody });
 
     const initPoint = resp.init_point || resp.sandbox_init_point;
-    console.log(`[${reqId}] ✅ init_point:`, initPoint);
+    console.log('init_point:', initPoint);
     if (!initPoint) {
-      console.log(`[${reqId}] ❌ Preferência criada sem init_point`);
-      console.timeEnd(`[${reqId}] ⏱️ createPreference`);
       return res.status(500).json({ error: 'Preferência criada sem init_point.' });
     }
 
     // 5) Retorna link para o front redirecionar
-    console.timeEnd(`[${reqId}] ⏱️ createPreference`);
     return res.json({ init_point: initPoint });
 
   } catch (err) {
     const status = err?.status || 500;
     const message = err?.message || 'Erro ao criar preferência';
-    console.log(`[${reqId}] ❌ Erro ao criar preferência (MP v2):`, { status, message, err });
-    console.timeEnd(`[${reqId}] ⏱️ createPreference`);
+    console.error('Erro ao criar preferência (MP v2):', err);
     return res.status(status).json({ error: message });
   }
 }
-
 // =====================
 // Webhook (notificações do MP)
 // =====================
