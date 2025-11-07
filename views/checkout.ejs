@@ -98,7 +98,7 @@
   // =========================
   // Helpers / buyer
   // =========================
-  const usuario = typeof window !== 'undefined' ? null : null; // só para não quebrar minificadores
+  const usuario = typeof window !== 'undefined' ? null : null; // apenas placeholder
   const buyer = <%- JSON.stringify({
     name: (typeof usuario !== 'undefined' && usuario && (usuario.nome || usuario.apelido)) ? (usuario.nome || usuario.apelido) : (res.locals.usuario?.nome || res.locals.usuario?.apelido || 'Cliente'),
     email: (typeof usuario !== 'undefined' && usuario && usuario.email) ? usuario.email : (res.locals.usuario?.email || 'teste@example.com')
@@ -145,7 +145,6 @@
     const totalNode = document.getElementById('total-geral');
     if (totalNode) totalNode.textContent = BRL(total);
 
-    // habilita/desabilita botão conforme houver itens
     const pagarBtn = document.getElementById('btnPagarMP');
     if (pagarBtn) pagarBtn.disabled = (list.querySelectorAll('.checkout-item').length === 0);
   }
@@ -179,11 +178,12 @@
         return;
       }
 
-    const resp = await fetch('/api/checkout/create-preference', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ items, buyer, debug: true }) // <— ATIVAR DEBUG TEMPORARIAMENTE
-});
+      const resp = await fetch('/api/checkout/create-preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Envia apenas items + buyer; CPF será coletado pelo MP
+        body: JSON.stringify({ items, buyer /*, debug: true */ })
+      });
 
       let data = {};
       try { data = await resp.json(); } catch {}
@@ -191,7 +191,7 @@
       console.log('🧾 Resposta /create-preference:', { ok: resp.ok, status: resp.status, data });
 
       if (!resp.ok || !data?.init_point) {
-        alert('Erro ao criar preferência. Tente novamente.');
+        alert(data?.error || 'Erro ao criar preferência. Tente novamente.');
         btn.disabled = false;
         return;
       }
@@ -203,7 +203,6 @@
       console.error('❌ Erro no pagamento:', err);
       alert('Não foi possível iniciar o pagamento agora. Tente novamente.');
     } finally {
-      // se preferir manter desabilitado até o redirect concluir, remova a linha abaixo
       btn.disabled = false;
     }
   }

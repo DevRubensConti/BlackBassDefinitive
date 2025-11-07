@@ -17,7 +17,7 @@ function getEnvFromToken(token) {
 }
 
 // 🔹 POST /api/checkout/create-preference
-// Recebe { items, buyer } do checkout.ejs e devolve { init_point }
+// Recebe { items, buyer, debug? } do checkout.ejs e devolve { init_point }
 router.post('/create-preference', async (req, res) => {
   try {
     const { items, buyer, debug } = req.body || {};
@@ -32,10 +32,14 @@ router.post('/create-preference', async (req, res) => {
       currency_id: it.currency_id || 'BRL'
     })).filter(x => x.quantity > 0 && x.unit_price >= 0);
 
+    const env = getEnvFromToken(process.env.MP_ACCESS_TOKEN);
+
+    // ⚠️ Em produção, deixe o MP coletar o CPF no próprio checkout.
+    // Envie apenas nome/email para pré-preencher.
     const payer = {
       name: (buyer && buyer.name) || 'Cliente',
-      email: (buyer && buyer.email) || 'teste@example.com',
-      identification: { type: 'CPF', number: process.env.MP_DEFAULT_CPF || '12345678909' }
+      email: (buyer && buyer.email) || 'cliente@example.com'
+      // NÃO enviar identification aqui (CPF será coletado pelo MP no Checkout Pro)
     };
 
     const preference = new Preference(mpClient);
@@ -49,18 +53,18 @@ router.post('/create-preference', async (req, res) => {
       },
       auto_return: 'approved',
       notification_url: 'https://blackbass-marketplace.onrender.com/api/checkout/webhook',
-      payer,
       statement_descriptor: 'BLACKBASS',
+      payer,
       metadata: {
         buyerEmail: payer.email,
-        mp_env: getEnvFromToken(process.env.MP_ACCESS_TOKEN),
+        mp_env: env,
         debug_ts: new Date().toISOString()
       }
     };
 
     // 🌶️ LOG COMPLETO DE ENTRADA
     console.log('[MP][CREATE_PREF] IN', {
-      env: getEnvFromToken(process.env.MP_ACCESS_TOKEN),
+      env,
       tokenPrefix: String(process.env.MP_ACCESS_TOKEN || '').slice(0, 10) + '…',
       items: normItems,
       payer,
@@ -75,7 +79,8 @@ router.post('/create-preference', async (req, res) => {
       id: result.id,
       init_point: result.init_point,
       sandbox_init_point: result.sandbox_init_point,
-      date_created: result.date_created
+      date_created: result.date_created,
+      live_mode: result.live_mode // true=produção, false=sandbox
     });
 
     const initPoint = result.init_point || result.sandbox_init_point;
@@ -124,6 +129,7 @@ router.get('/sucesso', (req, res) => res.render('sucesso'));
 router.get('/pendente', (req, res) => res.render('pendente'));
 router.get('/erro', (req, res) => res.render('erro'));
 
+// 🔎 Rota de debug do ambiente/token
 router.get('/debug', (req, res) => {
   const token = process.env.MP_ACCESS_TOKEN || '';
   const mode = getEnvFromToken(token); // 'SANDBOX' | 'PRODUCAO'
