@@ -79,6 +79,12 @@ function gerarCodigoPedido(lojaId) {
   return `L${lojaPrefix}-${y}${m}${day}-${rand}`;
 }
 
+function getClientIp(req) {
+  const xf = req.headers['x-forwarded-for'];
+  if (typeof xf === 'string' && xf.length) return xf.split(',')[0].trim();
+  return req.socket?.remoteAddress || req.ip || '';
+}
+
 // ===========================
 //  Criar preferência (Checkout Pro)
 // ===========================
@@ -90,8 +96,9 @@ router.post('/create-preference', async (req, res) => {
     }
 
     // Sessão do comprador
-    const compradorId = req.session?.usuario?.id;
-    const tipoUsuario = (req.session?.usuario?.tipo || '').toLowerCase(); // 'pf' | 'pj'
+    const usr = req.session?.usuario || {};
+    const compradorId = usr?.id;
+    const tipoUsuario = (usr?.tipo || '').toLowerCase(); // 'pf' | 'pj'
     if (!compradorId || !tipoUsuario) {
       return res.status(401).json({ error: 'Sessão expirada: faça login novamente.' });
     }
@@ -106,10 +113,58 @@ router.post('/create-preference', async (req, res) => {
 
     const env = getEnvFromToken(process.env.MP_ACCESS_TOKEN);
 
-    // MP coleta CPF no checkout — enviamos só nome/email
+    // ===== Antifraude: tentar preencher o máximo que houver na sessão =====
+    // Campos comuns de sessão que você pode ter:
+    // usr.cpf, usr.telefone, usr.endereco = { cep, rua, numero, cidade, uf, complemento }
+    const cpfNum = usr?.cpf ? String(usr.cpf).replace(/\D/g, '') : undefined;
+    const phoneNum = usr?.telefone ? String(usr.telefone).replace(/\D/g, '') : undefined;
+
     const payer = {
-      name: (buyer && buyer.name) || 'Cliente',
-      email: (buyer && buyer.email) || 'cliente@example.com'
+      name: buyer?.name || usr?.nome || usr?.apelido || 'Cliente',
+      email: buyer?.email || usr?.email || 'cliente@example.com',
+      identification: cpfNum ? { type: 'CPF', number: cpfNum } : undefined,
+      phone: phoneNum ? { area_code: '', number: phoneNum } : undefined,
+      address: usr?.endereco ? {
+        zip_code: usr.endereco.cep ? String(usr.endereco.cep).replace(/\D/g, '') : undefined,
+        street_name: usr.endereco.rua,
+        street_number: usr.endereco.numero ? String(usr.endereco.numero) : undefined,
+      } : undefined
+    };
+
+    const additional_info = {
+      ip_address: getClientIp(req),
+      payer: {
+        first_name: payer.name,
+        registration_date: usr?.created_at || undefined,
+        phone: payer.phone,
+        address: payer.address
+      },
+      items: normItems.map((it, idx) => ({
+        id: String(idx + 1),
+        title: it.title,
+        quantity: it.quantity,
+        unit_price: it.unit_price
+      })),
+      shipments: usr?.endereco ? {
+        receiver_address: {
+          zip_code: payer.address?.zip_code,
+          street_name: payer.address?.street_name,
+          street_number: payer.address?.street_number,
+          city_name: usr.endereco.cidade,
+          state_name: usr.endereco.uf,
+          floor: null,
+          apartment: null
+        }
+      } : undefined
+    };
+
+    // Oferecer PIX e limitar parcelas (ajuda em risco)
+    const payment_methods = {
+      // Você pode excluir métodos se quiser:
+      // excluded_payment_types: [{ id: 'ticket' }],
+      // Priorizar PIX (opcional):
+      default_payment_method_id: 'pix',
+      installments: 1
     };
 
     // Cliente Preference
@@ -130,9 +185,14 @@ router.post('/create-preference', async (req, res) => {
       statement_descriptor: 'BLACKBASS',
       payer,
 
+      // antifraude
+      additional_info,
+      payment_methods,
+      // binary_mode: true, // opcional: só approved ou rejected (sem in_process)
+
       external_reference: externalRef,
       metadata: {
-        buyerEmail: payer.email,
+        buyer_email: payer.email,
         mp_env: env,
         comprador_id: compradorId,   // usado pelo webhook
         tipo_usuario: tipoUsuario,   // 'pf' | 'pj'
@@ -148,7 +208,7 @@ router.post('/create-preference', async (req, res) => {
       tipoUsuario,
       items: normItems,
       payer,
-      ip: req.ip,
+      ip: getClientIp(req),
       ua: req.get('user-agent')
     });
 
