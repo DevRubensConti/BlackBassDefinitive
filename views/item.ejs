@@ -76,9 +76,9 @@
          <% const esgotado = Number(item.quantidade || 0) <= 0; %>
          <% const proprioItem = !!(usuario && String(usuario.id) === String(item.usuario_id)); %>
 <div class="buttons">
-  <form action="/api/checkout/create-preference" method="POST">
+     <!-- <form action="/api/checkout/create-preference" method="POST">
   <button type="submit">Pagar com Mercado Pago 💳</button>
-</form>
+</form>-->
   <% if (proprioItem) { %>
     <div class="action-row">
       <div class="meu-anuncio-alert">Este anúncio é seu.</div>
@@ -489,7 +489,139 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 })();
 </script>
+<script>
+(function () {
+  const mainImage = document.querySelector('.item-img');
+  const pageThumbs = Array.from(document.querySelectorAll('.thumbnail-list img'));
+  if (!mainImage || pageThumbs.length === 0) return;
 
+  // pega as URLs a partir das thumbs já renderizadas
+  const urls = pageThumbs.map(img => img.src);
+  let currentIndex = 0;
+
+  // mantém currentIndex sincronizado com a imagem principal
+  const syncIndexFromMain = () => {
+    const src = mainImage.currentSrc || mainImage.src;
+    const i = urls.findIndex(u => u === src);
+    if (i >= 0) currentIndex = i;
+  };
+  syncIndexFromMain();
+
+  // cria DOM do popup
+  function buildPopup() {
+    const overlay = document.createElement('div');
+    overlay.className = 'bb-img-popover';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'bb-img-popover__close';
+    closeBtn.setAttribute('aria-label', 'Fechar');
+    closeBtn.textContent = '×';
+
+    const gallery = document.createElement('div');
+    gallery.className = 'bb-pop-gallery';
+
+    const main = document.createElement('div');
+    main.className = 'bb-pop-main';
+
+    const img = document.createElement('img');
+    img.className = 'bb-pop-img';
+    img.alt = mainImage.alt || 'Pré-visualização';
+
+    const left = document.createElement('button');
+    left.className = 'bb-pop-arrow left';
+    left.setAttribute('aria-label', 'Imagem anterior');
+    left.textContent = '❮';
+
+    const right = document.createElement('button');
+    right.className = 'bb-pop-arrow right';
+    right.setAttribute('aria-label', 'Próxima imagem');
+    right.textContent = '❯';
+
+    const thumbs = document.createElement('div');
+    thumbs.className = 'bb-pop-thumbs';
+
+    // monta thumbs do popup
+    urls.forEach((u, idx) => {
+      const t = document.createElement('img');
+      t.src = u;
+      t.alt = 'Miniatura ' + (idx + 1);
+      t.addEventListener('click', () => updateImage(idx));
+      thumbs.appendChild(t);
+    });
+
+    // eventos globais de fechamento
+    const close = () => {
+      overlay.classList.remove('is-open');
+      document.body.classList.remove('bb-no-scroll');
+      setTimeout(() => overlay.remove(), 180);
+      document.removeEventListener('keydown', onKey);
+    };
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (ev) => {
+      if (ev.target === overlay) close();
+    });
+
+    const onKey = (ev) => {
+      if (ev.key === 'Escape') return close();
+      if (ev.key === 'ArrowLeft') return updateImage(currentIndex - 1);
+      if (ev.key === 'ArrowRight') return updateImage(currentIndex + 1);
+    };
+
+    // navegação setas
+    left.addEventListener('click', () => updateImage(currentIndex - 1));
+    right.addEventListener('click', () => updateImage(currentIndex + 1));
+
+    // injeta na página
+    main.appendChild(img);
+    main.appendChild(left);
+    main.appendChild(right);
+    gallery.appendChild(closeBtn);
+    gallery.appendChild(main);
+    gallery.appendChild(thumbs);
+    overlay.appendChild(gallery);
+    document.body.appendChild(overlay);
+
+    // abre
+    requestAnimationFrame(() => {
+      document.body.classList.add('bb-no-scroll');
+      overlay.classList.add('is-open');
+      document.addEventListener('keydown', onKey, { passive: true });
+      updateImage(currentIndex, { skipAnim: true });
+    });
+
+    function updateImage(index, opts = {}) {
+      if (index < 0) index = urls.length - 1;
+      if (index >= urls.length) index = 0;
+      currentIndex = index;
+
+      if (!opts.skipAnim) {
+        img.classList.add('is-changing');
+        setTimeout(() => img.classList.remove('is-changing'), 120);
+      }
+
+      img.src = urls[index];
+
+      // ativa thumb correspondente
+      Array.from(thumbs.children).forEach((node, i) => {
+        node.classList.toggle('active', i === index);
+      });
+    }
+  }
+
+  // abre popup ao clicar na imagem principal
+  mainImage.addEventListener('click', () => {
+    syncIndexFromMain();
+    buildPopup();
+  });
+
+  // se você troca a imagem principal por thumbs/setas na página, opcionalmente sincronize:
+  pageThumbs.forEach((t, i) => {
+    t.addEventListener('click', () => { currentIndex = i; });
+  });
+})();
+</script>
 
 </body>
 </html>

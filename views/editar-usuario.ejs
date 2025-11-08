@@ -11,20 +11,64 @@
   <main class="painel-container">
     <h2>Editar Perfil</h2>
 
-    <form action="/painel/editar-usuario" method="POST" class="form-usuario">
-      <label for="nome">Nome:</label>
-      <input type="text" id="nome" name="nome" value="<%= usuario.nome %>" required>
+    <form action="/painel/editar-usuario" method="POST" class="form-usuario" enctype="multipart/form-data">
+      <!-- Foto atual -->
+      <div class="linha-cheia bloco-avatar">
+        <label class="label-titulo">Foto atual</label>
+        <div class="avatar-wrap">
+          <img
+            id="avatarPreview"
+            src="<%= usuario.icone_url || '/images/chat-default.png' %>"
+            alt="Foto atual"
+            class="avatar-preview">
+          <div class="avatar-acao">
+            <label for="icone" class="btn-upload">Trocar foto</label>
+            <input type="file" id="icone" name="icone" accept="image/*" hidden>
+            <small class="hint">PNG/JPG/WebP até 5MB</small>
+          </div>
+        </div>
+      </div>
 
-      <label for="telefone">Telefone:</label>
-      <input type="text" id="telefone" name="telefone" value="<%= usuario.telefone || '' %>">
+      <!-- Mantém a URL atual caso não envie nova -->
+      <input type="hidden" name="icone_url" value="<%= usuario.icone_url || '' %>">
 
-      <div class="botoes-painel">
+      <div>
+        <label for="nome" class="label-titulo">Nome</label>
+        <input type="text" id="nome" name="nome" value="<%= usuario.nome %>" required>
+      </div>
+
+      <div>
+        <label for="telefone" class="label-titulo">Telefone</label>
+        <input type="text" id="telefone" name="telefone" value="<%= usuario.telefone || '' %>">
+      </div>
+
+      <div class="botoes-painel linha-cheia">
         <a href="/painel/usuario" class="btn-voltar-painel">← Voltar ao Painel</a>
-        <button type="submit" class="btn-filtrar">Salvar Alterações</button>
+        <button type="submit" class="btn-salvar">Salvar Alterações</button>
       </div>
     </form>
   </main>
 
   <%- include('partials/footer') %>
+
+  <script>
+    // Preview da imagem selecionada
+    const input = document.getElementById('icone');
+    const preview = document.getElementById('avatarPreview');
+
+    if (input && preview) {
+      input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          alert('Selecione um arquivo de imagem.');
+          input.value = '';
+          return;
+        }
+        const url = URL.createObjectURL(file);
+        preview.src = url;
+      });
+    }
+  </script>
 </body>
 </html>

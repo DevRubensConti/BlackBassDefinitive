@@ -3,6 +3,22 @@ const router = express.Router();
 const supabaseDb = require('../supabase/supabaseDb');
 const { requireLogin } = require('../middlewares/auth'); // ✅ CORRETO
 
+// ====== NOVO: Upload (multer) + helpers ======
+const multer = require('multer');
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
+
+// opcional: sanitize simples de nome de arquivo
+const sanitizeName = (s) => (s || '').normalize('NFKD')
+  .replace(/[^\w.\-]+/g, '_')
+  .slice(0, 80);
+
+const AVATARS_BUCKET = process.env.SUPABASE_BUCKET_AVATARS || 'imagens';
+// =============================================
+
+// Filtros de produtos (mantido)
 function aplicarFiltrosBasicosProdutos(query, filtros) {
   const { marca = '', tipo = '', preco_min = '', preco_max = '', q = '' } = filtros;
 
@@ -14,7 +30,7 @@ function aplicarFiltrosBasicosProdutos(query, filtros) {
   const max = parseFloat(preco_max);
   if (!Number.isNaN(max)) query = query.lte('preco', max);
 
-  // --- Busca textual (q) em múltiplas colunas, com suporte a várias palavras ---
+  // Busca textual (q) em várias colunas
   if (q && String(q).trim()) {
     const termos = String(q).trim().split(/\s+/).filter(Boolean);
     termos.forEach((t) => {
@@ -72,27 +88,63 @@ router.get('/painel/editar-usuario', requireLogin, async (req, res) => {
   res.render('editar-usuario', { usuario });
 });
 
-router.post('/painel/editar-usuario', requireLogin, async (req, res) => {
-  const { nome, telefone, icone_url } = req.body;
-  const usuarioId = req.session.usuario.id;
+// ====== POST com upload da foto (icone) para Supabase Storage ======
+router.post('/painel/editar-usuario', requireLogin, upload.single('icone'), async (req, res) => {
+  try {
+    const { nome, telefone, icone_url: iconeAtualNoForm } = req.body;
+    const usuarioId = req.session.usuario.id;
 
-  const { error } = await supabaseDb
-    .from('usuarios_pf')
-    .update({ nome, telefone, icone_url })
-    .eq('id', usuarioId);
+    let novaIconeUrl = iconeAtualNoForm || req.session.usuario.icone_url || null;
 
-  if (error) {
-    console.error('Erro ao atualizar usuário:', error);
-    return res.status(500).send('Erro ao atualizar perfil.');
+    // Se veio arquivo novo, enviar para Storage
+    if (req.file && req.file.buffer && req.file.mimetype?.startsWith('image/')) {
+      const original = sanitizeName(req.file.originalname);
+      const filename = `${Date.now()}_${original || 'avatar.jpg'}`;
+      const path = `avatars/${usuarioId}/${filename}`;
+
+      const { error: upErr } = await supabaseDb
+        .storage
+        .from(AVATARS_BUCKET)
+        .upload(path, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: true
+        });
+
+      if (upErr) {
+        console.error('[Avatar Upload] erro:', upErr);
+        return res.status(500).send('Falha ao enviar imagem. Tente novamente.');
+      }
+
+      const { data: pub } = supabaseDb
+        .storage
+        .from(AVATARS_BUCKET)
+        .getPublicUrl(path);
+
+      novaIconeUrl = pub?.publicUrl || novaIconeUrl;
+    }
+
+    const { error } = await supabaseDb
+      .from('usuarios_pf')
+      .update({ nome, telefone, icone_url: novaIconeUrl })
+      .eq('id', usuarioId);
+
+    if (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      return res.status(500).send('Erro ao atualizar perfil.');
+    }
+
+    // Atualiza sessão local
+    req.session.usuario.nome = nome;
+    req.session.usuario.telefone = telefone;
+    req.session.usuario.icone_url = novaIconeUrl;
+
+    res.redirect('/painel/usuario');
+  } catch (e) {
+    console.error('Erro geral no editar-usuario:', e);
+    res.status(500).send('Erro inesperado ao atualizar perfil.');
   }
-
-  // Atualiza a sessão local para refletir mudanças
-  req.session.usuario.nome = nome;
-  req.session.usuario.telefone = telefone;
-  req.session.usuario.icone_url = icone_url;
-
-  res.redirect('/painel/usuario');
 });
+/* ================================================================ */
 
 /* =============== Página pública do usuário (PF) =============== */
 router.get('/usuario/:id', async (req, res) => {
@@ -136,14 +188,12 @@ router.get('/usuario/:id', async (req, res) => {
     return res.render('usuario-publico', {
       usuario,
       produtos: produtos || [],
-      marca, tipo, preco_min, preco_max, q // <-- devolve q para o template
+      marca, tipo, preco_min, preco_max, q
     });
   } catch (err) {
     console.error('Erro inesperado /usuario/:id:', err);
     return res.status(500).send('Erro no servidor.');
   }
 });
-
-
 
 module.exports = router;
