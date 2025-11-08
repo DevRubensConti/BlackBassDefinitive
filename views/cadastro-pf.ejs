@@ -5,7 +5,6 @@
   <title>Cadastro Pessoa Física</title>
   <link rel="stylesheet" href="/css/signup.css">
   <style>
-    /* ADDED: feedback simples de loading e bloqueio durante a busca do CEP */
     .mensagem-erro.topo { margin-bottom: 12px; }
     .campo-bloqueado { background: #f6f6f6; }
     .hint { font-size: 12px; color:#666; margin-top:4px; }
@@ -85,10 +84,20 @@
     <details id="etapa-3">
       <summary>Etapa 3 - Endereço</summary>
 
+      <!-- CHANGED: CEP agora é o primeiro campo -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cep">CEP</label>
+          <input type="text" id="cep" name="cep" placeholder="00000-000" required inputmode="numeric" autocomplete="postal-code">
+          <div id="cep-status" class="hint"></div>
+        </div>
+      </div>
+
+      <!-- CHANGED: demais campos começam desabilitados -->
       <div class="form-row">
         <div class="form-group">
           <label for="estado">Estado</label>
-          <select id="estado" name="estado" required autocomplete="address-level1">
+          <select id="estado" name="estado" required autocomplete="address-level1" disabled class="campo-bloqueado">
             <option value="">Selecione o estado</option>
             <option value="AC">Acre</option><option value="AL">Alagoas</option>
             <option value="AP">Amapá</option><option value="AM">Amazonas</option>
@@ -109,35 +118,29 @@
 
         <div class="form-group">
           <label for="cidade">Cidade</label>
-          <input type="text" id="cidade" name="cidade" placeholder="Sua cidade" required autocomplete="address-level2">
-        </div>
-
-        <div class="form-group">
-          <label for="cep">CEP</label>
-          <input type="text" id="cep" name="cep" placeholder="00000-000" required inputmode="numeric" autocomplete="postal-code">
-          <div id="cep-status" class="hint"></div> <!-- ADDED -->
+          <input type="text" id="cidade" name="cidade" placeholder="Sua cidade" required autocomplete="address-level2" disabled class="campo-bloqueado">
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="endereco">Endereço</label>
-          <input type="text" id="endereco" name="endereco" placeholder="Rua / Avenida" required autocomplete="address-line1">
+          <input type="text" id="endereco" name="endereco" placeholder="Rua / Avenida" required autocomplete="address-line1" disabled class="campo-bloqueado">
         </div>
         <div class="form-group">
           <label for="numero">Número</label>
-          <input type="text" id="numero" name="numero" placeholder="Número" required autocomplete="address-line2">
+          <input type="text" id="numero" name="numero" placeholder="Número" required autocomplete="address-line2" disabled class="campo-bloqueado">
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="bairro">Bairro</label>
-          <input type="text" id="bairro" name="bairro" placeholder="Seu bairro" required>
+          <input type="text" id="bairro" name="bairro" placeholder="Seu bairro" required disabled class="campo-bloqueado">
         </div>
         <div class="form-group">
           <label for="complemento">Complemento (Opcional)</label>
-          <input type="text" id="complemento" name="complemento" placeholder="Apto, Bloco, Referência...">
+          <input type="text" id="complemento" name="complemento" placeholder="Apto, Bloco, Referência..." disabled class="campo-bloqueado">
         </div>
       </div>
 
@@ -157,7 +160,6 @@
     let preenchido = true;
     campos.forEach(input => { if (!input.value.trim()) preenchido = false; });
 
-    // Validação extra para CPF na Etapa 1
     if (atual === 'etapa-1') {
       const cpfInput = document.getElementById('cpf');
       if (!validarCPF(cpfInput.value)) {
@@ -224,6 +226,14 @@
     let value = e.target.value.replace(/\D/g, '');
     value = value.replace(/(\d{5})(\d)/, '$1-$2');
     e.target.value = value.slice(0, 9);
+
+    // ADDED: se CEP voltou a menos de 8 dígitos, bloqueia de novo e limpa
+    const digits = e.target.value.replace(/\D/g, '');
+    if (digits.length < 8) {
+      limparEndereco();
+      setEnderecoEnabled(false);
+      cepStatus.textContent = '';
+    }
   });
 
   // ===== Validação CPF =====
@@ -249,11 +259,20 @@
   const estadoSelect = document.getElementById('estado');
   const cidadeInput = document.getElementById('cidade');
   const enderecoInput = document.getElementById('endereco');
+  const numeroInput = document.getElementById('numero');     // ADDED
   const bairroInput = document.getElementById('bairro');
+  const complementoInput = document.getElementById('complemento'); // ADDED
   const cepStatus = document.getElementById('cep-status');
 
+  function setEnderecoEnabled(enabled) {
+    [estadoSelect, cidadeInput, enderecoInput, numeroInput, bairroInput, complementoInput].forEach(el => {
+      el.disabled = !enabled;
+      el.classList.toggle('campo-bloqueado', !enabled);
+    });
+  }
+
   function setEnderecoLoading(isLoading) {
-    [estadoSelect, cidadeInput, enderecoInput, bairroInput].forEach(el => {
+    [estadoSelect, cidadeInput, enderecoInput, numeroInput, bairroInput, complementoInput].forEach(el => {
       el.disabled = isLoading;
       el.classList.toggle('campo-bloqueado', isLoading);
     });
@@ -265,6 +284,10 @@
     enderecoInput.value = '';
     bairroInput.value = '';
     estadoSelect.value = '';
+    // número e complemento não limpamos automaticamente em sucesso;
+    // aqui é usado quando o CEP é apagado:
+    numeroInput.value = '';
+    complementoInput.value = '';
   }
 
   async function buscarCEP(cepNumerico) {
@@ -278,14 +301,19 @@
       cidadeInput.value = data.localidade || '';
       estadoSelect.value = data.uf || '';
       cepStatus.textContent = 'Endereço preenchido automaticamente.';
-      document.getElementById('numero').focus();
+      setEnderecoEnabled(true); // ADDED: habilita para edição
+      numeroInput.focus();
     } catch (err) {
       limparEndereco();
-      cepStatus.textContent = 'Não foi possível encontrar este CEP. Preencha manualmente.';
+      setEnderecoEnabled(true); // ADDED: habilita para edição manual se ViaCEP falhar
+      cepStatus.textContent = 'CEP não encontrado. Preencha o endereço manualmente.';
     } finally {
       setEnderecoLoading(false);
     }
   }
+
+  // Estado inicial: bloqueado até CEP válido
+  setEnderecoEnabled(false); // ADDED
 
   let cepDebounce;
   cepInput.addEventListener('blur', () => {
@@ -308,9 +336,7 @@
     mensagemErro.innerHTML = '';
 
     const cpfVal = document.getElementById('cpf')?.value || '';
-    if (!validarCPF(cpfVal)) {
-      erros.push('CPF inválido');
-    }
+    if (!validarCPF(cpfVal)) erros.push('CPF inválido');
 
     const cep = document.getElementById('cep')?.value?.trim() || '';
     if (!/^\d{5}-\d{3}$/.test(cep)) erros.push('CEP inválido (use o formato 00000-000)');
@@ -322,6 +348,9 @@
     if (!email.includes('@')) erros.push('E-mail inválido');
 
     if (!estadoSelect.value) erros.push('Selecione o Estado (UF)');
+    if (!cidadeInput.value.trim()) erros.push('Informe a cidade');
+    if (!enderecoInput.value.trim()) erros.push('Informe o endereço');
+    if (!bairroInput.value.trim()) erros.push('Informe o bairro');
 
     if (erros.length > 0) {
       e.preventDefault();
@@ -331,7 +360,7 @@
     }
   });
 
-  // ===== Mostrar/ocultar senha (ícone corrigido) =====
+  // ===== Mostrar/ocultar senha =====
   function toggleSenha() {
     const senhaInput = document.getElementById('senha');
     const icone = document.getElementById('icone-senha');
@@ -340,7 +369,7 @@
     icone.src = vaiMostrar ? '/images/eye-open.png' : '/images/eye-closed.png';
     icone.alt = vaiMostrar ? 'Esconder senha' : 'Mostrar senha';
   }
-  window.toggleSenha = toggleSenha; // garante acesso no onclick
+  window.toggleSenha = toggleSenha;
 </script>
 
 </body>

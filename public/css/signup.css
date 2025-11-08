@@ -85,6 +85,19 @@ details[open] summary {
   font-weight: bold;
 }
 
+/* <<< AJUSTE: aplica o branco translúcido somente quando NÃO estiver desabilitado */
+input:not(:disabled),
+select:not(:disabled),
+textarea:not(:disabled) {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  background-color: rgba(255, 255, 255, 0.9); /* mantém branco translúcido */
+  color: #333;
+}
+
+/* mantém as demais propriedades também quando desabilitado (bordas/raio etc.) */
 input,
 select,
 textarea {
@@ -92,8 +105,6 @@ textarea {
   border-radius: 8px;
   border: none;
   font-size: 16px;
-  background-color: rgba(255, 255, 255, 0.9); /* mantém branco translúcido */
-  color: #333;
 }
 
 textarea {
@@ -168,7 +179,6 @@ select#tipo {
   opacity: 1;
 }
 
-
 .toggle-senha {
   position: absolute;
   right: 10px;
@@ -179,8 +189,64 @@ select#tipo {
 }
 
 .toggle-senha img {
-    height: 60px;
-    
+  height: 60px;
 }
 
+/* <<< GARANTIA: aparência cinza quando desabilitado (alta especificidade) */
+main.form-etapas-wrapper input:disabled,
+main.form-etapas-wrapper select:disabled,
+main.form-etapas-wrapper textarea:disabled,
+main.form-etapas-wrapper .campo-bloqueado {
+  background-color: #eeeeee !important;   /* cor de fundo cinza */
+  border: 1px solid #c9c9c9 !important;   /* borda cinza */
+  color: #666666 !important;              /* texto cinza */
+  -webkit-text-fill-color: #666666 !important; /* Safari */
+  opacity: 1 !important;                  /* evita reduzir opacidade automática */
+  cursor: not-allowed !important;
+  background-image: none !important;      /* remove gradientes default do SO */
+  background-clip: padding-box;           /* garante borda sólida */
+}
 
+/* Placeholder mais suave quando desabilitado */
+main.form-etapas-wrapper input:disabled::placeholder,
+main.form-etapas-wrapper textarea:disabled::placeholder {
+  color: #999 !important;
+}
+
+/* Transição suave quando habilita */
+main.form-etapas-wrapper input,
+main.form-etapas-wrapper select,
+main.form-etapas-wrapper textarea {
+  transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+/* ---- Garantir cinza quando desabilitado (alta especificidade, sem quebrar o resto) ---- */
+
+/* 1) Inputs habilitados continuam brancos translúcidos */
+:where(main.form-etapas-wrapper) :is(input, select, textarea):not([disabled]) {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #333;
+}
+
+/* 2) Inputs desabilitados (e/ou com .campo-bloqueado) ficam cinza */
+:where(main.form-etapas-wrapper) :is(input, select, textarea)[disabled],
+:where(main.form-etapas-wrapper) .campo-bloqueado {
+  background-color: #eeeeee !important;
+  border: 1px solid #c9c9c9 !important;
+  color: #666666 !important;
+  -webkit-text-fill-color: #666666 !important; /* Safari */
+  opacity: 1 !important;                      /* não escurece o componente inteiro */
+  cursor: not-allowed !important;
+  background-image: none !important;
+  background-clip: padding-box;
+}
+
+/* 3) Placeholder mais suave no estado desabilitado */
+:where(main.form-etapas-wrapper) input[disabled]::placeholder,
+:where(main.form-etapas-wrapper) textarea[disabled]::placeholder {
+  color: #999 !important;
+}
+
+/* 4) Transição suave ao habilitar */
+:where(main.form-etapas-wrapper) :is(input, select, textarea) {
+  transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+}
