@@ -15,17 +15,19 @@ body {
   flex-direction: column;
 }
 
-.main-login {
+/* Container principal centralizado */
+.main-recovery {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  margin-top: 120px; 
-  margin-bottom: 120px; 
+  margin-top: 120px;
+  margin-bottom: 120px;
 }
 
-.login-container {
+/* Bloco do conteúdo */
+.recovery-container {
   background-color: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -35,24 +37,34 @@ body {
   width: 90%;
   color: var(--cor-secundaria);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-}
-
-.login-container h2 {
   text-align: center;
-  margin-bottom: 30px;
 }
 
-.form-group {
+.recovery-container h2 {
+  margin-bottom: 25px;
+  color: var(--cor-secundaria);
+}
+
+.recovery-container p {
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 25px;
+}
+
+/* Formulário */
+.recovery-form .form-group {
   margin-bottom: 20px;
+  text-align: left;
 }
 
-.form-group label {
+.recovery-form label {
   display: block;
   font-weight: bold;
   margin-bottom: 5px;
 }
 
-.form-group input {
+.recovery-form input[type="email"],
+.recovery-form input[type="password"] {
   width: 100%;
   padding: 12px;
   font-size: 16px;
@@ -62,7 +74,8 @@ body {
   color: #333;
 }
 
-#entrar {
+#enviar-email,
+#salvar-senha {
   width: 100%;
   background-color: var(--cor-primaria);
   color: var(--cor-secundaria);
@@ -74,43 +87,56 @@ body {
   transition: background 0.3s ease;
 }
 
-#entrar:hover {
+#enviar-email:hover,
+#salvar-senha:hover {
   background-color: var(--cor-primaria-escura);
 }
 
-.signup-link {
-  text-align: center;
+/* Mensagem de sucesso/erro */
+.mensagem-status {
+  margin-top: 15px;
+  font-size: 14px;
+  color: var(--cor-secundaria-escura);
+}
+
+/* Link de voltar */
+.back-link {
   margin-top: 20px;
   font-size: 14px;
 }
 
-.signup-link a {
+.back-link a {
   color: var(--cor-primaria);
   text-decoration: none;
 }
 
-.signup-link a:hover {
+.back-link a:hover {
   text-decoration: underline;
 }
 
-.mensagem-erro {
-  margin-top: 12px;
-  color: var(--cor-secundaria-escura);
-  font-size: 14px;
-  text-align: center;
+/* Mensagem final (forgot_done.ejs) */
+.done-container h2 {
+  color: var(--cor-secundaria);
+  margin-bottom: 15px;
 }
 
-.links-login {
-  margin-top: 15px;
-  text-align: center;
+.done-container p {
+  font-size: 15px;
+  line-height: 1.6;
 }
 
-.forgot-link a {
-  color: var(--cor-primaria);
-  font-size: 14px;
+.done-container a {
+  display: inline-block;
+  margin-top: 25px;
+  background: var(--cor-primaria);
+  color: var(--cor-secundaria);
+  padding: 12px 25px;
+  border-radius: 8px;
   text-decoration: none;
+  font-weight: bold;
+  transition: background 0.3s ease;
 }
 
-.forgot-link a:hover {
-  text-decoration: underline;
+.done-container a:hover {
+  background: var(--cor-primaria-escura);
 }

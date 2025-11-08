@@ -6,33 +6,42 @@
   <link rel="stylesheet" href="/css/login.css">
 </head>
 <body>
-    <%- include('partials/navbar.ejs') %>
+  <%- include('partials/navbar.ejs') %>
 
-<main class="main-login">
-  <div class="login-container">
-    <h2>Entrar</h2>
-    <form action="/login" method="POST">
-      <div class="form-group">
-        <label for="email">E-mail:</label>
-        <input type="email" id="email" name="email" required placeholder="seuemail@exemplo.com">
+  <main class="main-login">
+    <div class="login-container">
+      <h2>Entrar</h2>
+
+      <form action="/login" method="POST">
+        <div class="form-group">
+          <label for="email">E-mail:</label>
+          <input type="email" id="email" name="email" required placeholder="seuemail@exemplo.com" value="<%= typeof email !== 'undefined' ? email : '' %>">
+        </div>
+
+        <div class="form-group">
+          <label for="senha">Senha:</label>
+          <input type="password" id="senha" name="senha" required placeholder="••••••••">
+        </div>
+
+        <% if (typeof erroLogin !== 'undefined') { %>
+          <div class="mensagem-erro"><%= erroLogin %></div>
+        <% } %>
+
+        <button type="submit" id="entrar">Entrar</button>
+      </form>
+
+      <div class="links-login">
+        <p class="forgot-link">
+          <a href="/auth/forgot">Esqueceu sua senha?</a>
+        </p>
+
+        <p class="signup-link">
+          Ainda não tem conta? <a href="/escolher-cadastro">Cadastre-se</a>
+        </p>
       </div>
+    </div>
+  </main>
 
-      <div class="form-group">
-        <label for="senha">Senha:</label>
-        <input type="password" id="senha" name="senha" required placeholder="••••••••">
-      </div>
-
-      <button type="submit" id="entrar">Entrar</button>
-      <% if (typeof erroLogin !== 'undefined') { %>
-        <div class="mensagem-erro"><%= erroLogin %></div>
-      <% } %>
-    </form>
-
-    <p class="signup-link">
-      Ainda não tem conta? <a href="/escolher-cadastro">Cadastre-se</a>
-    </p>
-  </div>
-</main>
   <%- include('partials/footer.ejs') %>
 </body>
 </html>

@@ -5,18 +5,19 @@ const supabaseAuth = require('../supabase/supabaseAuth'); // ADDED: ANON (Auth)
 const supabaseDb   = require('../supabase/supabaseDb');   // ADDED: SERVICE ROLE (DB)
 const bcrypt = require('bcrypt'); // (opcional) remova se não usar
 const { ensureLoja, onlyDigits } = require('../helpers/loja');
-const redirectUrl = process.env.AUTH_REDIRECT_URL
-// Página de login
+const redirectUrl = process.env.AUTH_REDIRECT_URL;
+
+// ================================
+// LOGIN
+// ================================
 router.get('/login', (req, res) => {
   res.render('login');
 });
 
-// Login - PF ou PJ
 router.post('/login', async (req, res) => {
   const { email, senha } = req.body;
 
-  // 1) Auth (usa o client ANON só para autenticação)
-  const { data: loginData, error: loginError } = await supabaseAuth.auth.signInWithPassword({ // CHANGED
+  const { data: loginData, error: loginError } = await supabaseAuth.auth.signInWithPassword({
     email,
     password: senha
   });
@@ -51,7 +52,7 @@ router.post('/login', async (req, res) => {
   const uid = loginData.user.id;
 
   // 2) Busca PF (SERVICE ROLE)
-  const pfResp = await supabaseDb // CHANGED
+  const pfResp = await supabaseDb
     .from('usuarios_pf')
     .select('*')
     .eq('id', uid)
@@ -63,7 +64,7 @@ router.post('/login', async (req, res) => {
   let tipo = 'pf';
 
   if (!usuario) {
-    const pjResp = await supabaseDb // CHANGED
+    const pjResp = await supabaseDb
       .from('usuarios_pj')
       .select('*')
       .eq('id', uid)
@@ -113,14 +114,14 @@ router.post('/login', async (req, res) => {
 });
 
 // (Opcional) Reenviar e-mail de confirmação – usa supabaseAuth
-router.post('/auth/reenviar-confirmacao', async (req, res) => { // ADDED
+router.post('/auth/reenviar-confirmacao', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.redirect('/login');
 
   const { error } = await supabaseAuth.auth.resend({
     type: 'signup',
     email,
-    options: { emailRedirectTo: process.env.AUTH_REDIRECT_URL }
+    options: { emailRedirectTo: redirectUrl }
   });
 
   if (error) {
@@ -133,7 +134,9 @@ router.post('/auth/reenviar-confirmacao', async (req, res) => { // ADDED
   return res.redirect(`/verifique-email?email=${encodeURIComponent(email)}`);
 });
 
-// Logout
+// ================================
+// LOGOUT
+// ================================
 router.get('/logout', (req, res) => {
   req.session.destroy(err => {
     if (err) {
@@ -145,6 +148,9 @@ router.get('/logout', (req, res) => {
   });
 });
 
+// ================================
+// CADASTRO PJ
+// ================================
 router.post('/cadastro-pj', async (req, res) => {
   const {
     nomeFantasia, razaoSocial, cnpj, email, senha, telefone,
@@ -217,7 +223,7 @@ router.post('/cadastro-pj', async (req, res) => {
       cnpj: cnpjDigits || null,
       cidade: cidade || null,
       estado: estado || null,
-      descricao: descricao || null // ícone padrão (ou troque por req.body.icone_url validado)
+      descricao: descricao || null
     });
 
     // 6) Redireciona para aviso de confirmação
@@ -228,9 +234,9 @@ router.post('/cadastro-pj', async (req, res) => {
   }
 });
 
-/* ================================
-   POST /cadastro-pf
-   ================================ */
+// ================================
+// CADASTRO PF
+// ================================
 router.post('/cadastro-pf', async (req, res) => {
   try {
     const {
@@ -314,12 +320,13 @@ router.post('/cadastro-pf', async (req, res) => {
   }
 });
 
-// Página de cadastro
+// ================================
+// PÁGINAS DE CADASTRO E CONFIRMAÇÃO
+// ================================
 router.get('/signup', (req, res) => {
   res.render('signup');
 });
 
-// Página de escolha de cadastro
 router.get('/escolher-cadastro', (req, res) => {
   res.render('escolher-cadastro');
 });
@@ -342,6 +349,43 @@ router.get('/verifique-email', (req, res) => {
 // Página de confirmação de e-mail
 router.get('/email-confirmado', (req, res) => {
   res.render('email-confirmado', { loginUrl: '/login' });
+});
+
+// ================================
+// RECUPERAÇÃO DE SENHA (FORGOT / RESET)
+// ================================
+
+// Formulário "Esqueci minha senha"
+router.get('/auth/forgot', (req, res) => {
+  res.render('auth/forgot'); // views/auth/forgot.ejs
+});
+
+// Envio do e-mail de recuperação
+router.post('/auth/forgot', async (req, res) => {
+  const { email } = req.body;
+  try {
+    // Mensagem neutra sempre (não revelar se e-mail existe)
+    await supabaseAuth.auth.resetPasswordForEmail(email, {
+      redirectTo: `${String(redirectUrl || '').replace(/\/$/, '')}/auth/reset`
+    });
+  } catch (e) {
+    console.error('Erro resetPasswordForEmail:', e);
+    // não diferenciamos erros para evitar enumeração de e-mails
+  }
+  return res.redirect('/auth/forgot/done');
+});
+
+// Página "verifique seu e-mail"
+router.get('/auth/forgot/done', (req, res) => {
+  res.render('auth/forgot_done'); // views/auth/forgot_done.ejs
+});
+
+// Página de redefinição (front usará supabase-js para trocar a senha)
+router.get('/auth/reset', (req, res) => {
+  res.render('auth/reset', {
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY
+  });
 });
 
 module.exports = router;

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Definir Nova Senha</title>
+  <link rel="stylesheet" href="/css/recovery.css">
+</head>
+<body>
+  <%- include('../partials/navbar.ejs') %>
+
+  <main class="main-recovery">
+    <div class="recovery-container">
+      <h2>Definir nova senha</h2>
+
+      <form class="recovery-form" id="reset-form">
+        <div class="form-group">
+          <label for="password">Nova senha:</label>
+          <input type="password" id="password" minlength="8" required placeholder="Digite sua nova senha">
+        </div>
+
+        <button type="submit" id="salvar-senha">Salvar nova senha</button>
+        <p id="msg" class="mensagem-status"></p>
+      </form>
+
+      <div class="back-link">
+        <a href="/login">Voltar ao login</a>
+      </div>
+    </div>
+  </main>
+
+  <%- include('../partials/footer.ejs') %>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    const supabase = createClient('<%= SUPABASE_URL %>', '<%= SUPABASE_ANON_KEY %>');
+
+    try { await supabase.auth.exchangeCodeForSession(window.location.href); } catch (e) {}
+
+    const form = document.getElementById('reset-form');
+    const msg = document.getElementById('msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = 'Atualizando senha...';
+
+      const newPassword = document.getElementById('password').value;
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      if (!sessionData?.session) {
+        msg.textContent = 'Link inválido ou expirado. Solicite novamente.';
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        msg.textContent = 'Erro ao atualizar a senha. Tente novamente.';
+        return;
+      }
+
+      msg.textContent = 'Senha alterada com sucesso! Você já pode acessar o sistema.';
+      setTimeout(() => (window.location.href = '/login'), 2000);
+    });
+  </script>
+</body>
+</html>
