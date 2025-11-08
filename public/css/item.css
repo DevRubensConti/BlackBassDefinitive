@@ -384,3 +384,48 @@ button.disabled {
 .indisponivel { color: #d33; font-weight: 600; }
 .disponivel   { color: #2e7d32; }
 .description { white-space: pre-line; line-height: 1.5; }
+
+.item-gallery {
+  position: relative;
+  display: inline-block;
+}
+
+.item-gallery .arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.4);
+  color: white;
+  border: none;
+  font-size: 2rem;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 50%;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.item-gallery .arrow:hover {
+  background: rgba(0,0,0,0.7);
+}
+
+.item-gallery .arrow.left {
+  left: 5px;
+}
+
+.item-gallery .arrow.right {
+  right: 5px;
+}
+
+.thumbnail-list img {
+  cursor: pointer;
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  margin: 5px;
+  border: 2px solid transparent;
+}
+
+.thumbnail-list img.active {
+  border-color: #007bff;
+}

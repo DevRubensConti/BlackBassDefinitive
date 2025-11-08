@@ -15,13 +15,16 @@
     <h1 class="item-title"><%= item.nome %> - <%= item.condicao %></h1>
     <div class="item-main">
       <div class="item-gallery">
-        <img src="<%= item.imagem_url.split(',')[0] %>" class="item-img" alt="Imagem principal do produto" />
-        <div class="thumbnail-list">
-          <% item.imagem_url.split(',').forEach(url => { %>
-            <img src="<%= url.trim() %>" alt="Thumbnail" />
-          <% }) %>
-        </div>
-      </div>
+  <button class="arrow left" aria-label="Imagem anterior">❮</button>
+  <img src="<%= item.imagem_url.split(',')[0] %>" class="item-img" alt="Imagem principal do produto" />
+  <button class="arrow right" aria-label="Próxima imagem">❯</button>
+
+  <div class="thumbnail-list">
+    <% item.imagem_url.split(',').forEach(url => { %>
+      <img src="<%= url.trim() %>" alt="Thumbnail" />
+    <% }) %>
+  </div>
+</div>
       <% if (dono) { %>
         <section class="seller-card">
           <!-- Coluna esquerda -->
@@ -220,17 +223,39 @@
 
 <script>
   // Galeria (garante que o DOM carregou)
-  document.addEventListener('DOMContentLoaded', () => {
-    const mainImage = document.querySelector('.item-img');
-    const thumbnails = document.querySelectorAll('.thumbnail-list img');
+document.addEventListener('DOMContentLoaded', () => {
+  const mainImage = document.querySelector('.item-img');
+  const thumbnails = Array.from(document.querySelectorAll('.thumbnail-list img'));
+  const leftArrow = document.querySelector('.arrow.left');
+  const rightArrow = document.querySelector('.arrow.right');
 
-    thumbnails.forEach(thumbnail => {
-      thumbnail.addEventListener('click', () => {
-        const newSrc = thumbnail.getAttribute('src');
-        mainImage.setAttribute('src', newSrc);
-      });
-    });
+  let currentIndex = 0;
+
+  function updateImage(index) {
+    if (index < 0) index = thumbnails.length - 1;
+    if (index >= thumbnails.length) index = 0;
+    currentIndex = index;
+
+    const newSrc = thumbnails[index].getAttribute('src');
+    mainImage.setAttribute('src', newSrc);
+
+    // Atualiza destaque das miniaturas
+    thumbnails.forEach((t, i) => t.classList.toggle('active', i === index));
+  }
+
+  // Clique nas miniaturas
+  thumbnails.forEach((thumbnail, idx) => {
+    thumbnail.addEventListener('click', () => updateImage(idx));
   });
+
+  // Setas
+  leftArrow.addEventListener('click', () => updateImage(currentIndex - 1));
+  rightArrow.addEventListener('click', () => updateImage(currentIndex + 1));
+
+  // Inicia com a primeira imagem destacada
+  updateImage(0);
+});
+
 </script>
 
 <script>
