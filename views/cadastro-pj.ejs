@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <title>Cadastro Pessoa Jurídica</title>
   <link rel="stylesheet" href="/css/signup.css">
+  <style>
+    /* ADDED: feedback simples de loading e erro */
+    .mensagem-erro.topo { margin-bottom: 12px; }
+    .campo-bloqueado { background: #f6f6f6; }
+    .hint { font-size: 12px; color:#666; margin-top:4px;}
+  </style>
 </head>
 <body>
 <%- include('partials/navbar.ejs') %>
@@ -11,133 +17,143 @@
 <main class="form-etapas-wrapper">
   <% if (mensagemErro) { %>
     <div class="erro-cadastro">
-        <p><%= mensagemErro %></p>
+      <p><%= mensagemErro %></p>
     </div>
-    <% } %>  
+  <% } %>  
+
   <h2><u>Cadastro - Loja (PJ)</u></h2>
+
   <div id="mensagem-erro-pj" class="mensagem-erro topo" style="display: none;"></div>
+
   <form id="form-pj" method="POST" action="/cadastro-pj" autocomplete="off">
-    <details id="etapa-pj-1">
-        <summary>Etapa 1 - Informações da Loja</summary>
+    <details id="etapa-pj-1" open>
+      <summary>Etapa 1 - Informações da Loja</summary>
+
+      <div class="form-group">
+        <label for="nomeFantasia">Nome Fantasia</label>
+        <input type="text" id="nomeFantasia" name="nomeFantasia" required>
+      </div>
+
+      <div class="form-row">
         <div class="form-group">
-          <label>Nome Fantasia</label>
-          <input type="text" name="nomeFantasia" required>
+          <label for="cnpj">CNPJ</label>
+          <input type="text" id="cnpj" name="cnpj" placeholder="Digite o CNPJ da sua loja" required inputmode="numeric" autocomplete="off">
+          <div class="hint">Formato: 00.000.000/0000-00</div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>CNPJ</label>
-            <input type="text" id="cnpj" name="cnpj" placeholder="Digite o CNPJ da sua loja" required>
+      </div>
+
+      <div class="form-group">
+        <label for="razaoSocial">Razão Social</label>
+        <input type="text" id="razaoSocial" name="razaoSocial" required>
+      </div>
+
+      <button type="button" onclick="desbloquearEtapaProxima('etapa-pj-1', 'etapa-pj-2')">Continuar</button>
+    </details>
+
+    <details id="etapa-pj-2">
+      <summary>Etapa 2 - Contato e Acesso</summary>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="Digite o Email da sua loja" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <div class="senha-wrapper">
+            <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required autocomplete="new-password">
+            <img id="icone-senha" src="/images/eye-closed.png" alt="Mostrar senha" style="cursor:pointer;" onclick="toggleSenha()">
           </div>
         </div>
+      </div>
+
+      <div class="form-row">
         <div class="form-group">
-          <label>Razão Social</label>
-          <input type="text" name="razaoSocial" required>
+          <label for="telefone">Telefone</label>
+          <input type="text" id="telefone" name="telefone" placeholder="Digite o Telefone da sua loja" required inputmode="tel" autocomplete="tel">
         </div>
-        <button type="button" onclick="desbloquearEtapaProxima('etapa-pj-1', 'etapa-pj-2')">Continuar</button>
-      </details>
-      <details id="etapa-pj-2">
-        <summary>Etapa 2 - Contato e Acesso</summary>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Email</label>
-            <input type="email" name="email" placeholder="Digite o Email da sua loja" required>
-          </div>
-        <div class="form-group">
-        <label>Senha</label>
-            <div class="senha-wrapper">
-            <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required>
-            <img id="icone-senha" src="/images/eye-closed.png" alt="Mostrar senha" onclick="toggleSenha()">
-            </div>
-        </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Telefone</label>
-            <input type="text" name="telefone" placeholder="Digite o Telefone da sua loja" required>
-          </div>
-        </div>
-        <button type="button" onclick="desbloquearEtapaProxima('etapa-pj-2', 'etapa-pj-3')">Continuar</button>
-      </details>
+      </div>
+
+      <button type="button" onclick="desbloquearEtapaProxima('etapa-pj-2', 'etapa-pj-3')">Continuar</button>
+    </details>
       
-      <details id="etapa-pj-3">
-        <summary>Etapa 3 - Endereço</summary>
-        <div class="form-row">
-          <div class="form-group">
-            <label>CEP</label>
-            <input type="text" name="cep" placeholder="Digite o CEP da sua loja" required>
-          </div>
-          <div class="form-group">
-            <label>Estado</label>
-            <select name="estado" required>
-                <option value="">Selecione o estado</option>
-                <option value="AC">Acre</option>
-                <option value="AL">Alagoas</option>
-                <option value="AP">Amapá</option>
-                <option value="AM">Amazonas</option>
-                <option value="BA">Bahia</option>
-                <option value="CE">Ceará</option>
-                <option value="DF">Distrito Federal</option>
-                <option value="ES">Espírito Santo</option>
-                <option value="GO">Goiás</option>
-                <option value="MA">Maranhão</option>
-                <option value="MT">Mato Grosso</option>
-                <option value="MS">Mato Grosso do Sul</option>
-                <option value="MG">Minas Gerais</option>
-                <option value="PA">Pará</option>
-                <option value="PB">Paraíba</option>
-                <option value="PR">Paraná</option>
-                <option value="PE">Pernambuco</option>
-                <option value="PI">Piauí</option>
-                <option value="RJ">Rio de Janeiro</option>
-                <option value="RN">Rio Grande do Norte</option>
-                <option value="RS">Rio Grande do Sul</option>
-                <option value="RO">Rondônia</option>
-                <option value="RR">Roraima</option>
-                <option value="SC">Santa Catarina</option>
-                <option value="SP">São Paulo</option>
-                <option value="SE">Sergipe</option>
-                <option value="TO">Tocantins</option>
-            </select>
-          </div>
+    <details id="etapa-pj-3">
+      <summary>Etapa 3 - Endereço</summary>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cep">CEP</label>
+          <input type="text" id="cep" name="cep" placeholder="00000-000" required inputmode="numeric" autocomplete="postal-code">
+          <div id="cep-status" class="hint"></div>
         </div>
-          <div class="form-group">
-            <label>Cidade</label>
-            <input type="text" name="cidade" placeholder="Digite a cidade da sua loja" required>
-          </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Endereço</label>
-            <input type="text" name="endereco" placeholder="Digite o Endereço da sua loja" required>
-          </div>
-          <div class="form-group">
-            <label>Número</label>
-            <input type="text" name="numero" placeholder="Digite o numero do estabelecimento" required>
-          </div>
+
+        <div class="form-group">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado" required>
+            <option value="">Selecione o estado</option>
+            <option value="AC">Acre</option><option value="AL">Alagoas</option>
+            <option value="AP">Amapá</option><option value="AM">Amazonas</option>
+            <option value="BA">Bahia</option><option value="CE">Ceará</option>
+            <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option>
+            <option value="GO">Goiás</option><option value="MA">Maranhão</option>
+            <option value="MT">Mato Grosso</option><option value="MS">Mato Grosso do Sul</option>
+            <option value="MG">Minas Gerais</option><option value="PA">Pará</option>
+            <option value="PB">Paraíba</option><option value="PR">Paraná</option>
+            <option value="PE">Pernambuco</option><option value="PI">Piauí</option>
+            <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option>
+            <option value="RS">Rio Grande do Sul</option><option value="RO">Rondônia</option>
+            <option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
+            <option value="SP">São Paulo</option><option value="SE">Sergipe</option>
+            <option value="TO">Tocantins</option>
+          </select>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Bairro</label>
-            <input type="text" name="bairro" placeholder="Digite o Bairro da sua loja"  required>
-          </div>
-          <div class="form-group">
-            <label>Complemento (Opicional)</label>
-            <input type="text" name="complemento" placeholder="Digite um Complemento" >
-          </div>
+      </div>
+
+      <div class="form-group">
+        <label for="cidade">Cidade</label>
+        <input type="text" id="cidade" name="cidade" placeholder="Digite a cidade da sua loja" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="endereco">Endereço</label>
+          <input type="text" id="endereco" name="endereco" placeholder="Rua / Avenida" required>
         </div>
-        <button type="submit">Cadastrar Loja</button>
-      </details>
+
+        <div class="form-group">
+          <label for="numero">Número</label>
+          <input type="text" id="numero" name="numero" placeholder="Número" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="bairro">Bairro</label>
+          <input type="text" id="bairro" name="bairro" placeholder="Digite o Bairro da sua loja" required>
+        </div>
+
+        <div class="form-group">
+          <label for="complemento">Complemento (Opcional)</label>
+          <input type="text" id="complemento" name="complemento" placeholder="Apto, Bloco, Sala...">
+        </div>
+      </div>
+
+      <button type="submit">Cadastrar Loja</button>
+    </details>
   </form>
 </main>
 
 <%- include('partials/footer.ejs') %>
 
 <script>
+  // ===== Helpers de etapa (AGORA inclui inputs e selects) =====
   function desbloquearEtapaProxima(atual, proxima) {
-    const campos = document.querySelectorAll(`#${atual} input:required`);
+    const campos = document.querySelectorAll(
+      `#${atual} input:required, #${atual} select:required, #${atual} textarea:required`
+    );
     let preenchido = true;
-    campos.forEach(input => {
-      if (!input.value.trim()) preenchido = false;
-    });
+    campos.forEach(input => { if (!input.value.trim()) preenchido = false; });
     if (preenchido) {
       document.getElementById(atual).removeAttribute('open');
       document.getElementById(proxima).setAttribute('open', true);
@@ -148,10 +164,10 @@
   }
 
   function etapaPreenchida(idEtapa) {
-    const campos = document.querySelectorAll(`#${idEtapa} input:required`);
-    for (let campo of campos) {
-      if (!campo.value.trim()) return false;
-    }
+    const campos = document.querySelectorAll(
+      `#${idEtapa} input:required, #${idEtapa} select:required, #${idEtapa} textarea:required`
+    );
+    for (let campo of campos) { if (!campo.value.trim()) return false; }
     return true;
   }
 
@@ -169,6 +185,7 @@
     }
   });
 
+  // ===== Máscaras CNPJ / Telefone / CEP =====
   const cnpjInput = document.getElementById('cnpj');
   if (cnpjInput) {
     cnpjInput.addEventListener('input', function (e) {
@@ -177,30 +194,28 @@
       value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
       value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
       value = value.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-      e.target.value = value;
+      e.target.value = value.slice(0, 18);
     });
   }
 
-  document.querySelectorAll('input[name="telefone"]').forEach(function (input) {
-    input.addEventListener('input', function (e) {
-      let value = e.target.value.replace(/\D/g, '');
-      if (value.length <= 10) {
-        value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-      } else {
-        value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-      }
-      e.target.value = value;
-    });
+  document.getElementById('telefone').addEventListener('input', function (e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 10) {
+      value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    } else {
+      value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+    e.target.value = value.slice(0, 15);
   });
 
-  document.querySelectorAll('input[name="cep"]').forEach(function (input) {
-    input.addEventListener('input', function (e) {
-      let value = e.target.value.replace(/\D/g, '');
-      value = value.replace(/(\d{5})(\d)/, '$1-$2');
-      e.target.value = value.slice(0, 9);
-    });
+  const cepInput = document.getElementById('cep');
+  cepInput.addEventListener('input', function (e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+    e.target.value = value.slice(0, 9);
   });
 
+  // ===== Validação CNPJ =====
   function validarCNPJ(cnpj) {
     cnpj = cnpj.replace(/[^\d]+/g, '');
     if (cnpj.length !== 14) return false;
@@ -216,7 +231,6 @@
       soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
       if (pos < 2) pos = 9;
     }
-
     let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
     if (resultado != parseInt(digitos.charAt(0))) return false;
 
@@ -229,48 +243,106 @@
       soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
       if (pos < 2) pos = 9;
     }
-
     resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
     return resultado == parseInt(digitos.charAt(1));
   }
 
-    document.getElementById('form-pj').addEventListener('submit', function (e) {
+  // ===== CEP Auto-complete (ViaCEP) =====
+  const estadoSelect = document.getElementById('estado');
+  const cidadeInput = document.getElementById('cidade');
+  const enderecoInput = document.getElementById('endereco');
+  const bairroInput = document.getElementById('bairro');
+  const cepStatus = document.getElementById('cep-status');
+
+  function setEnderecoLoading(isLoading) {
+    [estadoSelect, cidadeInput, enderecoInput, bairroInput].forEach(el => {
+      el.disabled = isLoading;
+      el.classList.toggle('campo-bloqueado', isLoading);
+    });
+    cepStatus.textContent = isLoading ? 'Buscando endereço pelo CEP…' : '';
+  }
+
+  function limparEndereco() {
+    cidadeInput.value = '';
+    enderecoInput.value = '';
+    bairroInput.value = '';
+    estadoSelect.value = '';
+  }
+
+  async function buscarCEP(cepNumerico) {
+    try {
+      setEnderecoLoading(true);
+      const res = await fetch(`https://viacep.com.br/ws/${cepNumerico}/json/`);
+      const data = await res.json();
+      if (data.erro) throw new Error('CEP não encontrado.');
+      // Preenche campos
+      enderecoInput.value = data.logradouro || '';
+      bairroInput.value = data.bairro || '';
+      cidadeInput.value = data.localidade || '';
+      estadoSelect.value = data.uf || '';
+      cepStatus.textContent = 'Endereço preenchido automaticamente.';
+      // Foca no número
+      document.getElementById('numero').focus();
+    } catch (err) {
+      limparEndereco();
+      cepStatus.textContent = 'Não foi possível encontrar este CEP. Preencha manualmente.';
+    } finally {
+      setEnderecoLoading(false);
+    }
+  }
+
+  let cepDebounce;
+  cepInput.addEventListener('blur', () => {
+    const cepNum = cepInput.value.replace(/\D/g, '');
+    if (cepNum.length === 8) buscarCEP(cepNum);
+  });
+  // Opcional: debounce durante digitação
+  cepInput.addEventListener('keyup', () => {
+    clearTimeout(cepDebounce);
+    const cepNum = cepInput.value.replace(/\D/g, '');
+    if (cepNum.length === 8) {
+      cepDebounce = setTimeout(() => buscarCEP(cepNum), 400);
+    }
+  });
+
+  // ===== Submit =====
+  document.getElementById('form-pj').addEventListener('submit', function (e) {
     const erros = [];
-    const cnpjInput = document.getElementById('cnpj');
     const mensagemErro = document.getElementById('mensagem-erro-pj');
     mensagemErro.style.display = 'none';
     mensagemErro.innerHTML = '';
 
     if (!validarCNPJ(cnpjInput.value)) {
-        erros.push('CNPJ inválido');
+      erros.push('CNPJ inválido');
     }
 
-    // você pode adicionar outras validações aqui, por exemplo:
-    // const email = document.querySelector('[name="email"]').value;
-    // if (!email.includes('@')) erros.push('E-mail inválido');
+    // Validação de endereço básica
+    if (!cepInput.value || cepInput.value.replace(/\D/g, '').length !== 8) {
+      erros.push('CEP inválido');
+    }
+    if (!estadoSelect.value) {
+      erros.push('Selecione o Estado (UF)');
+    }
 
     if (erros.length > 0) {
-        e.preventDefault();
-        mensagemErro.innerHTML = 'Cadastro não foi possível pois:<br>– ' + erros.join('<br>– ');
-        mensagemErro.style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      e.preventDefault();
+      mensagemErro.innerHTML = 'Cadastro não foi possível pois:<br>– ' + erros.join('<br>– ');
+      mensagemErro.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    });
+  });
 
-</script>
-<script>
+  // ===== Mostrar/ocultar senha (ícone corrigido) =====
   function toggleSenha() {
     const senhaInput = document.getElementById('senha');
     const icone = document.getElementById('icone-senha');
-
-    const senhaVisivel = senhaInput.type === 'text';
-
-    senhaInput.type = senhaVisivel ? 'password' : 'text';
-    icone.src = senhaVisivel ? '/images/eye-open.png' : '/images/eye-closed.png';
-    icone.alt = senhaVisivel ? 'Mostrar senha' : 'Esconder senha';
+    const vaiMostrar = senhaInput.type === 'password';
+    senhaInput.type = vaiMostrar ? 'text' : 'password';
+    icone.src = vaiMostrar ? '/images/eye-open.png' : '/images/eye-closed.png';
+    icone.alt = vaiMostrar ? 'Esconder senha' : 'Mostrar senha';
   }
+  window.toggleSenha = toggleSenha; // garante acesso no onclick
 </script>
-
 
 </body>
 </html>
