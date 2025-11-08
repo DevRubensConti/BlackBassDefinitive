@@ -1,11 +1,20 @@
 const express = require('express');
 const router = express.Router();
 // const supabase = require('../supabase'); // REMOVED
-const supabaseAuth = require('../supabase/supabaseAuth'); // ADDED: ANON (Auth)
-const supabaseDb   = require('../supabase/supabaseDb');   // ADDED: SERVICE ROLE (DB)
+const supabaseAuth = require('../supabase/supabaseAuth'); // ANON (Auth)
+const supabaseDb   = require('../supabase/supabaseDb');   // SERVICE ROLE (DB)
 const bcrypt = require('bcrypt'); // (opcional) remova se não usar
 const { ensureLoja, onlyDigits } = require('../helpers/loja');
-const redirectUrl = process.env.AUTH_REDIRECT_URL;
+
+// ================================
+// URLS DE REDIRECT (CONFIRMAÇÃO x RECUPERAÇÃO)
+// ================================
+const baseUrl = (process.env.BASE_URL || '').replace(/\/$/, ''); // ex.: https://blackbass.example.com
+const confirmPath = process.env.AUTH_REDIRECT_URL_CONFIRM || '/email-confirmado';
+const recoveryPath = process.env.AUTH_REDIRECT_URL_RECOVERY || '/auth/reset';
+
+const CONFIRM_URL = `${baseUrl}${confirmPath}`;
+const RECOVERY_URL = `${baseUrl}${recoveryPath}`;
 
 // ================================
 // LOGIN
@@ -121,7 +130,7 @@ router.post('/auth/reenviar-confirmacao', async (req, res) => {
   const { error } = await supabaseAuth.auth.resend({
     type: 'signup',
     email,
-    options: { emailRedirectTo: redirectUrl }
+    options: { emailRedirectTo: CONFIRM_URL }
   });
 
   if (error) {
@@ -184,7 +193,7 @@ router.post('/cadastro-pj', async (req, res) => {
     const { data: signUp, error: signErr } = await supabaseAuth.auth.signUp({
       email,
       password: senha,
-      options: { emailRedirectTo: redirectUrl }
+      options: { emailRedirectTo: CONFIRM_URL }
     });
     if (signErr || !signUp?.user) {
       console.error('Auth signUp (PJ) error:', signErr);
@@ -271,7 +280,7 @@ router.post('/cadastro-pf', async (req, res) => {
     const { data: signUp, error: signErr } = await supabaseAuth.auth.signUp({
       email,
       password: senha,
-      options: { emailRedirectTo: redirectUrl }
+      options: { emailRedirectTo: CONFIRM_URL }
     });
     if (signErr || !signUp?.user) {
       console.error('Auth signUp (PF) error:', signErr);
@@ -366,7 +375,7 @@ router.post('/auth/forgot', async (req, res) => {
   try {
     // Mensagem neutra sempre (não revelar se e-mail existe)
     await supabaseAuth.auth.resetPasswordForEmail(email, {
-      redirectTo: `${String(redirectUrl || '').replace(/\/$/, '')}/auth/reset`
+      redirectTo: RECOVERY_URL
     });
   } catch (e) {
     console.error('Erro resetPasswordForEmail:', e);
