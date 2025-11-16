@@ -314,28 +314,39 @@ router.post('/bricks/process-payment', async (req, res) => {
     }
 
     const {
-      token,
-      paymentMethodId,
-      issuerId,
-      installments,
-      amount,
-      payer: payerFromBrick
-    } = payload || {};
+  token,
+  paymentMethodId,
+  payment_method_id,
+  issuerId,
+  issuer_id,
+  installments,
+  amount,
+  transaction_amount,
+  payer: payerFromBrick
+} = payload || {};
 
-    const transactionAmount = Number(amount || 0);
+// aceita tanto camelCase quanto snake_case
+const pmId = paymentMethodId || payment_method_id;
+const issId = issuerId || issuer_id;
+const transactionAmount = Number(amount || transaction_amount || 0);
 
-    if (!token || !paymentMethodId || !transactionAmount) {
-      console.error('[BRICKS][PAYMENT] Dados insuficientes', {
-        hasToken: !!token,
-        paymentMethodId,
-        transactionAmount
-      });
-      return res.status(400).json({
-        error: 'Dados insuficientes para criar pagamento.',
-        details: { token: !!token, paymentMethodId, amount: transactionAmount }
-      });
+if (!token || !pmId || !transactionAmount) {
+  console.error('[BRICKS][PAYMENT] Dados insuficientes', {
+    hasToken: !!token,
+    paymentMethodId: paymentMethodId,
+    payment_method_id,
+    transactionAmount
+  });
+  return res.status(400).json({
+    error: 'Dados insuficientes para criar pagamento.',
+    details: {
+      token: !!token,
+      paymentMethodId: paymentMethodId,
+      payment_method_id,
+      amount: transactionAmount
     }
-
+  });
+}
 
     // ========= Buscar dados reais do comprador no Supabase =========
     let perfil = null;
@@ -414,21 +425,21 @@ router.post('/bricks/process-payment', async (req, res) => {
 
     const paymentClient = new Payment(mpClient);
 
-    const paymentBody = {
-      transaction_amount: transactionAmount,
-      token,
-      description: 'Compra BlackBass',
-      installments: Number(installments || 1),
-      payment_method_id: paymentMethodId,
-      issuer_id: issuerId || undefined,
-      payer,
-      metadata: {
-        comprador_id: compradorId,
-        tipo_usuario: tipoUsuario,
-        mp_env: env,
-        via: 'BRICKS'
-      }
-    };
+const paymentBody = {
+  transaction_amount: transactionAmount,
+  token,
+  description: 'Compra BlackBass',
+  installments: Number(installments || 1),
+  payment_method_id: pmId,
+  issuer_id: issId || undefined,
+  payer,
+  metadata: {
+    comprador_id: compradorId,
+    tipo_usuario: tipoUsuario,
+    mp_env: env,
+    via: 'BRICKS'
+  }
+};
 
     const payment = await paymentClient.create({ body: paymentBody });
 
