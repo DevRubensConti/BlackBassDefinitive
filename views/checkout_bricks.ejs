@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Checkout BlackBass (Bricks)</title>
+</head>
+<body>
+  <h1>Checkout (Bricks) – total: R$ <%= totalAmount.toFixed(2) %></h1>
+
+  <div id="cardPaymentBrick_container"></div>
+
+  <!-- SDK do Mercado Pago -->
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+  <script>
+    // Public key vinda do backend
+    const mp = new MercadoPago("<%= mpPublicKey %>", {
+      locale: "pt-BR",
+    });
+
+    const bricksBuilder = mp.bricks();
+
+    async function renderCardPaymentBrick() {
+      const settings = {
+        initialization: {
+          amount: <%= totalAmount %>, // valor total do carrinho
+        },
+        customization: {
+          visual: {
+            style: {
+              theme: "default", // 'default' | 'dark' | 'bootstrap' | 'flat'
+            },
+          },
+        },
+        callbacks: {
+          onSubmit: (cardFormData) => {
+            // Envia pro backend processar o pagamento
+            return new Promise((resolve, reject) => {
+              fetch("/api/checkout/bricks/process-payment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  ...cardFormData,
+                  amount: <%= totalAmount %>,
+                }),
+              })
+                .then(async (resp) => {
+                  let data = {};
+                  try {
+                    data = await resp.json();
+                  } catch (e) {
+                    console.warn("Resposta sem JSON ou inválida:", e);
+                  }
+
+                  if (!resp.ok) {
+                    console.error("Erro HTTP do backend:", resp.status, data);
+                    window.location.href = "/api/checkout/erro";
+                    return resolve();
+                  }
+
+                  console.log("Resposta backend Bricks:", data);
+
+                  // Trata status do pagamento
+                  if (data.status === "approved") {
+                    window.location.href = "/api/checkout/sucesso";
+                  } else if (
+                    data.status === "in_process" ||
+                    data.status === "pending"
+                  ) {
+                    // se quiser, pode ajustar pra uma página específica de "em análise"
+                    window.location.href = "/api/checkout/pendente";
+                  } else {
+                    window.location.href = "/api/checkout/erro";
+                  }
+
+                  resolve();
+                })
+                .catch((error) => {
+                  console.error("Erro de rede/backend no Brick:", error);
+                  window.location.href = "/api/checkout/erro";
+                  reject(error);
+                });
+            });
+          },
+          onReady: () => {
+            console.log("Card Payment Brick pronto");
+          },
+          onError: (error) => {
+            console.error("Erro no Brick:", error);
+          },
+        },
+      };
+
+      // Cria o Brick dentro do container
+      window.cardPaymentBrickController = await bricksBuilder.create(
+        "cardPayment",
+        "cardPaymentBrick_container",
+        settings
+      );
+    }
+
+    renderCardPaymentBrick();
+  </script>
+</body>
+</html>

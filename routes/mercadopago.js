@@ -1,5 +1,5 @@
 // routes/mercadopago.js
-// Integração Checkout Pro (SDK v2) + webhook cria pedidos no Supabase
+// Integração Checkout Pro (SDK v2) + Bricks + webhook cria pedidos no Supabase
 
 const express = require('express');
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
@@ -88,11 +88,12 @@ function getClientIp(req) {
 function onlyDigits(s) {
   return (s || '').toString().replace(/\D+/g, '');
 }
+
 function splitPhone(brPhone) {
   const d = onlyDigits(brPhone);
   // tenta DDD + número (8-9 dígitos)
   if (d.length >= 10) {
-    return { area_code: d.slice(0,2), number: d.slice(2) };
+    return { area_code: d.slice(0, 2), number: d.slice(2) };
   }
   return { area_code: '', number: d };
 }
@@ -116,12 +117,14 @@ router.post('/create-preference', async (req, res) => {
     }
 
     // Normaliza itens
-    const normItems = items.map(it => ({
-      title: String(it.title || 'Item'),
-      quantity: Number(it.quantity || 1),
-      unit_price: Number(it.unit_price || 0),
-      currency_id: it.currency_id || 'BRL'
-    })).filter(x => x.quantity > 0 && x.unit_price >= 0);
+    const normItems = items
+      .map(it => ({
+        title: String(it.title || 'Item'),
+        quantity: Number(it.quantity || 1),
+        unit_price: Number(it.unit_price || 0),
+        currency_id: it.currency_id || 'BRL'
+      }))
+      .filter(x => x.quantity > 0 && x.unit_price >= 0);
 
     const env = getEnvFromToken(process.env.MP_ACCESS_TOKEN);
 
@@ -130,16 +133,20 @@ router.post('/create-preference', async (req, res) => {
     if (tipoUsuario === 'pf') {
       const { data, error } = await supabaseDb
         .from('usuarios_pf')
-        .select('nome, email, cpf, telefone, cep, endereco, numero, cidade, estado, bairro, complemento')
+        .select(
+          'nome, email, cpf, telefone, cep, endereco, numero, cidade, estado, bairro, complemento'
+        )
         .eq('id', compradorId)
         .maybeSingle();
       if (error) throw new Error('Erro carregando usuarios_pf: ' + JSON.stringify(error));
       perfil = data || {};
     } else {
-      // PJ — opcional: você pode enviar CNPJ como identification.type='CNPJ'
+      // PJ
       const { data, error } = await supabaseDb
         .from('usuarios_pj')
-        .select('nomeFantasia, email, cnpj, telefone, cep, endereco, numero, cidade, estado, bairro, complemento')
+        .select(
+          'nomeFantasia, email, cnpj, telefone, cep, endereco, numero, cidade, estado, bairro, complemento'
+        )
         .eq('id', compradorId)
         .maybeSingle();
       if (error) throw new Error('Erro carregando usuarios_pj: ' + JSON.stringify(error));
@@ -147,17 +154,15 @@ router.post('/create-preference', async (req, res) => {
     }
 
     // Monta payer com base no perfil do banco (não da sessão)
-    const nome = buyer?.name
-      || perfil?.nome
-      || perfil?.nomeFantasia
-      || usr?.nome
-      || usr?.apelido
-      || 'Cliente';
+    const nome =
+      buyer?.name ||
+      perfil?.nome ||
+      perfil?.nomeFantasia ||
+      usr?.nome ||
+      usr?.apelido ||
+      'Cliente';
 
-    const email = buyer?.email
-      || perfil?.email
-      || usr?.email
-      || 'cliente@example.com';
+    const email = buyer?.email || perfil?.email || usr?.email || 'cliente@example.com';
 
     const tel = splitPhone(perfil?.telefone || usr?.telefone);
     const cep = onlyDigits(perfil?.cep);
@@ -176,11 +181,14 @@ router.post('/create-preference', async (req, res) => {
         return undefined; // o MP coleta no checkout se faltar
       })(),
       phone: tel.number ? { area_code: tel.area_code, number: tel.number } : undefined,
-      address: (cep || perfil?.endereco) ? {
-        zip_code: cep || undefined,
-        street_name: perfil?.endereco || undefined,
-        street_number: numero,
-      } : undefined
+      address:
+        cep || perfil?.endereco
+          ? {
+              zip_code: cep || undefined,
+              street_name: perfil?.endereco || undefined,
+              street_number: numero
+            }
+          : undefined
     };
 
     // additional_info p/ antifraude
@@ -197,16 +205,19 @@ router.post('/create-preference', async (req, res) => {
         quantity: it.quantity,
         unit_price: it.unit_price
       })),
-      shipments: (cep || perfil?.endereco) ? {
-        receiver_address: {
-          zip_code: payer.address?.zip_code,
-          street_name: payer.address?.street_name,
-          street_number: payer.address?.street_number,
-          city_name: perfil?.cidade || undefined,
-          state_name: perfil?.estado || undefined,
-          apartment: perfil?.complemento || undefined
-        }
-      } : undefined
+      shipments:
+        cep || perfil?.endereco
+          ? {
+              receiver_address: {
+                zip_code: payer.address?.zip_code,
+                street_name: payer.address?.street_name,
+                street_number: payer.address?.street_number,
+                city_name: perfil?.cidade || undefined,
+                state_name: perfil?.estado || undefined,
+                apartment: perfil?.complemento || undefined
+              }
+            }
+          : undefined
     };
 
     // === PIX disponível sem forçar (remove default_payment_method_id)
@@ -273,7 +284,6 @@ router.post('/create-preference', async (req, res) => {
 
     if (debug) return res.json({ init_point: usedUrl, result, request_body: body });
     return res.json({ init_point: usedUrl });
-
   } catch (error) {
     console.error('[MP][CREATE_PREF] ERROR', error);
     return res.status(500).json({
@@ -288,7 +298,6 @@ router.post('/create-preference', async (req, res) => {
 // ===========================
 router.post('/webhook', async (req, res) => {
   try {
-    // Vem assinatura/ids nos headers; body é raw (express.raw configurado no app.js)
     const signature = req.get('x-signature');
     const requestId = req.get('x-request-id');
 
@@ -316,7 +325,6 @@ router.post('/webhook', async (req, res) => {
     });
 
     if (!paymentId) {
-      // Retornamos 200 para evitar novas tentativas, mas sem processar
       return res.status(200).send('No payment id');
     }
 
@@ -346,37 +354,38 @@ router.post('/webhook', async (req, res) => {
       return res.status(400).send('Metadata incompleta');
     }
 
-    // (Opcional) Idempotência:
-    // crie uma tabela payments_processados(payment_id TEXT PK) e cheque aqui
-    // se já processou este payment.id. Se sim, return 200.
-
     // Snapshot do carrinho na aprovação
     const itensCarrinho = await carregarCarrinhoSnapshot(compradorId, tipoUsuario);
     if (!itensCarrinho?.length) {
-      console.warn('[MP][WEBHOOK] Carrinho vazio no momento da aprovação', { compradorId, tipoUsuario });
+      console.warn('[MP][WEBHOOK] Carrinho vazio no momento da aprovação', {
+        compradorId,
+        tipoUsuario
+      });
       return res.status(200).send('Carrinho vazio');
     }
 
     // Criar pedidos por loja
     const porLoja = agruparPorLoja(itensCarrinho);
-    const isPF = (String(tipoUsuario).toLowerCase() === 'pf');
+    const isPF = String(tipoUsuario).toLowerCase() === 'pf';
 
     for (const [lojaId, itens] of porLoja.entries()) {
       const codigo = gerarCodigoPedido(lojaId);
 
-      const { data: pid, error: rpcErr } = await supabaseDb.rpc('create_pedido_with_itens', {
-        _loja: lojaId,
-        _status: 'pago', // status inicial após aprovação
-        _tipo_usuario: tipoUsuario,
-        _itens: itens,
-        _comprador_pf_id: isPF ? compradorId : null,
-        _comprador_pj_id: !isPF ? compradorId : null,
-        _codigo: codigo
-      });
+      const { data: pid, error: rpcErr } = await supabaseDb.rpc(
+        'create_pedido_with_itens',
+        {
+          _loja: lojaId,
+          _status: 'pago', // status inicial após aprovação
+          _tipo_usuario: tipoUsuario,
+          _itens: itens,
+          _comprador_pf_id: isPF ? compradorId : null,
+          _comprador_pj_id: !isPF ? compradorId : null,
+          _codigo: codigo
+        }
+      );
 
       if (rpcErr) {
         console.error('[MP][WEBHOOK] Erro criando pedido RPC:', rpcErr);
-        // Retorne 500 para o MP re-tentar depois
         return res.status(500).send('Erro criando pedido');
       }
     }
@@ -404,7 +413,6 @@ router.post('/webhook', async (req, res) => {
       console.warn('[MP][WEBHOOK] Carrinho não limpo (continuando):', delErr);
     }
 
-    // (Opcional) gravar payment.id como processado (idempotência)
     return res.status(200).send('OK');
   } catch (err) {
     console.error('Erro no webhook do Mercado Pago:', err);
@@ -430,6 +438,259 @@ router.get('/debug', (req, res) => {
     tokenPrefix: token.slice(0, 10) + '…',
     now: new Date().toISOString()
   });
+});
+
+// ===========================
+//  Página de checkout com Brick (beta)
+// ===========================
+router.get('/bricks', async (req, res) => {
+  try {
+    const usr = req.session?.usuario || {};
+    const compradorId = usr?.id;
+    const tipoUsuario = (usr?.tipo || '').toLowerCase(); // 'pf' | 'pj'
+
+    if (!compradorId || !tipoUsuario) {
+      return res.redirect('/login');
+    }
+
+    const itensCarrinho = await carregarCarrinhoSnapshot(compradorId, tipoUsuario);
+
+    const total = itensCarrinho.reduce((acc, row) => {
+      const prod = row.produtos || {};
+      const preco = Number(prod.preco || 0);
+      const qtd = Math.max(1, parseInt(row.quantidade, 10) || 1);
+      return acc + preco * qtd;
+    }, 0);
+
+    return res.render('checkout_bricks', {
+      mpPublicKey: process.env.MP_PUBLIC_KEY,
+      totalAmount: total || 0,
+      usuario: usr,
+      itensCarrinho
+    });
+  } catch (err) {
+    console.error('[BRICKS][GET] ERRO', err);
+    return res.status(500).send('Erro carregando checkout bricks');
+  }
+});
+
+// ===========================
+//  Bricks – processa pagamento
+// ===========================
+router.post('/bricks/process-payment', async (req, res) => {
+  try {
+    const usr = req.session?.usuario || {};
+    const compradorId = usr?.id;
+    const tipoUsuario = (usr?.tipo || '').toLowerCase(); // 'pf' | 'pj'
+
+    if (!compradorId || !tipoUsuario) {
+      return res.status(401).json({ error: 'Sessão expirada: faça login novamente.' });
+    }
+
+    const {
+      token,
+      paymentMethodId,
+      issuerId,
+      installments,
+      amount,
+      payer: payerFromBrick
+    } = req.body || {};
+
+    const transactionAmount = Number(amount || 0);
+
+    if (!token || !paymentMethodId || !transactionAmount) {
+      return res.status(400).json({
+        error: 'Dados insuficientes para criar pagamento.',
+        details: { token: !!token, paymentMethodId, amount: transactionAmount }
+      });
+    }
+
+    // ========= Buscar dados reais do comprador no Supabase =========
+    let perfil = null;
+    if (tipoUsuario === 'pf') {
+      const { data, error } = await supabaseDb
+        .from('usuarios_pf')
+        .select(
+          'nome, email, cpf, telefone, cep, endereco, numero, cidade, estado, bairro, complemento'
+        )
+        .eq('id', compradorId)
+        .maybeSingle();
+      if (error) throw new Error('Erro carregando usuarios_pf: ' + JSON.stringify(error));
+      perfil = data || {};
+    } else {
+      const { data, error } = await supabaseDb
+        .from('usuarios_pj')
+        .select(
+          'nomeFantasia, email, cnpj, telefone, cep, endereco, numero, cidade, estado, bairro, complemento'
+        )
+        .eq('id', compradorId)
+        .maybeSingle();
+      if (error) throw new Error('Erro carregando usuarios_pj: ' + JSON.stringify(error));
+      perfil = data || {};
+    }
+
+    const nome =
+      payerFromBrick?.name ||
+      perfil?.nome ||
+      perfil?.nomeFantasia ||
+      usr?.nome ||
+      usr?.apelido ||
+      'Cliente';
+
+    const email =
+      payerFromBrick?.email || perfil?.email || usr?.email || 'cliente@example.com';
+
+    const docTypeFromBrick = payerFromBrick?.identification?.type;
+    const docNumberFromBrick = payerFromBrick?.identification?.number;
+
+    let identification = undefined;
+    if (docNumberFromBrick) {
+      identification = {
+        type: docTypeFromBrick || (tipoUsuario === 'pf' ? 'CPF' : 'CNPJ'),
+        number: onlyDigits(docNumberFromBrick)
+      };
+    } else if (tipoUsuario === 'pf' && perfil?.cpf) {
+      identification = {
+        type: 'CPF',
+        number: onlyDigits(perfil.cpf)
+      };
+    } else if (tipoUsuario === 'pj' && perfil?.cnpj) {
+      identification = {
+        type: 'CNPJ',
+        number: onlyDigits(perfil.cnpj)
+      };
+    }
+
+    const payer = {
+      email,
+      first_name: nome,
+      identification
+    };
+
+    const env = getEnvFromToken(process.env.MP_ACCESS_TOKEN);
+
+    console.log('[BRICKS][PAYMENT] IN', {
+      env,
+      compradorId,
+      tipoUsuario,
+      transactionAmount,
+      paymentMethodId,
+      installments,
+      issuerId,
+      payer
+    });
+
+    const paymentClient = new Payment(mpClient);
+
+    const paymentBody = {
+      transaction_amount: transactionAmount,
+      token,
+      description: 'Compra BlackBass',
+      installments: Number(installments || 1),
+      payment_method_id: paymentMethodId,
+      issuer_id: issuerId || undefined,
+      payer,
+      metadata: {
+        comprador_id: compradorId,
+        tipo_usuario: tipoUsuario,
+        mp_env: env,
+        via: 'BRICKS'
+      }
+    };
+
+    const payment = await paymentClient.create({ body: paymentBody });
+
+    console.log('[BRICKS][PAYMENT] OUT', {
+      id: payment.id,
+      status: payment.status,
+      status_detail: payment.status_detail,
+      live_mode: payment.live_mode
+    });
+
+    if (payment.status !== 'approved') {
+      return res.status(200).json({
+        status: payment.status,
+        status_detail: payment.status_detail,
+        id: payment.id
+      });
+    }
+
+    // ========= Aprovado: cria pedidos + decrementa estoque + limpa carrinho =========
+    const itensCarrinho = await carregarCarrinhoSnapshot(compradorId, tipoUsuario);
+    if (!itensCarrinho?.length) {
+      console.warn('[BRICKS][PAYMENT] Carrinho vazio na aprovação', {
+        compradorId,
+        tipoUsuario
+      });
+      return res.status(200).json({
+        status: payment.status,
+        status_detail: payment.status_detail,
+        id: payment.id,
+        warning: 'Carrinho vazio no momento da aprovação.'
+      });
+    }
+
+    const porLoja = agruparPorLoja(itensCarrinho);
+    const isPF = String(tipoUsuario).toLowerCase() === 'pf';
+
+    for (const [lojaId, itens] of porLoja.entries()) {
+      const codigo = gerarCodigoPedido(lojaId);
+
+      const { data: pid, error: rpcErr } = await supabaseDb.rpc(
+        'create_pedido_with_itens',
+        {
+          _loja: lojaId,
+          _status: 'pago',
+          _tipo_usuario: tipoUsuario,
+          _itens: itens,
+          _comprador_pf_id: isPF ? compradorId : null,
+          _comprador_pj_id: !isPF ? compradorId : null,
+          _codigo: codigo
+        }
+      );
+
+      if (rpcErr) {
+        console.error('[BRICKS][PAYMENT] Erro criando pedido RPC:', rpcErr);
+        return res.status(500).json({ error: 'Erro criando pedido', details: rpcErr });
+      }
+    }
+
+    // Decrementar estoque
+    for (const row of itensCarrinho) {
+      const qtd = Math.max(1, parseInt(row.quantidade, 10) || 1);
+      const { error: decErr } = await supabaseDb.rpc('decrementa_estoque', {
+        p_id: row.produto_id,
+        p_qtd: qtd
+      });
+      if (decErr) {
+        console.error('[BRICKS][PAYMENT] Erro decrementando estoque', row.produto_id, decErr);
+      }
+    }
+
+    // Limpar carrinho
+    const { error: delErr } = await supabaseDb
+      .from('carrinho')
+      .delete()
+      .eq('usuario_id', compradorId)
+      .eq('tipo_usuario', tipoUsuario);
+
+    if (delErr) {
+      console.warn('[BRICKS][PAYMENT] Carrinho não limpo (continuando):', delErr);
+    }
+
+    return res.status(200).json({
+      status: payment.status,
+      status_detail: payment.status_detail,
+      id: payment.id,
+      pedidos_criados: true
+    });
+  } catch (err) {
+    console.error('[BRICKS][PAYMENT] ERROR', err);
+    return res.status(500).json({
+      error: 'Erro ao processar pagamento com Bricks',
+      details: String(err?.message || err)
+    });
+  }
 });
 
 module.exports = router;
