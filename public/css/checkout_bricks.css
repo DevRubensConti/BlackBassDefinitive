@@ -1,0 +1,281 @@
+@import url('/css/style.css');
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(rgba(10,10,10,.85), rgba(10,10,10,.9)),
+                  url('/images/background.png') no-repeat center center fixed;
+      background-size: cover;
+      color: var(--cor-secundaria);
+    }
+
+    .bb-checkout-page {
+      min-height: calc(100vh - 120px);
+      padding: 30px 16px 40px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .bb-checkout-container {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 22px 26px;
+      border-radius: 18px;
+      background: linear-gradient(
+        145deg,
+        rgba(255,255,255,0.06),
+        rgba(0,0,0,0.65)
+      );
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow:
+        0 16px 40px rgba(0,0,0,0.65),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(10px);
+    }
+
+    .bb-checkout-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .bb-checkout-title {
+      margin: 0;
+      font-family: 'Bebas Neue', system-ui, sans-serif;
+      font-size: 28px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--cor-letras-navbar, #f5f5f5);
+      text-shadow: 2px 2px #28573F;
+    }
+
+    .bb-checkout-subtitle {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: rgba(230,230,230,0.78);
+    }
+
+    .bb-total-pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.18);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .bb-total-pill span {
+      display: block;
+      font-size: 13px;
+      color: rgba(230,230,230,0.7);
+    }
+
+    .bb-total-pill strong {
+      font-size: 15px;
+      color: var(--cor-primaria, #57BD89);
+    }
+
+    .bb-checkout-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.1fr);
+      gap: 22px;
+      margin-top: 10px;
+    }
+
+    /* Resumo da compra */
+    .bb-summary-card {
+      background: rgba(0,0,0,0.65);
+      border-radius: 16px;
+      padding: 18px 16px 16px;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 10px 26px rgba(0,0,0,.55);
+    }
+
+    .bb-summary-card h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: var(--cor-primaria, #57BD89);
+    }
+
+    .bb-summary-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 190px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.35) transparent;
+    }
+
+    .bb-summary-list::-webkit-scrollbar { width: 6px; }
+    .bb-summary-list::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.3);
+      border-radius: 999px;
+    }
+
+    .bb-summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.08);
+      font-size: 13px;
+      color: var(--cor-letras-navbar, #f3f3f3);
+    }
+
+    .bb-summary-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .bb-summary-item-name {
+      flex: 1;
+    }
+
+    .bb-summary-item-qty {
+      color: rgba(230,230,230,0.7);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .bb-summary-item-price {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .bb-summary-footer {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .bb-summary-total-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      color: var(--cor-secundaria, #fff);
+    }
+
+    .bb-summary-total-line span:last-child {
+      color: var(--cor-primaria, #57BD89);
+      font-size: 15px;
+    }
+
+    .bb-summary-note {
+      font-size: 12px;
+      color: rgba(230,230,230,0.65);
+    }
+
+    .bb-back-cart {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--cor-secundaria-clara, #d4f5df);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.04);
+      transition: background .15s ease, transform .1s ease, box-shadow .15s ease;
+    }
+
+    .bb-back-cart span {
+      font-size: 14px;
+    }
+
+    .bb-back-cart:hover {
+      background: rgba(255,255,255,0.09);
+      box-shadow: 0 4px 14px rgba(0,0,0,.5);
+      transform: translateY(-1px);
+    }
+
+    /* Card do pagamento (Bricks) */
+    .bb-payment-card {
+      background: rgba(0,0,0,0.7);
+      border-radius: 16px;
+      padding: 18px 16px 16px;
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 12px 28px rgba(0,0,0,.6);
+    }
+
+    .bb-payment-card h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: var(--cor-letras-navbar, #f5f5f5);
+    }
+
+    .bb-payment-subtitle {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: rgba(230,230,230,0.7);
+    }
+
+    #cardPaymentBrick_container {
+      margin-top: 4px;
+    }
+
+    .bb-payment-security {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      font-size: 11px;
+      color: rgba(230,230,230,0.65);
+      align-items: center;
+    }
+
+    .bb-payment-chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bb-payment-chip span.emoji {
+      font-size: 14px;
+    }
+
+    /* Responsivo */
+    @media (max-width: 900px) {
+      .bb-checkout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bb-checkout-container {
+        padding: 18px 14px 22px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .bb-checkout-title {
+        font-size: 22px;
+      }
+
+      .bb-checkout-page {
+        padding: 18px 10px 26px;
+      }
+
+      .bb-summary-card,
+      .bb-payment-card {
+        padding: 14px 12px;
+      }
+
+      .bb-total-pill {
+        font-size: 12px;
+      }
+    }

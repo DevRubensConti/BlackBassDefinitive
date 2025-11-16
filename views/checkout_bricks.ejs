@@ -3,11 +3,103 @@
 <head>
   <meta charset="UTF-8" />
   <title>Checkout BlackBass (Bricks)</title>
-</head>
-<body>
-  <h1>Checkout (Bricks) – total: R$ <%= totalAmount.toFixed(2) %></h1>
 
-  <div id="cardPaymentBrick_container"></div>
+  <!-- CSS base do site (variáveis de cor, navbar, etc.) -->
+  <link rel="stylesheet" href="/css/checkout_bricks.css">
+  </head>
+<body>
+  <%- include('partials/navbar.ejs') %>
+
+  <main class="bb-checkout-page">
+    <section class="bb-checkout-container">
+      <header class="bb-checkout-header">
+        <div>
+          <h1 class="bb-checkout-title">Finalizar pagamento</h1>
+          <p class="bb-checkout-subtitle">
+            Revise o valor total e conclua seu pagamento com segurança pelo Mercado Pago.
+          </p>
+        </div>
+
+        <div class="bb-total-pill">
+          <span>Total da compra</span>
+          <strong>R$ <%= totalAmount.toFixed(2) %></strong>
+        </div>
+      </header>
+
+      <div class="bb-checkout-grid">
+        <!-- RESUMO DA COMPRA -->
+        <aside class="bb-summary-card">
+          <h2>Resumo da compra</h2>
+
+          <% if (itensCarrinho && itensCarrinho.length) { %>
+            <ul class="bb-summary-list">
+              <% itensCarrinho.forEach(row => { 
+                   const prod = row.produtos || {};
+                   const qtd  = Number(row.quantidade || 1);
+                   const preco = Number(prod.preco || 0);
+              %>
+                <li class="bb-summary-item">
+                  <div class="bb-summary-item-name">
+                    <%= prod.nome || 'Item' %>
+                  </div>
+                  <div class="bb-summary-item-qty">
+                    x<%= qtd %>
+                  </div>
+                  <div class="bb-summary-item-price">
+                    R$ <%= (qtd * preco).toFixed(2) %>
+                  </div>
+                </li>
+              <% }) %>
+            </ul>
+          <% } else { %>
+            <p class="bb-summary-note">Não foi possível carregar o detalhamento dos itens.</p>
+          <% } %>
+
+          <div class="bb-summary-footer">
+            <div class="bb-summary-total-line">
+              <span>Total</span>
+              <span>R$ <%= totalAmount.toFixed(2) %></span>
+            </div>
+            <p class="bb-summary-note">
+              O pagamento é processado pelo Mercado Pago. Seus dados de cartão não ficam salvos no BlackBass.
+            </p>
+          </div>
+
+          <a href="/carrinho" class="bb-back-cart">
+            <span>←</span>
+            <span>Voltar para o carrinho</span>
+          </a>
+        </aside>
+
+        <!-- PAGAMENTO (BRICKS) -->
+        <section class="bb-payment-card">
+          <h2>Pagamento com cartão</h2>
+          <p class="bb-payment-subtitle">
+            Preencha os dados do cartão no formulário seguro abaixo. Você será redirecionado automaticamente após a aprovação.
+          </p>
+
+          <div id="cardPaymentBrick_container"></div>
+
+          <div class="bb-payment-security">
+            <div class="bb-payment-chip">
+              <span class="emoji">🔒</span>
+              <span>Ambiente seguro Mercado Pago</span>
+            </div>
+            <div class="bb-payment-chip">
+              <span class="emoji">💳</span>
+              <span>Cartão de crédito e débito</span>
+            </div>
+            <div class="bb-payment-chip">
+              <span class="emoji">📄</span>
+              <span>Comprovante enviado para seu e-mail</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer.ejs') %>
 
   <!-- SDK do Mercado Pago -->
   <script src="https://sdk.mercadopago.com/js/v2"></script>
@@ -66,7 +158,6 @@
                     data.status === "in_process" ||
                     data.status === "pending"
                   ) {
-                    // se quiser, pode ajustar pra uma página específica de "em análise"
                     window.location.href = "/api/checkout/pendente";
                   } else {
                     window.location.href = "/api/checkout/erro";
