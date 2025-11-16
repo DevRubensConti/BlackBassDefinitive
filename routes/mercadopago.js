@@ -284,12 +284,33 @@ router.get('/bricks', async (req, res) => {
 // ===========================
 router.post('/bricks/process-payment', async (req, res) => {
   try {
+    // LOG inicial: sempre mostra que a rota foi chamada
+    console.log('[BRICKS][PAYMENT] HIT ROUTE', {
+      bodyType: typeof req.body,
+      isBuffer: Buffer.isBuffer(req.body)
+    });
+
     const usr = req.session?.usuario || {};
     const compradorId = usr?.id;
     const tipoUsuario = (usr?.tipo || '').toLowerCase(); // 'pf' | 'pj'
 
     if (!compradorId || !tipoUsuario) {
       return res.status(401).json({ error: 'Sessão expirada: faça login novamente.' });
+    }
+
+    // 🔴 Aqui é o pulo do gato: garantir que o body seja um OBJETO
+    let payload = req.body;
+
+    if (Buffer.isBuffer(payload)) {
+      try {
+        payload = JSON.parse(payload.toString('utf8'));
+      } catch (e) {
+        console.error('[BRICKS][PAYMENT] Body não é JSON válido:', e);
+        return res.status(400).json({
+          error: 'Corpo da requisição inválido (não é JSON).',
+          details: String(e?.message || e)
+        });
+      }
     }
 
     const {
@@ -299,16 +320,22 @@ router.post('/bricks/process-payment', async (req, res) => {
       installments,
       amount,
       payer: payerFromBrick
-    } = req.body || {};
+    } = payload || {};
 
     const transactionAmount = Number(amount || 0);
 
     if (!token || !paymentMethodId || !transactionAmount) {
+      console.error('[BRICKS][PAYMENT] Dados insuficientes', {
+        hasToken: !!token,
+        paymentMethodId,
+        transactionAmount
+      });
       return res.status(400).json({
         error: 'Dados insuficientes para criar pagamento.',
         details: { token: !!token, paymentMethodId, amount: transactionAmount }
       });
     }
+
 
     // ========= Buscar dados reais do comprador no Supabase =========
     let perfil = null;
