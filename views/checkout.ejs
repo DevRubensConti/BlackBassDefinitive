@@ -85,8 +85,11 @@
       </div>
 
       <div style="margin-top: 20px;">
-        <button id="btnPagarMP" class="btn-pagamento">Ir para pagamento</button>
-      </div>
+  <form method="GET" action="/checkout/frete">
+    <button type="submit" class="btn-pagamento">Finalizar pedido</button>
+  </form>
+</div>
+
     <% } else { %>
       <p class="empty">Seu carrinho está vazio.</p>
     <% } %>

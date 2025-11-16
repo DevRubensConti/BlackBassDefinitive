@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Escolha o frete | BlackBass</title>
+
+  <!-- estilo base do site -->
+  <link rel="stylesheet" href="/css/frete_gateway.css" >
+
+</head>
+<body>
+  <%- include('partials/navbar.ejs') %>
+
+  <main class="frete-page">
+    <h1 class="frete-title">Escolha o frete</h1>
+
+    <% if (!itensCarrinho || !itensCarrinho.length) { %>
+      <div class="frete-card frete-empty">
+        Seu carrinho está vazio. <a href="/" style="color: var(--cor-primaria, #57BD89);">Voltar para a loja</a>.
+      </div>
+    <% } else { %>
+      <div class="frete-layout">
+        <!-- Coluna esquerda: itens + resumo -->
+        <section class="frete-card">
+          <h2>Resumo do pedido</h2>
+          <small>Confira seus itens antes de escolher o frete.</small>
+
+          <div class="frete-items-list">
+            <% itensCarrinho.forEach((row) => { 
+              const prod = row.produtos || {};
+              const img = (prod.imagem_url || '').split(',')[0] || '/images/placeholder.png';
+              const qtd = Number(row.quantidade || 1);
+              const preco = Number(prod.preco || 0);
+              const subtotalItem = qtd * preco;
+            %>
+              <article class="frete-item">
+                <img src="<%= img %>" alt="Produto" 
+                     onerror="this.onerror=null;this.src='/images/placeholder.png';" />
+
+                <div class="frete-item-info">
+                  <h3><%= prod.nome || 'Produto' %></h3>
+                  <p>Qtd: <%= qtd %></p>
+                </div>
+
+                <div class="frete-item-price">
+                  <span><%= subtotalItem.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></span>
+                  <small>
+                    (<%= preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %> un.)
+                  </small>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+
+          <div class="frete-resumo">
+            <div class="frete-resumo-row">
+              <span>Subtotal produtos</span>
+              <strong id="subtotal-text">
+                <%= Number(subtotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+              </strong>
+            </div>
+            <div class="frete-resumo-row">
+              <span>Frete</span>
+              <span id="frete-text">
+                <% if (freteSelecionado) { %>
+                  <%= Number(freteSelecionado.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+                  (<%= freteSelecionado.metodo %>)
+                <% } else { %>
+                  A escolher
+                <% } %>
+              </span>
+            </div>
+            <div class="frete-resumo-row total">
+              <span>Total estimado</span>
+              <span id="total-geral-text">
+                <% 
+                  const totalEstimado = Number(subtotal || 0) + Number((freteSelecionado && freteSelecionado.valor) || 0);
+                %>
+                <%= totalEstimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Coluna direita: opções de frete -->
+        <section class="frete-card">
+          <h2>Opções de frete</h2>
+          <small>Essas opções podem ser integradas depois a Melhor Envio / Correios.</small>
+
+          <form method="POST" action="/checkout/frete" id="form-frete">
+            <!-- opções mockadas (depois você troca pela resposta real do gateway) -->
+            <div class="frete-options" id="frete-options">
+              <label class="frete-option">
+                <input
+                  type="radio"
+                  name="metodo"
+                  value="Econômico"
+                  data-valor="19.90"
+                  data-prazo="7 a 10 dias úteis"
+                  <%= freteSelecionado && freteSelecionado.metodo === 'Econômico' ? 'checked' : '' %>
+                />
+                <div class="frete-option-left">
+                  <span class="frete-option-nome">Econômico</span>
+                  <span class="frete-option-prazo">7 a 10 dias úteis</span>
+                </div>
+                <div class="frete-option-right">
+                  <div class="frete-option-preco">R$ 19,90</div>
+                  <div class="frete-option-tag">Melhor custo-benefício</div>
+                </div>
+              </label>
+
+              <label class="frete-option">
+                <input
+                  type="radio"
+                  name="metodo"
+                  value="Rápido"
+                  data-valor="34.90"
+                  data-prazo="3 a 5 dias úteis"
+                  <%= freteSelecionado && freteSelecionado.metodo === 'Rápido' ? 'checked' : '' %>
+                />
+                <div class="frete-option-left">
+                  <span class="frete-option-nome">Rápido</span>
+                  <span class="frete-option-prazo">3 a 5 dias úteis</span>
+                </div>
+                <div class="frete-option-right">
+                  <div class="frete-option-preco">R$ 34,90</div>
+                  <div class="frete-option-tag">Entrega mais rápida</div>
+                </div>
+              </label>
+
+              <label class="frete-option">
+                <input
+                  type="radio"
+                  name="metodo"
+                  value="Expresso"
+                  data-valor="59.90"
+                  data-prazo="1 a 2 dias úteis"
+                  <%= freteSelecionado && freteSelecionado.metodo === 'Expresso' ? 'checked' : '' %>
+                />
+                <div class="frete-option-left">
+                  <span class="frete-option-nome">Expresso</span>
+                  <span class="frete-option-prazo">1 a 2 dias úteis</span>
+                </div>
+                <div class="frete-option-right">
+                  <div class="frete-option-preco">R$ 59,90</div>
+                  <div class="frete-option-tag">Mais rápido possível</div>
+                </div>
+              </label>
+            </div>
+
+            <p class="frete-alert">
+              Após escolher o frete, você será redirecionado para a página de pagamento.
+            </p>
+
+            <!-- Hidden inputs que o backend espera -->
+            <input type="hidden" name="valor" id="frete-valor-hidden" value="<%= freteSelecionado ? freteSelecionado.valor : '' %>">
+            <input type="hidden" name="prazo" id="frete-prazo-hidden" value="<%= freteSelecionado ? freteSelecionado.prazo : '' %>">
+
+            <div class="frete-actions">
+              <a href="/carrinho" class="btn btn-secundario">
+                ⬅ Voltar para o carrinho
+              </a>
+
+              <button type="submit" class="btn btn-primario" id="btn-continuar-pagamento">
+                Continuar para pagamento
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+    <% } %>
+  </main>
+
+  <%- include('partials/footer.ejs') %>
+
+  <script>
+    (function () {
+      const subtotal = Number(<%= Number(subtotal || 0).toFixed(2) %>);
+      const freteSelecionado = <%- JSON.stringify(freteSelecionado || null) %>;
+
+      const optionsContainer = document.getElementById('frete-options');
+      const freteText = document.getElementById('frete-text');
+      const totalText = document.getElementById('total-geral-text');
+      const inputValor = document.getElementById('frete-valor-hidden');
+      const inputPrazo = document.getElementById('frete-prazo-hidden');
+      const btnContinuar = document.getElementById('btn-continuar-pagamento');
+
+      function formatBRL(v) {
+        return Number(v || 0).toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        });
+      }
+
+      function atualizarResumo(valor, metodo, prazo) {
+        if (freteText) {
+          if (valor > 0) {
+            freteText.textContent = formatBRL(valor) + (metodo ? ` (${metodo})` : '');
+          } else {
+            freteText.textContent = 'A escolher';
+          }
+        }
+        if (totalText) {
+          const total = subtotal + (valor || 0);
+          totalText.textContent = formatBRL(total);
+        }
+      }
+
+      function aplicarCheckedVisual() {
+        if (!optionsContainer) return;
+        const labels = optionsContainer.querySelectorAll('.frete-option');
+        labels.forEach(label => {
+          const radio = label.querySelector('input[type="radio"]');
+          if (radio && radio.checked) {
+            label.classList.add('checked');
+          } else {
+            label.classList.remove('checked');
+          }
+        });
+      }
+
+      if (optionsContainer) {
+        optionsContainer.addEventListener('change', (e) => {
+          const target = e.target;
+          if (!target || target.name !== 'metodo') return;
+
+          const valor = Number(target.dataset.valor || 0);
+          const prazo = target.dataset.prazo || '';
+          const metodo = target.value || 'desconhecido';
+
+          if (inputValor) inputValor.value = String(valor);
+          if (inputPrazo) inputPrazo.value = prazo;
+
+          atualizarResumo(valor, metodo, prazo);
+          aplicarCheckedVisual();
+        });
+
+        aplicarCheckedVisual();
+      }
+
+      // Se veio frete da sessão, garante que o resumo inicie correto
+      if (freteSelecionado && typeof freteSelecionado.valor !== 'undefined') {
+        atualizarResumo(
+          Number(freteSelecionado.valor || 0),
+          freteSelecionado.metodo || '',
+          freteSelecionado.prazo || ''
+        );
+      } else {
+        atualizarResumo(0, '', '');
+      }
+
+      // Validação simples no submit
+      const form = document.getElementById('form-frete');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          const checked = optionsContainer
+            ? optionsContainer.querySelector('input[type="radio"]:checked')
+            : null;
+
+          if (!checked) {
+            e.preventDefault();
+            alert('Por favor, selecione uma opção de frete antes de continuar.');
+            return false;
+          }
+
+          if (btnContinuar) {
+            btnContinuar.disabled = true;
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

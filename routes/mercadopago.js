@@ -260,25 +260,30 @@ router.get('/bricks', async (req, res) => {
 
     const itensCarrinho = await carregarCarrinhoSnapshot(compradorId, tipoUsuario);
 
-    const total = itensCarrinho.reduce((acc, row) => {
+    const subtotal = itensCarrinho.reduce((acc, row) => {
       const prod = row.produtos || {};
       const preco = Number(prod.preco || 0);
       const qtd = Math.max(1, parseInt(row.quantidade, 10) || 1);
       return acc + preco * qtd;
     }, 0);
 
+    const frete = req.session.freteSelecionado || { valor: 0 };
+
+    const total = subtotal + Number(frete.valor || 0);
+
     return res.render('checkout_bricks', {
       mpPublicKey: process.env.MP_PUBLIC_KEY,
       totalAmount: total || 0,
       usuario: usr,
-      itensCarrinho
+      itensCarrinho,
+      subtotal,
+      frete
     });
   } catch (err) {
     console.error('[BRICKS][GET] ERRO', err);
     return res.status(500).send('Erro carregando checkout bricks');
   }
 });
-
 // ===========================
 //  Bricks – processa pagamento
 // ===========================

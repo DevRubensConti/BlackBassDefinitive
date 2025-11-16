@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const express = require('express');
 const session = require('express-session');
-const bodyParser = require('body-parser');
+// const bodyParser = require('body-parser'); // ⛔️ não precisa mais
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -18,20 +18,21 @@ const io = new Server(server);
 // ===========================
 //  Webhook do Mercado Pago
 // ===========================
-// ⚠️ Este middleware deve vir ANTES do bodyParser.
-// Garante que o corpo do webhook chegue cru (Buffer),
+// ⚠️ Este middleware deve vir ANTES de qualquer parser JSON/urlencoded.
+// Garante que o corpo do webhook chegue cru (Buffer)
 // para validações e parsing corretos no controller.
 app.use('/api/checkout/webhook', express.raw({ type: '*/*' }));
 
 // ===========================
 //  Middlewares globais
 // ===========================
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+// Substitui bodyParser:
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // Sessão compartilhada com o Socket.io
 const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || 'blackbass-secret',
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 dia
@@ -63,13 +64,13 @@ app.use('/', require('./routes/loja'));
 app.use('/', require('./routes/carrinho'));
 app.use('/', require('./routes/pedidos'));
 app.use('/', require('./routes/chat'));
-app.use('/', require('./routes/modelos')); 
-app.use('/', require('./routes/descricao')); 
+app.use('/', require('./routes/modelos'));
+app.use('/', require('./routes/descricao'));
 app.use('/', require('./routes/avaliacoes'));
 app.use('/', require('./routes/financeiro'));
 app.use('/', require('./routes/ofertas'));
 app.use('/api/checkout', require('./routes/mercadopago'));
-
+app.use('/', require('./routes/frete'));
 
 // ===========================
 //  Socket.io
