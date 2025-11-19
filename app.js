@@ -71,6 +71,7 @@ app.use('/', require('./routes/financeiro'));
 app.use('/', require('./routes/ofertas'));
 app.use('/api/checkout', require('./routes/mercadopago'));
 app.use('/', require('./routes/frete'));
+app.use('/', require('./routes/melhorenvio'));
 
 // ===========================
 //  Socket.io
