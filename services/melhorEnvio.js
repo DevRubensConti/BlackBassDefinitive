@@ -7,12 +7,15 @@ const CLIENT_SECRET = (process.env.MELHOR_ENVIO_CLIENT_SECRET || '').trim();
 const BASE_URL      = (process.env.MELHOR_ENVIO_BASE_URL || 'https://sandbox.melhorenvio.com.br').trim();
 const AUTH_URL      = (process.env.MELHOR_ENVIO_AUTH_URL || 'https://sandbox.melhorenvio.com.br').trim();
 const REDIRECT_URI  = (process.env.MELHOR_ENVIO_REDIRECT_URI || '').trim();
+// 🔥 Agora o escopo vem da env, com default seguro
+const SCOPES        = (process.env.MELHOR_ENVIO_SCOPES || 'shipping-calculate').trim();
 
 // DEBUG de configuração
 console.log('[ME] CLIENT_ID        =', CLIENT_ID ? CLIENT_ID.slice(0, 6) + '…' : '(vazio)');
 console.log('[ME] BASE_URL         =', BASE_URL);
 console.log('[ME] AUTH_URL         =', AUTH_URL);
 console.log('[ME] REDIRECT_URI     =', REDIRECT_URI || '(vazio)');
+console.log('[ME] SCOPES           =', SCOPES || '(vazio)');
 
 if (!CLIENT_ID || !CLIENT_SECRET) {
   console.warn('[ME] Atenção: CLIENT_ID ou CLIENT_SECRET vazios. Verifique seu .env');
@@ -31,8 +34,8 @@ function buildAuthorizeUrl(state) {
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
     response_type: 'code',
-    // Ajuste os escopos conforme configurado na aplicação do Melhor Envio
-    scope: 'shipping-calculate shipping-read shipping-write',
+    // Escopos agora controlados por env (MELHOR_ENVIO_SCOPES)
+    scope: SCOPES,
     state
   });
 
