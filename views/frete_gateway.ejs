@@ -6,7 +6,6 @@
 
   <!-- estilo base do site -->
   <link rel="stylesheet" href="/css/frete_gateway.css" >
-
 </head>
 <body>
   <%- include('partials/navbar.ejs') %>
@@ -85,67 +84,115 @@
         <!-- Coluna direita: opções de frete -->
         <section class="frete-card">
           <h2>Opções de frete</h2>
-          <small>Essas opções podem ser integradas depois a Melhor Envio / Correios.</small>
+          <small>
+            <% if (cotacoes && cotacoes.length) { %>
+              Opções calculadas automaticamente pelo Melhor Envio.
+            <% } else { %>
+              Opções padrão de frete (serão integradas ao Melhor Envio).
+            <% } %>
+          </small>
 
           <form method="POST" action="/checkout/frete" id="form-frete">
-            <!-- opções mockadas (depois você troca pela resposta real do gateway) -->
             <div class="frete-options" id="frete-options">
-              <label class="frete-option">
-                <input
-                  type="radio"
-                  name="metodo"
-                  value="Econômico"
-                  data-valor="19.90"
-                  data-prazo="7 a 10 dias úteis"
-                  <%= freteSelecionado && freteSelecionado.metodo === 'Econômico' ? 'checked' : '' %>
-                />
-                <div class="frete-option-left">
-                  <span class="frete-option-nome">Econômico</span>
-                  <span class="frete-option-prazo">7 a 10 dias úteis</span>
-                </div>
-                <div class="frete-option-right">
-                  <div class="frete-option-preco">R$ 19,90</div>
-                  <div class="frete-option-tag">Melhor custo-benefício</div>
-                </div>
-              </label>
+              <% if (cotacoes && cotacoes.length) { %>
+                <% cotacoes.forEach(function(cot, idx) { 
+                  const rawPrice = Number(cot.custom_price || cot.price || 0);
+                  const dt = cot.custom_delivery_time || cot.delivery_time || {};
+                  const min = dt && (dt.min || dt.min_business || dt.min_days || dt.minimo);
+                  const max = dt && (dt.max || dt.max_business || dt.max_days || dt.maximo);
+                  const prazoLabel = (min && max) ? `${min} a ${max} dias úteis` : '';
+                  const nomeServico = cot.name || (cot.company && cot.company.name) || `Serviço ${idx+1}`;
+                  const checked =
+                    freteSelecionado && freteSelecionado.metodo
+                      ? (freteSelecionado.metodo === nomeServico)
+                      : (idx === 0);
+                %>
+                  <label class="frete-option">
+                    <input
+                      type="radio"
+                      name="metodo"
+                      value="<%= nomeServico %>"
+                      data-valor="<%= rawPrice.toFixed(2) %>"
+                      data-prazo="<%= prazoLabel %>"
+                      <%= checked ? 'checked' : '' %>
+                    />
+                    <div class="frete-option-left">
+                      <span class="frete-option-nome">
+                        <%= nomeServico %>
+                      </span>
+                      <span class="frete-option-prazo">
+                        <%= prazoLabel || 'Prazo não informado' %>
+                      </span>
+                    </div>
+                    <div class="frete-option-right">
+                      <div class="frete-option-preco">
+                        <%= rawPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+                      </div>
+                      <div class="frete-option-tag">
+                        Melhor Envio
+                      </div>
+                    </div>
+                  </label>
+                <% }); %>
+              <% } else { %>
+                <!-- Fallback: opções mockadas -->
+                <label class="frete-option">
+                  <input
+                    type="radio"
+                    name="metodo"
+                    value="Econômico"
+                    data-valor="19.90"
+                    data-prazo="7 a 10 dias úteis"
+                    <%= freteSelecionado && freteSelecionado.metodo === 'Econômico' ? 'checked' : 'checked' %>
+                  />
+                  <div class="frete-option-left">
+                    <span class="frete-option-nome">Econômico</span>
+                    <span class="frete-option-prazo">7 a 10 dias úteis</span>
+                  </div>
+                  <div class="frete-option-right">
+                    <div class="frete-option-preco">R$ 19,90</div>
+                    <div class="frete-option-tag">Melhor custo-benefício</div>
+                  </div>
+                </label>
 
-              <label class="frete-option">
-                <input
-                  type="radio"
-                  name="metodo"
-                  value="Rápido"
-                  data-valor="34.90"
-                  data-prazo="3 a 5 dias úteis"
-                  <%= freteSelecionado && freteSelecionado.metodo === 'Rápido' ? 'checked' : '' %>
-                />
-                <div class="frete-option-left">
-                  <span class="frete-option-nome">Rápido</span>
-                  <span class="frete-option-prazo">3 a 5 dias úteis</span>
-                </div>
-                <div class="frete-option-right">
-                  <div class="frete-option-preco">R$ 34,90</div>
-                  <div class="frete-option-tag">Entrega mais rápida</div>
-                </div>
-              </label>
+                <label class="frete-option">
+                  <input
+                    type="radio"
+                    name="metodo"
+                    value="Rápido"
+                    data-valor="34.90"
+                    data-prazo="3 a 5 dias úteis"
+                    <%= freteSelecionado && freteSelecionado.metodo === 'Rápido' ? 'checked' : '' %>
+                  />
+                  <div class="frete-option-left">
+                    <span class="frete-option-nome">Rápido</span>
+                    <span class="frete-option-prazo">3 a 5 dias úteis</span>
+                  </div>
+                  <div class="frete-option-right">
+                    <div class="frete-option-preco">R$ 34,90</div>
+                    <div class="frete-option-tag">Entrega mais rápida</div>
+                  </div>
+                </label>
 
-              <label class="frete-option">
-                <input
-                  type="radio"
-                  name="metodo"
-                  value="Expresso"
-                  data-valor="59.90"
-                  data-prazo="1 a 2 dias úteis"
-                  <%= freteSelecionado && freteSelecionado.metodo === 'Expresso' ? 'checked' : '' %>
-                />
-                <div class="frete-option-left">
-                  <span class="frete-option-nome">Expresso</span>
-                  <span class="frete-option-prazo">1 a 2 dias úteis</span>
-                </div>
-                <div class="frete-option-right">
-                  <div class="frete-option-preco">R$ 59,90</div>
-                  <div class="frete-option-tag">Mais rápido possível</div>
-                </div>
-              </label>
+                <label class="frete-option">
+                  <input
+                    type="radio"
+                    name="metodo"
+                    value="Expresso"
+                    data-valor="59.90"
+                    data-prazo="1 a 2 dias úteis"
+                    <%= freteSelecionado && freteSelecionado.metodo === 'Expresso' ? 'checked' : '' %>
+                  />
+                  <div class="frete-option-left">
+                    <span class="frete-option-nome">Expresso</span>
+                    <span class="frete-option-prazo">1 a 2 dias úteis</span>
+                  </div>
+                  <div class="frete-option-right">
+                    <div class="frete-option-preco">R$ 59,90</div>
+                    <div class="frete-option-tag">Mais rápido possível</div>
+                  </div>
+                </label>
+              <% } %>
             </div>
 
             <p class="frete-alert">
@@ -238,13 +285,28 @@
         aplicarCheckedVisual();
       }
 
-      // Se veio frete da sessão, garante que o resumo inicie correto
+      // Inicializa resumo:
       if (freteSelecionado && typeof freteSelecionado.valor !== 'undefined') {
         atualizarResumo(
           Number(freteSelecionado.valor || 0),
           freteSelecionado.metodo || '',
           freteSelecionado.prazo || ''
         );
+      } else if (optionsContainer) {
+        // Se não veio da sessão, usa a opção marcada (primeira) como default
+        const checked = optionsContainer.querySelector('input[type="radio"]:checked');
+        if (checked) {
+          const valorInit = Number(checked.dataset.valor || 0);
+          const prazoInit = checked.dataset.prazo || '';
+          const metodoInit = checked.value || 'desconhecido';
+
+          if (inputValor) inputValor.value = String(valorInit);
+          if (inputPrazo) inputPrazo.value = prazoInit;
+
+          atualizarResumo(valorInit, metodoInit, prazoInit);
+        } else {
+          atualizarResumo(0, '', '');
+        }
       } else {
         atualizarResumo(0, '', '');
       }
