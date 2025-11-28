@@ -11,12 +11,21 @@ const {
 const router = express.Router();
 
 /**
+ * Helper: converte expires_in em expires_at (ISO)
+ */
+function calcExpiresAt(expiresInSec) {
+  const base = Date.now();
+  const ms = (expiresInSec || 3600) * 1000;
+  return new Date(base + ms).toISOString();
+}
+
+/**
  * Helper: busca token da loja e renova se necessário
  */
 async function getValidAccessToken(lojaId) {
   const { data: row, error } = await supabaseDb
     .from('melhorenvio_tokens')
-    .select('access_token, refresh_token, expires_in, token_type, created_at')
+    .select('access_token, refresh_token, expires_in, token_type, created_at, expires_at')
     .eq('loja_id', lojaId)
     .maybeSingle();
 
@@ -30,11 +39,20 @@ async function getValidAccessToken(lojaId) {
   }
 
   const now = Date.now();
-  const createdAtMs = row.created_at ? new Date(row.created_at).getTime() : now;
-  const expiresInMs = (row.expires_in || 3600) * 1000;
+
+  let expiresAtMs;
+  if (row.expires_at) {
+    // Novo formato: usa expires_at direto
+    expiresAtMs = new Date(row.expires_at).getTime();
+  } else {
+    // Legado: calcula usando created_at + expires_in
+    const createdAtMs = row.created_at ? new Date(row.created_at).getTime() : now;
+    const expiresInMs = (row.expires_in || 3600) * 1000;
+    expiresAtMs = createdAtMs + expiresInMs;
+  }
 
   // Renova se faltam menos de 5 minutos para expirar
-  const willExpireSoon = now > createdAtMs + expiresInMs - 5 * 60 * 1000;
+  const willExpireSoon = !expiresAtMs || now > expiresAtMs - 5 * 60 * 1000;
 
   if (!willExpireSoon || !row.refresh_token) {
     return row.access_token;
@@ -44,6 +62,8 @@ async function getValidAccessToken(lojaId) {
 
   const newTokens = await refreshAccessToken(row.refresh_token);
 
+  const expiresAt = calcExpiresAt(newTokens.expires_in || row.expires_in);
+
   const { error: upsertErr } = await supabaseDb
     .from('melhorenvio_tokens')
     .upsert(
@@ -51,9 +71,10 @@ async function getValidAccessToken(lojaId) {
         loja_id: lojaId,
         access_token: newTokens.access_token,
         refresh_token: newTokens.refresh_token || row.refresh_token,
-        expires_in: newTokens.expires_in,
+        expires_in: newTokens.expires_in || row.expires_in,
         token_type: newTokens.token_type || row.token_type || 'Bearer',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        expires_at: expiresAt
       },
       { onConflict: 'loja_id' }
     );
@@ -155,6 +176,8 @@ router.get('/integracoes/melhorenvio/callback', async (req, res) => {
       return res.status(400).send('Falha ao obter token do Melhor Envio.');
     }
 
+    const expiresAt = calcExpiresAt(tokenData.expires_in);
+
     // salva os tokens no banco (um registro por loja)
     const { error: upsertErr } = await supabaseDb
       .from('melhorenvio_tokens')
@@ -165,7 +188,8 @@ router.get('/integracoes/melhorenvio/callback', async (req, res) => {
           refresh_token: tokenData.refresh_token,
           expires_in: tokenData.expires_in,
           token_type: tokenData.token_type || 'Bearer',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          expires_at: expiresAt
         },
         { onConflict: 'loja_id' }
       );
