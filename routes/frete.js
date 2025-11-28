@@ -126,18 +126,61 @@ router.get('/checkout/frete', async (req, res) => {
         // 1) pega token do Melhor Envio salvo para a LOJA (com refresh automático)
         const accessToken = await getValidAccessTokenForLoja(primeiraLojaId);
 
-        // 2) CEP de origem (loja) – pega da tabela lojas, senão fallback
-        let cepOrigem = '13097173';
+        // 2) CEP de origem (loja)
+        // Busca o CEP do dono da loja (PF ou PJ) via usuario_id + doc_tipo.
+        let cepOrigem = process.env.MELHOR_ENVIO_CEP_ORIGEM || '13097173';
+
         const { data: lojaRow, error: lojaErr } = await supabaseDb
           .from('lojas')
-          .select('id, cep')
+          .select('id, usuario_id, doc_tipo')
           .eq('id', primeiraLojaId)
           .maybeSingle();
 
         if (lojaErr) {
           console.warn('[FRETE][GET] Erro buscando loja para CEP de origem:', lojaErr);
-        } else if (lojaRow?.cep) {
-          cepOrigem = String(lojaRow.cep).replace(/\D+/g, '');
+        } else if (lojaRow?.usuario_id) {
+          const docTipo = (lojaRow.doc_tipo || '').toUpperCase();
+
+          try {
+            if (docTipo === 'CNPJ') {
+              // Loja PJ → buscar em usuarios_pj
+              const { data: pj, error: pjErr } = await supabaseDb
+                .from('usuarios_pj')
+                .select('cep')
+                .eq('id', lojaRow.usuario_id)
+                .maybeSingle();
+
+              if (pjErr) {
+                console.warn(
+                  '[FRETE][GET] Erro buscando usuarios_pj para CEP origem:',
+                  pjErr
+                );
+              } else if (pj?.cep) {
+                cepOrigem = String(pj.cep).replace(/\D+/g, '');
+              }
+            } else {
+              // Loja PF → buscar em usuarios_pf
+              const { data: pf, error: pfErr } = await supabaseDb
+                .from('usuarios_pf')
+                .select('cep')
+                .eq('id', lojaRow.usuario_id)
+                .maybeSingle();
+
+              if (pfErr) {
+                console.warn(
+                  '[FRETE][GET] Erro buscando usuarios_pf para CEP origem:',
+                  pfErr
+                );
+              } else if (pf?.cep) {
+                cepOrigem = String(pf.cep).replace(/\D+/g, '');
+              }
+            }
+          } catch (cepErr) {
+            console.warn(
+              '[FRETE][GET] Erro geral ao resolver CEP origem da loja:',
+              cepErr
+            );
+          }
         }
 
         // 3) CEP de destino (comprador) – usa usuarios_pf / usuarios_pj
