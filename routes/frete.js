@@ -213,28 +213,32 @@ router.get('/checkout/frete', async (req, res) => {
         }
 
         // 4) monta payload de cotação (exemplo; depois refine com peso/medidas reais)
-        const payload = {
-          from: {
-            postal_code: cepOrigem
-          },
-          to: {
-            postal_code: cepDestino
-          },
-          products: itensCarrinho.map((row) => {
-            const prod = row.produtos || {};
-            const qtd = Number(row.quantidade || 1);
+        // 4) monta payload de cotação (guitarra padrão: caixa para guitarra/acústica)
+const payload = {
+  from: {
+    postal_code: cepOrigem
+  },
+  to: {
+    postal_code: cepDestino
+  },
+  products: itensCarrinho.map((row) => {
+    const prod = row.produtos || {};
+    const qtd = Number(row.quantidade || 1);
+    const preco = Number(prod.preco || 0);
 
-            return {
-              id: prod.id,
-              width: 11,
-              height: 2,
-              length: 16,
-              weight: 0.3,
-              quantity: qtd,
-              insurance_value: Number(prod.preco || 0) * qtd
-            };
-          })
-        };
+    return {
+      id: prod.id,
+      // Medidas aproximadas de uma guitarra acústica em caixa
+      // 40" x 15" ≈ 102cm x 38cm, altura estimada 12cm
+      length: 102, // cm (comprimento)
+      width: 38,   // cm (largura)
+      height: 12,  // cm (altura)
+      weight: 4,   // kg (peso médio com case/embalagem)
+      quantity: qtd,
+      insurance_value: preco * qtd
+    };
+  })
+};
 
         // 5) chama a API de cálculo do Melhor Envio
         cotacoes = await melhorEnvioRequest(
