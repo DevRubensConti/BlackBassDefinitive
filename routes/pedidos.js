@@ -240,43 +240,41 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
     };
   }
 
-const { data: itens, error: itensErr } = await supabaseDb
-  .from('pedido_itens')
-  .select('produto_id, quantidade, nome, unit_price_cents, subtotal_cents')
-  .eq('pedido_id', pedidoId);
+  // 4) Itens do pedido
+  const { data: itens, error: itensErr } = await supabaseDb
+    .from('pedido_itens')
+    .select('produto_id, quantidade, nome, unit_price_cents, subtotal_cents')
+    .eq('pedido_id', pedidoId);
 
-if (itensErr || !itens || !itens.length) {
-  console.error('[ME][PEDIDO] Erro ao buscar itens do pedido:', itensErr);
-  throw new Error('Itens do pedido não encontrados para etiqueta.');
-}
+  if (itensErr || !itens || !itens.length) {
+    console.error('[ME][PEDIDO] Erro ao buscar itens do pedido:', itensErr);
+    throw new Error('Itens do pedido não encontrados para etiqueta.');
+  }
 
-// Produtos + volume (aproximação guitarra/violão)
-const products = itens.map((it) => ({
-  id: it.produto_id,
-  quantity: Number(it.quantidade || 1),
-  weight: 4,
-  length: 102,
-  width: 38,
-  height: 24,
-  insurance_value: (Number(it.subtotal_cents || 0) / 100) || 0
-}));
+  // Produtos no formato exigido pelo Melhor Envio
+  const products = itens.map((it) => {
+    const unitario = Number(it.unit_price_cents || 0) / 100;
+    const subtotal = Number(it.subtotal_cents || 0) / 100;
 
-const totalInsurance = products.reduce((acc, p) => acc + (p.insurance_value || 0), 0);
-const totalWeight = products.reduce((acc, p) => acc + (p.weight || 0) * p.quantity, 0);
+    return {
+      id: it.produto_id,
+      name: it.nome || 'Produto',
+      quantity: Number(it.quantidade || 1),
+      unitary_value: unitario,
+      weight: 4,               // kg por unidade (ajusta se quiser)
+      insurance_value: subtotal
+    };
+  });
 
-const serviceId = Number(process.env.MELHOR_ENVIO_DEFAULT_SERVICE_ID || 3);
+  const totalInsurance = products.reduce((acc, p) => acc + (p.insurance_value || 0), 0);
+  const totalWeight = products.reduce((acc, p) => acc + (p.weight || 0) * p.quantity, 0);
+  const serviceId = Number(process.env.MELHOR_ENVIO_DEFAULT_SERVICE_ID || 3);
 
-const payloadCart = {
-  service: serviceId,
-  from: remetente,
-  to: destinatario,
-  products: products.map((p) => ({
-    id: p.id,
-    quantity: p.quantity,
-    weight: p.weight,
-    insurance_value: p.insurance_value
-  })),
-
+  const payloadCart = {
+    service: serviceId,
+    from: remetente,
+    to: destinatario,
+    products, // 🔥 agora vai com name + unitary_value + etc
     volumes: [
       {
         format: 'box',
@@ -294,7 +292,11 @@ const payloadCart = {
     }
   };
 
-  console.log('[ME][PEDIDO] Payload carrinho para pedido', pedidoId, JSON.stringify(payloadCart, null, 2));
+  console.log(
+    '[ME][PEDIDO] Payload carrinho para pedido',
+    pedidoId,
+    JSON.stringify(payloadCart, null, 2)
+  );
 
   // 5) /me/cart
   const cartResp = await inserirFreteNoCarrinho(accessToken, payloadCart);
