@@ -126,7 +126,7 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
   if (docTipo === 'CNPJ') {
     const { data: pj, error: pjErr } = await supabaseDb
       .from('usuarios_pj')
-      .select('cnpj, email, "nomeFantasia", "razaoSocial", telefone, cep, endereco, numero, bairro, complemento, cidade, estado')
+      .select('cnpj, cpf_responsavel, email, "nomeFantasia", "razaoSocial", telefone, cep, endereco, numero, bairro, complemento, cidade, estado')
       .eq('id', lojaRow.usuario_id)
       .maybeSingle();
 
@@ -139,8 +139,10 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
       name: pj.nomeFantasia || pj.razaoSocial || 'Remetente',
       phone: pj.telefone || '',
       email: pj.email || '',
-      document: pj.cnpj || '',
-      company_document: pj.cnpj || '',
+      // CPF do responsável (campo novo) – Melhor Envio exige CPF aqui
+      document: String(pj.cpf_responsavel || pj.cnpj || '').replace(/\D+/g, ''),
+      // CNPJ da empresa
+      company_document: String(pj.cnpj || '').replace(/\D+/g, ''),
       postal_code: String(pj.cep || '').replace(/\D+/g, ''),
       address: pj.endereco || '',
       number: pj.numero || '',
@@ -166,7 +168,7 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
       name: `${pf.nome || ''} ${pf.sobrenome || ''}`.trim() || 'Remetente',
       phone: pf.telefone || '',
       email: pf.email || '',
-      document: pf.cpf || '',
+      document: String(pf.cpf || '').replace(/\D+/g, ''),
       postal_code: String(pf.cep || '').replace(/\D+/g, ''),
       address: pf.endereco || '',
       number: pf.numero || '',
@@ -185,7 +187,7 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
   if (tipoComprador === 'pj') {
     const { data: pjComp, error: pjCompErr } = await supabaseDb
       .from('usuarios_pj')
-      .select('cnpj, email, "nomeFantasia", "razaoSocial", telefone, cep, endereco, numero, bairro, complemento, cidade, estado')
+      .select('cnpj, cpf_responsavel, email, "nomeFantasia", "razaoSocial", telefone, cep, endereco, numero, bairro, complemento, cidade, estado')
       .eq('id', pedido.comprador_pj_id)
       .maybeSingle();
 
@@ -198,8 +200,9 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
       name: pjComp.nomeFantasia || pjComp.razaoSocial || 'Destinatário',
       phone: pjComp.telefone || '',
       email: pjComp.email || '',
-      document: pjComp.cnpj || '',
-      company_document: pjComp.cnpj || '',
+      // CPF do responsável como documento pessoal; fallback para CNPJ se faltar
+      document: String(pjComp.cpf_responsavel || pjComp.cnpj || '').replace(/\D+/g, ''),
+      company_document: String(pjComp.cnpj || '').replace(/\D+/g, ''),
       postal_code: String(pjComp.cep || '').replace(/\D+/g, ''),
       address: pjComp.endereco || '',
       number: pjComp.numero || '',
@@ -225,7 +228,7 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
       name: `${pfComp.nome || ''} ${pfComp.sobrenome || ''}`.trim() || 'Destinatário',
       phone: pfComp.telefone || '',
       email: pfComp.email || '',
-      document: pfComp.cpf || '',
+      document: String(pfComp.cpf || '').replace(/\D+/g, ''),
       postal_code: String(pfComp.cep || '').replace(/\D+/g, ''),
       address: pfComp.endereco || '',
       number: pfComp.numero || '',
@@ -362,7 +365,6 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
     labelUrl
   };
 }
-
 
 // =============================
 // MEUS PEDIDOS (comprador)
