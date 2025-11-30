@@ -8,6 +8,8 @@ const BASE_URL      = (process.env.MELHOR_ENVIO_BASE_URL || 'https://sandbox.mel
 const AUTH_URL      = (process.env.MELHOR_ENVIO_AUTH_URL || 'https://sandbox.melhorenvio.com.br').trim();
 const REDIRECT_URI  = (process.env.MELHOR_ENVIO_REDIRECT_URI || '').trim();
 // 🔥 Agora o escopo vem da env, com default seguro
+// ⚠️ Para cart/checkout/labels você provavelmente vai precisar de algo como:
+// MELHOR_ENVIO_SCOPES="shipping-calculate shipping-cart shipping-manage"
 const SCOPES        = (process.env.MELHOR_ENVIO_SCOPES || 'shipping-calculate').trim();
 
 // DEBUG de configuração
@@ -156,7 +158,7 @@ async function melhorEnvioRequest(path, accessToken, options = {}) {
   const base = BASE_URL.replace(/\/+$/, '');
   const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
 
-  console.log('[ME][REQ] Chamando', url, 'method=', options.method || 'GET');
+  console.log('[ME][REQ] Chamando', url, 'method =', options.method || 'GET');
 
   const resp = await fetch(url, {
     method: options.method || 'GET',
@@ -183,9 +185,97 @@ async function melhorEnvioRequest(path, accessToken, options = {}) {
   return data;
 }
 
+/**
+ * Insere um frete no carrinho do Melhor Envio (/api/v2/me/cart)
+ * usando os dados do envio (remetente, destinatário, produtos, volumes, etc.).
+ *
+ * payloadCart deve seguir o formato da doc oficial:
+ * {
+ *   service: <id do serviço>,
+ *   from: { ... },
+ *   to: { ... },
+ *   products: [ ... ],
+ *   volumes: [ ... ],
+ *   options: { ... }
+ * }
+ */
+async function inserirFreteNoCarrinho(accessToken, payloadCart) {
+  console.log('[ME][CART] Inserindo frete no carrinho do Melhor Envio…');
+  return melhorEnvioRequest(
+    '/api/v2/me/cart',
+    accessToken,
+    {
+      method: 'POST',
+      body: JSON.stringify(payloadCart)
+    }
+  );
+}
+
+/**
+ * Faz o checkout (compra) das etiquetas que estão no carrinho
+ * usando os IDs retornados em /me/cart.
+ *
+ * shipmentIds pode ser um único ID ou um array de IDs.
+ */
+async function checkoutFretes(accessToken, shipmentIds) {
+  const orders = Array.isArray(shipmentIds) ? shipmentIds : [shipmentIds];
+
+  console.log('[ME][CHECKOUT] Realizando checkout de etiquetas:', orders);
+
+  const body = { orders };
+
+  return melhorEnvioRequest(
+    '/api/v2/me/shipment/checkout',
+    accessToken,
+    {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }
+  );
+}
+
+/**
+ * Gera as etiquetas para os envios comprados.
+ *
+ * shipmentIds pode ser um único ID ou um array de IDs.
+ * Exemplo:
+ *   await gerarEtiquetas(accessToken, 'ORD_123');
+ *   await gerarEtiquetas(accessToken, ['ORD_123', 'ORD_456']);
+ */
+async function gerarEtiquetas(accessToken, shipmentIds) {
+  if (!accessToken) {
+    throw new Error('[MELHOR_ENVIO][LABEL] accessToken não informado');
+  }
+
+  const orders = Array.isArray(shipmentIds) ? shipmentIds : [shipmentIds];
+
+  if (!orders.length) {
+    throw new Error('[MELHOR_ENVIO][LABEL] Nenhum ID de ordem informado (orders[])');
+  }
+
+  console.log('[ME][GENERATE] Gerando etiquetas para envios:', orders);
+
+  const body = JSON.stringify({ orders });
+
+  const result = await melhorEnvioRequest(
+    '/api/v2/me/shipment/generate',
+    accessToken,
+    {
+      method: 'POST',
+      body
+    }
+  );
+
+  console.log('[MELHOR_ENVIO][LABEL] Resultado gerar etiquetas:', result);
+  return result;
+}
+
 module.exports = {
   buildAuthorizeUrl,
   exchangeCodeForToken,
   refreshAccessToken,
-  melhorEnvioRequest
+  melhorEnvioRequest,
+  inserirFreteNoCarrinho,
+  checkoutFretes,
+  gerarEtiquetas
 };

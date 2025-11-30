@@ -84,9 +84,16 @@
         <!-- Coluna direita: opções de frete -->
         <section class="frete-card">
           <h2>Opções de frete</h2>
+          <%
+            var temCotacoes = Array.isArray(cotacoes) && cotacoes.length > 0;
+            var validCotacoes = (cotacoes || []).filter(function(c) { return !c.error; });
+          %>
           <small>
-            <% if (cotacoes && cotacoes.length) { %>
+            <% if (temCotacoes && validCotacoes.length) { %>
               Opções calculadas automaticamente pelo Melhor Envio.
+            <% } else if (temCotacoes && !validCotacoes.length) { %>
+              Nenhuma transportadora atendeu este trecho/dimensões no Melhor Envio (sandbox).
+              Serão exibidas opções padrão de frete.
             <% } else { %>
               Opções padrão de frete (serão integradas ao Melhor Envio).
             <% } %>
@@ -94,16 +101,80 @@
 
           <form method="POST" action="/checkout/frete" id="form-frete">
             <div class="frete-options" id="frete-options">
-              <% if (cotacoes && cotacoes.length) { %>
-                <% cotacoes.forEach(function(cot, idx) { 
-                  const rawPrice = Number(cot.custom_price || cot.price || 0);
-                  const dt = cot.custom_delivery_time || cot.delivery_time || {};
-                  const min = dt && (dt.min || dt.min_business || dt.min_days || dt.minimo);
-                  const max = dt && (dt.max || dt.max_business || dt.max_days || dt.maximo);
-                  const prazoLabel = (min && max) ? `${min} a ${max} dias úteis` : '';
-                  const nomeServico = cot.name || (cot.company && cot.company.name) || `Serviço ${idx+1}`;
-                  const checked =
-                    freteSelecionado && freteSelecionado.metodo
+              <% if (validCotacoes.length) { %>
+                <% validCotacoes.forEach(function(cot, idx) { 
+                  // Preço: tenta usar custom_price > 0; senão price; senão final_price
+                  var rawPrice = 0;
+                  if (cot.custom_price != null && Number(cot.custom_price) > 0) {
+                    rawPrice = Number(cot.custom_price);
+                  } else if (cot.price != null && Number(cot.price) > 0) {
+                    rawPrice = Number(cot.price);
+                  } else if (cot.final_price != null && Number(cot.final_price) > 0) {
+                    rawPrice = Number(cot.final_price);
+                  } else {
+                    rawPrice = 0;
+                  }
+
+                  // Prazo: tenta usar delivery_range/custom_delivery_range
+                  var range = cot.custom_delivery_range || cot.delivery_range || null;
+                  var min = null;
+                  var max = null;
+
+                  if (range) {
+                    if (typeof range.min !== 'undefined') {
+                      min = range.min;
+                    } else if (typeof range.min_business !== 'undefined') {
+                      min = range.min_business;
+                    } else if (typeof range.min_days !== 'undefined') {
+                      min = range.min_days;
+                    } else if (typeof range.minimo !== 'undefined') {
+                      min = range.minimo;
+                    }
+
+                    if (typeof range.max !== 'undefined') {
+                      max = range.max;
+                    } else if (typeof range.max_business !== 'undefined') {
+                      max = range.max_business;
+                    } else if (typeof range.max_days !== 'undefined') {
+                      max = range.max_days;
+                    } else if (typeof range.maximo !== 'undefined') {
+                      max = range.maximo;
+                    }
+                  }
+
+                  var prazoLabel = '';
+                  if (min != null && max != null) {
+                    prazoLabel = min + ' a ' + max + ' dias úteis';
+                  } else if (cot.custom_delivery_time || cot.delivery_time) {
+                    var tPrazo = cot.custom_delivery_time || cot.delivery_time;
+                    prazoLabel = tPrazo + ' dias úteis';
+                  }
+
+                  // Transportadora (Jadlog, Correios, etc.)
+                  var empresa = (cot.company && cot.company.name) ? cot.company.name : 'Transportadora';
+
+                  // Nome amigável
+                  var nomeServicoRaw = cot.name || empresa || ('Serviço ' + (idx+1));
+                  var tipoServico = 'Padrão';
+                  var nomeServico;
+
+                  if (nomeServicoRaw && nomeServicoRaw.charAt(0) === '.') {
+                    // Usa tempo de entrega pra diferenciar econômico x rápido
+                    var tempo = cot.custom_delivery_time || cot.delivery_time || null;
+                    if (tempo && tempo >= 5) {
+                      tipoServico = 'Econômico';
+                    } else if (tempo && tempo < 5) {
+                      tipoServico = 'Rápido';
+                    } else {
+                      tipoServico = 'Padrão';
+                    }
+                    nomeServico = empresa + ' - ' + tipoServico;
+                  } else {
+                    nomeServico = nomeServicoRaw;
+                  }
+
+                  var checked =
+                    (freteSelecionado && freteSelecionado.metodo)
                       ? (freteSelecionado.metodo === nomeServico)
                       : (idx === 0);
                 %>
@@ -129,7 +200,7 @@
                         <%= rawPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
                       </div>
                       <div class="frete-option-tag">
-                        Melhor Envio
+                        <%= empresa %>
                       </div>
                     </div>
                   </label>

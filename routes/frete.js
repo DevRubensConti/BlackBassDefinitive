@@ -6,6 +6,9 @@ const { melhorEnvioRequest, refreshAccessToken } = require('../services/melhorEn
 
 const router = express.Router();
 
+// Serviços de frete do Melhor Envio (ex.: "1,2,18" → PAC, SEDEX, Jadlog, etc.)
+const MELHOR_ENVIO_SERVICES = process.env.MELHOR_ENVIO_SERVICES || '1,2,18';
+
 // ===============================
 // Helper: token do Melhor Envio por loja (com refresh)
 // ===============================
@@ -212,33 +215,32 @@ router.get('/checkout/frete', async (req, res) => {
           }
         }
 
-        // 4) monta payload de cotação (exemplo; depois refine com peso/medidas reais)
-        // 4) monta payload de cotação (guitarra padrão: caixa para guitarra/acústica)
+
 const payload = {
-  from: {
-    postal_code: cepOrigem
-  },
-  to: {
-    postal_code: cepDestino
-  },
+  from: { postal_code: cepOrigem },
+  to:   { postal_code: cepDestino },
   products: itensCarrinho.map((row) => {
     const prod = row.produtos || {};
     const qtd = Number(row.quantidade || 1);
     const preco = Number(prod.preco || 0);
 
     return {
-      id: prod.id,
-      // Medidas aproximadas de uma guitarra acústica em caixa
-      // 40" x 15" ≈ 102cm x 38cm, altura estimada 12cm
-      length: 102, // cm (comprimento)
-      width: 38,   // cm (largura)
-      height: 12,  // cm (altura)
-      weight: 4,   // kg (peso médio com case/embalagem)
-      quantity: qtd,
-      insurance_value: preco * qtd
+      id: prod.id || prod.nome || 'Produto',
+      width: 38,
+      height: 12,
+      length: 102,
+      weight: 4,
+      insurance_value: preco * qtd,
+      quantity: qtd
     };
-  })
+  }),
+  options: {
+    receipt: false,
+    own_hand: false
+  }
+  // sem "services": deixa o Melhor Envio escolher os que funcionam
 };
+
 
         // 5) chama a API de cálculo do Melhor Envio
         cotacoes = await melhorEnvioRequest(
@@ -249,6 +251,9 @@ const payload = {
             body: JSON.stringify(payload)
           }
         );
+        console.log('\n================ MELHOR ENVIO RAW RESPONSE ================');
+        console.log(JSON.stringify(cotacoes, null, 2));
+        console.log('===========================================================\n');
 
         console.log(
           '[FRETE][GET] Cotações Melhor Envio:',

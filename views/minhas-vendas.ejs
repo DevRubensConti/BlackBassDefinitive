@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Minhas Vendas</title>
-  <link rel="stylesheet" href="/css/pedidos.css">
+  <link rel="stylesheet" href="/css/minhas-vendas.css">
 </head>
 <body>
   <%- include('partials/navbar.ejs') %>
@@ -11,24 +11,90 @@
   <main class="vendas-container">
     <h1>📦 Minhas Vendas</h1>
 
-    <% if (vendas.length > 0) { %>
+    <% if (vendas && vendas.length) { %>
       <section class="vendas-grid">
-        <% vendas.forEach(venda => { %>
+        <% vendas.forEach(venda => { 
+             const itens = venda.itens || [];
+             const primeiroItem = itens[0] || {};
+             const img = primeiroItem.imagem_url || '/images/placeholder.png';
+        %>
           <div class="venda-card">
-            <div class="venda-img">
-              <% if (venda.produtos && venda.produtos.imagem_url) { %>
-                <img src="<%= venda.produtos.imagem_url.split(',')[0] %>" alt="Produto">
+            <!-- Cabeçalho do pedido -->
+            <header class="venda-header">
+              <div>
+                <h3>Código do pedido: <span><%= venda.codigo || ('#' + venda.id) %></span></h3>
+                <p>
+                  <strong>Status:</strong> 
+                  <span class="badge-status"><%= venda.status %></span>
+                </p>
+                <p>
+                  <strong>Data:</strong> 
+                  <%= venda.data ? new Date(venda.data).toLocaleDateString('pt-BR') : '-' %>
+                </p>
+              </div>
+              <div class="venda-total">
+                <p><strong>Total:</strong></p>
+                <p class="valor-total">
+                  <%= Number(venda.total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+                </p>
+              </div>
+            </header>
+
+            <div class="venda-body">
+              <!-- Imagem principal (primeiro item) -->
+              <div class="venda-img">
+                <% if (primeiroItem && primeiroItem.imagem_url) { %>
+                  <img src="<%= img %>" alt="Produto">
+                <% } else { %>
+                  <div class="no-img">Sem imagem</div>
+                <% } %>
+              </div>
+
+              <!-- Lista de itens da venda -->
+              <div class="venda-itens">
+                <% if (itens.length) { %>
+                  <ul>
+                    <% itens.forEach(item => { %>
+                      <li class="venda-item-linha">
+                        <div class="venda-item-info">
+                          <span class="item-nome"><%= item.nome || 'Produto' %></span>
+                          <span class="item-qtd">Qtd: <%= item.quantidade %></span>
+                        </div>
+                        <div class="venda-item-valores">
+                          <span class="item-preco-unit">
+                            <%= Number(item.unitario || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %> un.
+                          </span>
+                          <span class="item-subtotal">
+                            <%= Number(item.subtotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+                          </span>
+                        </div>
+                      </li>
+                    <% }) %>
+                  </ul>
+                <% } else { %>
+                  <p class="nenhum-item">Nenhum item encontrado para este pedido.</p>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- Ações: gerar / ver etiqueta -->
+            <footer class="venda-footer">
+              <% if (venda.me_label_url) { %>
+                <a href="<%= venda.me_label_url %>" target="_blank" class="btn btn-primario">
+                  🧾 Ver etiqueta
+                </a>
               <% } else { %>
-                <div class="no-img">Sem imagem</div>
+                <form 
+                  method="POST" 
+                  action="/minhas-vendas/<%= venda.id %>/gerar-etiqueta"
+                  class="venda-actions"
+                >
+                  <button type="submit" class="btn btn-secundario">
+                    📦 Gerar etiqueta
+                  </button>
+                </form>
               <% } %>
-            </div>
-            <div class="venda-info">
-              <h3><%= venda.produtos ? venda.produtos.nome : 'Produto removido' %></h3>
-              <p><strong>Preço:</strong> R$ <%= venda.preco_total %></p>
-              <p><strong>Status:</strong> <%= venda.status %></p>
-              <p><strong>Comprador:</strong> <%= venda.usuarios_pf ? venda.usuarios_pf.nome : 'Desconhecido' %></p>
-              <p><strong>Data:</strong> <%= new Date(venda.data_pedido).toLocaleDateString() %></p>
-            </div>
+            </footer>
           </div>
         <% }) %>
       </section>
