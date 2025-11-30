@@ -251,7 +251,7 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
     throw new Error('Itens do pedido não encontrados para etiqueta.');
   }
 
-  // Produtos no formato exigido pelo Melhor Envio
+// Produtos no formato esperado pelo Melhor Envio
   const products = itens.map((it) => {
     const unitario = Number(it.unit_price_cents || 0) / 100;
     const subtotal = Number(it.subtotal_cents || 0) / 100;
@@ -260,21 +260,33 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
       id: it.produto_id,
       name: it.nome || 'Produto',
       quantity: Number(it.quantidade || 1),
-      unitary_value: unitario,
-      weight: 4,               // kg por unidade (ajusta se quiser)
-      insurance_value: subtotal
+      unitary_value: unitario > 0 ? unitario : 1, // garante >= 1
+      weight: 4,                                   // kg por unidade (ajusta depois)
+      insurance_value: subtotal > 0 ? subtotal : 1 // fallback >= 1
     };
   });
 
-  const totalInsurance = products.reduce((acc, p) => acc + (p.insurance_value || 0), 0);
-  const totalWeight = products.reduce((acc, p) => acc + (p.weight || 0) * p.quantity, 0);
+// total segurado = soma dos subtotais (nota fiscal do pedido)
+  let totalInsurance = products.reduce((acc, p) => acc + (p.insurance_value || 0), 0);
+
+  // fallback de segurança
+  if (!totalInsurance || totalInsurance < 1) {
+    totalInsurance = 1;
+  }
+
+  // peso total do volume
+  const totalWeight = products.reduce(
+    (acc, p) => acc + (p.weight || 0) * (p.quantity || 1),
+    0
+  );
+
   const serviceId = Number(process.env.MELHOR_ENVIO_DEFAULT_SERVICE_ID || 3);
 
-  const payloadCart = {
+    const payloadCart = {
     service: serviceId,
     from: remetente,
     to: destinatario,
-    products, // 🔥 agora vai com name + unitary_value + etc
+    products,
     volumes: [
       {
         format: 'box',
@@ -282,7 +294,7 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
         width: 38,
         length: 102,
         weight: totalWeight,
-        insurance_value: totalInsurance
+        insurance_value: totalInsurance // mesmo valor total dos produtos
       }
     ],
     options: {
@@ -292,12 +304,7 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
     }
   };
 
-  console.log(
-    '[ME][PEDIDO] Payload carrinho para pedido',
-    pedidoId,
-    JSON.stringify(payloadCart, null, 2)
-  );
-
+  console.log('[ME][PEDIDO] Payload carrinho para pedido', pedidoId, JSON.stringify(payloadCart, null, 2));
   // 5) /me/cart
   const cartResp = await inserirFreteNoCarrinho(accessToken, payloadCart);
 
