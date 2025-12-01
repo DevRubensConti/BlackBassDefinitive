@@ -240,69 +240,79 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
     };
   }
 
-  // 4) Itens do pedido
-  const { data: itens, error: itensErr } = await supabaseDb
-    .from('pedido_itens')
-    .select('produto_id, quantidade, nome, unit_price_cents, subtotal_cents')
-    .eq('pedido_id', pedidoId);
+// 4) Itens do pedido
+const { data: itens, error: itensErr } = await supabaseDb
+  .from('pedido_itens')
+  .select('produto_id, quantidade, nome, unit_price_cents, subtotal_cents')
+  .eq('pedido_id', pedidoId);
 
-  if (itensErr || !itens || !itens.length) {
-    console.error('[ME][PEDIDO] Erro ao buscar itens do pedido:', itensErr);
-    throw new Error('Itens do pedido não encontrados para etiqueta.');
-  }
+if (itensErr || !itens || !itens.length) {
+  console.error('[ME][PEDIDO] Erro ao buscar itens do pedido:', itensErr);
+  throw new Error('Itens do pedido não encontrados para etiqueta.');
+}
 
 // Produtos no formato esperado pelo Melhor Envio
-  const products = itens.map((it) => {
-    const unitario = Number(it.unit_price_cents || 0) / 100;
-    const subtotal = Number(it.subtotal_cents || 0) / 100;
+const products = itens.map((it) => {
+  const qty       = Number(it.quantidade || 1);
+  const unitario  = Number(it.unit_price_cents || 0) / 100;
+  const lineTotal = unitario * qty;
 
-    return {
-      id: it.produto_id,
-      name: it.nome || 'Produto',
-      quantity: Number(it.quantidade || 1),
-      unitary_value: unitario > 0 ? unitario : 1, // garante >= 1
-      weight: 4,                                   // kg por unidade (ajusta depois)
-      insurance_value: subtotal > 0 ? subtotal : 1 // fallback >= 1
-    };
-  });
-
-// total segurado = soma dos subtotais (nota fiscal do pedido)
-  let totalInsurance = products.reduce((acc, p) => acc + (p.insurance_value || 0), 0);
-
-  // fallback de segurança
-  if (!totalInsurance || totalInsurance < 1) {
-    totalInsurance = 1;
-  }
-
-  // peso total do volume
-  const totalWeight = products.reduce(
-    (acc, p) => acc + (p.weight || 0) * (p.quantity || 1),
-    0
-  );
-
-  const serviceId = Number(process.env.MELHOR_ENVIO_DEFAULT_SERVICE_ID || 3);
-
-    const payloadCart = {
-    service: serviceId,
-    from: remetente,
-    to: destinatario,
-    products,
-    volumes: [
-      {
-        format: 'box',
-        height: 24,
-        width: 38,
-        length: 102,
-        weight: totalWeight,
-        insurance_value: totalInsurance // mesmo valor total dos produtos
-      }
-    ],
-    options: {
-      receipt: false,
-      own_hand: false,
-      collect: false
-    }
+  return {
+    // id é opcional, mas pode mandar pra rastrear o produto
+    id: it.produto_id,
+    name: it.nome || 'Produto',
+    quantity: String(qty),           // a API aceita string
+    unitary_value: Number(unitario.toFixed(2)) // ex: 1.00
   };
+});
+
+// soma dos valores declarados (seguro)
+const totalInsurance = products.reduce((acc, p) => {
+  const qty  = Number(p.quantity || 1);
+  const unit = Number(p.unitary_value || 0);
+  return acc + (qty * unit);
+}, 0);
+
+// peso total (aqui mantive 4kg por unidade, ajusta se quiser)
+const totalWeight = itens.reduce((acc, it) => {
+  const qty = Number(it.quantidade || 1);
+  const pesoUnit = 4; // kg por unidade
+  return acc + (pesoUnit * qty);
+}, 0);
+
+const serviceId = Number(process.env.MELHOR_ENVIO_DEFAULT_SERVICE_ID || 3);
+
+const payloadCart = {
+  service: serviceId,
+  from: remetente,
+  to: destinatario,
+  products, // já no formato certo
+
+  volumes: [
+    {
+      format: 'box',
+      height: 24,
+      width: 38,
+      length: 102,
+      weight: totalWeight
+    }
+  ],
+
+  options: {
+    // identifica de onde veio (opcional, mas útil)
+    platform: 'BlackBass Marketplace',
+    tags: [pedido.codigo || String(pedido.id)],
+
+    // AQUI está o valor segurado corretinho 👇
+    insurance_value: Math.max(1, Number(totalInsurance.toFixed(2))),
+
+    receipt: false,
+    own_hand: false,
+    collect: false
+    // se você tiver NF depois:
+    // invoice: { key: 'CHAVE_DA_NF' }
+  }
+};
 
   console.log('[ME][PEDIDO] Payload carrinho para pedido', pedidoId, JSON.stringify(payloadCart, null, 2));
   // 5) /me/cart
