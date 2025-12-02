@@ -282,27 +282,32 @@ async function imprimirEtiquetas(accessToken, shipmentIds = []) {
     throw new Error('[MELHOR_ENVIO][PRINT] Nenhum shipmentId informado para impressão de etiquetas.');
   }
 
-  // Monta a query string: mode=public&orders[]=id1&orders[]=id2...
   const params = new URLSearchParams();
   params.set('mode', 'public');
   orders.forEach(id => params.append('orders[]', id));
 
+  const base = BASE_URL.replace(/\/+$/, '');
   const path = `/api/v2/me/shipment/print?${params.toString()}`;
+  const url = `${base}${path}`;
 
-  console.log('[ME][PRINT] Enviando para impressão (GET):', path);
+  console.log('[ME][PRINT] URL pública da etiqueta:', url);
 
-  const resp = await melhorEnvioRequest(
-    path,
-    accessToken,
-    {
-      method: 'GET'
-      // sem body!
+  // Opcional: faz uma chamada só pra validar
+  const resp = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`
     }
-  );
+  });
 
-  console.log('[ME][PRINT] Resposta impressão:', resp);
-  return resp;
+  if (!resp.ok) {
+    throw new Error(`[MELHOR_ENVIO][PRINT] Erro ao gerar etiqueta (status ${resp.status})`);
+  }
+
+  // Retorna num formato que o criarGerarEtiquetaParaPedido já entende
+  return { url };
 }
+
 
 
 
