@@ -164,7 +164,7 @@ async function melhorEnvioRequest(path, accessToken, options = {}) {
     method: options.method || 'GET',
     headers: {
       Accept: 'application/json',
-      'Content-Type': options.body ? 'application/json' : 'application/json',
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       Authorization: `Bearer ${accessToken}`,
       ...(options.headers || {})
     },
@@ -184,6 +184,7 @@ async function melhorEnvioRequest(path, accessToken, options = {}) {
 
   return data;
 }
+
 
 /**
  * Insere um frete no carrinho do Melhor Envio (/api/v2/me/cart)
@@ -270,31 +271,39 @@ async function gerarEtiquetas(accessToken, shipmentIds) {
   return result;
 }
 
-// services/melhorEnvio.js
-
-// services/melhorEnvio.js
-
 async function imprimirEtiquetas(accessToken, shipmentIds = []) {
-  if (!shipmentIds || !shipmentIds.length) {
-    throw new Error('Nenhum shipmentId informado para impressão de etiquetas.');
+  if (!accessToken) {
+    throw new Error('[MELHOR_ENVIO][PRINT] accessToken não informado');
   }
 
-  const body = {
-    mode: 'public',     // link público
-    orders: shipmentIds // array de IDs de envios
-  };
+  const orders = Array.isArray(shipmentIds) ? shipmentIds : [shipmentIds];
 
-  console.log('[ME][PRINT] Enviando para impressão:', body);
+  if (!orders.length) {
+    throw new Error('[MELHOR_ENVIO][PRINT] Nenhum shipmentId informado para impressão de etiquetas.');
+  }
 
-  const resp = await melhorEnvioRequest('/api/v2/me/shipment/print', {
-    method: 'POST',
+  // Monta a query string: mode=public&orders[]=id1&orders[]=id2...
+  const params = new URLSearchParams();
+  params.set('mode', 'public');
+  orders.forEach(id => params.append('orders[]', id));
+
+  const path = `/api/v2/me/shipment/print?${params.toString()}`;
+
+  console.log('[ME][PRINT] Enviando para impressão (GET):', path);
+
+  const resp = await melhorEnvioRequest(
+    path,
     accessToken,
-    body
-  });
+    {
+      method: 'GET'
+      // sem body!
+    }
+  );
 
   console.log('[ME][PRINT] Resposta impressão:', resp);
   return resp;
 }
+
 
 
 module.exports = {
