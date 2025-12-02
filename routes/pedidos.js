@@ -314,6 +314,7 @@ const payloadCart = {
   }
 };
 
+
   console.log('[ME][PEDIDO] Payload carrinho para pedido', pedidoId, JSON.stringify(payloadCart, null, 2));
   // 5) /me/cart
   const cartResp = await inserirFreteNoCarrinho(accessToken, payloadCart);
