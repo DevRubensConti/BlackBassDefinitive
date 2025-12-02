@@ -80,10 +80,17 @@
             <!-- Ações: gerar / ver etiqueta -->
             <footer class="venda-footer">
               <% if (venda.me_label_url) { %>
+                <!-- Etiqueta já com link salvo -->
                 <a href="<%= venda.me_label_url %>" target="_blank" class="btn btn-primario">
                   🧾 Ver etiqueta
                 </a>
+              <% } else if (venda.me_order_id) { %>
+                <!-- Já criou envio no Melhor Envio, mas ainda sem URL salva -->
+                <button type="button" class="btn btn-disabled" disabled>
+                  ⏳ Etiqueta em processamento no Melhor Envio
+                </button>
               <% } else { %>
+                <!-- Ainda não gerou nada -->
                 <form 
                   method="POST" 
                   action="/minhas-vendas/<%= venda.id %>/gerar-etiqueta"

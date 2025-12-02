@@ -272,21 +272,25 @@ async function gerarEtiquetas(accessToken, shipmentIds) {
 
 // services/melhorEnvio.js
 
-async function imprimirEtiquetas(accessToken, shipmentIds, mode = 'public') {
-  // shipmentIds: array com 1+ IDs de envio retornados no /cart
+// services/melhorEnvio.js
+
+async function imprimirEtiquetas(accessToken, shipmentIds = []) {
+  if (!shipmentIds || !shipmentIds.length) {
+    throw new Error('Nenhum shipmentId informado para impressão de etiquetas.');
+  }
+
   const body = {
-    mode,              // 'public' => link acessível sem login
-    shipment_ids: shipmentIds
+    mode: 'public',     // link público
+    orders: shipmentIds // array de IDs de envios
   };
 
-  console.log('[ME][PRINT] Solicitando impressão de etiquetas...', body);
+  console.log('[ME][PRINT] Enviando para impressão:', body);
 
-  const resp = await melhorEnvioRequest(
-    '/api/v2/me/shipment/print',
-    'POST',
+  const resp = await melhorEnvioRequest('/api/v2/me/shipment/print', {
+    method: 'POST',
     accessToken,
     body
-  );
+  });
 
   console.log('[ME][PRINT] Resposta impressão:', resp);
   return resp;
