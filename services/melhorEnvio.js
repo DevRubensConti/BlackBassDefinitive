@@ -270,6 +270,29 @@ async function gerarEtiquetas(accessToken, shipmentIds) {
   return result;
 }
 
+// services/melhorEnvio.js
+
+async function imprimirEtiquetas(accessToken, shipmentIds, mode = 'public') {
+  // shipmentIds: array com 1+ IDs de envio retornados no /cart
+  const body = {
+    mode,              // 'public' => link acessível sem login
+    shipment_ids: shipmentIds
+  };
+
+  console.log('[ME][PRINT] Solicitando impressão de etiquetas...', body);
+
+  const resp = await melhorEnvioRequest(
+    '/api/v2/me/shipment/print',
+    'POST',
+    accessToken,
+    body
+  );
+
+  console.log('[ME][PRINT] Resposta impressão:', resp);
+  return resp;
+}
+
+
 module.exports = {
   buildAuthorizeUrl,
   exchangeCodeForToken,
@@ -277,5 +300,6 @@ module.exports = {
   melhorEnvioRequest,
   inserirFreteNoCarrinho,
   checkoutFretes,
-  gerarEtiquetas
+  gerarEtiquetas,
+  imprimirEtiquetas
 };

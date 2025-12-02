@@ -6,7 +6,8 @@ const {
   inserirFreteNoCarrinho,
   checkoutFretes,
   gerarEtiquetas,
-  refreshAccessToken
+  refreshAccessToken,
+  imprimirEtiquetas     
 } = require('../services/melhorEnvio');
 
 
@@ -83,10 +84,7 @@ async function getValidAccessTokenForLoja(lojaId) {
 }
 
 // =============================
-// Helper: criar+checkout+gerar etiqueta para um pedido
-// =============================
-// =============================
-// Helper: criar+checkout+gerar etiqueta para um pedido
+// Helper: criar+checkout+gerar+imprimir etiqueta para um pedido
 // =============================
 async function criarGerarEtiquetaParaPedido(pedidoId) {
   // 1) Pedido
@@ -240,82 +238,73 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
     };
   }
 
-// 4) Itens do pedido
-const { data: itens, error: itensErr } = await supabaseDb
-  .from('pedido_itens')
-  .select('produto_id, quantidade, nome, unit_price_cents, subtotal_cents')
-  .eq('pedido_id', pedidoId);
+  // 4) Itens do pedido
+  const { data: itens, error: itensErr } = await supabaseDb
+    .from('pedido_itens')
+    .select('produto_id, quantidade, nome, unit_price_cents, subtotal_cents')
+    .eq('pedido_id', pedidoId);
 
-if (itensErr || !itens || !itens.length) {
-  console.error('[ME][PEDIDO] Erro ao buscar itens do pedido:', itensErr);
-  throw new Error('Itens do pedido não encontrados para etiqueta.');
-}
-
-// Produtos no formato esperado pelo Melhor Envio
-const products = itens.map((it) => {
-  const qty       = Number(it.quantidade || 1);
-  const unitario  = Number(it.unit_price_cents || 0) / 100;
-  const lineTotal = unitario * qty;
-
-  return {
-    // id é opcional, mas pode mandar pra rastrear o produto
-    id: it.produto_id,
-    name: it.nome || 'Produto',
-    quantity: String(qty),           // a API aceita string
-    unitary_value: Number(unitario.toFixed(2)) // ex: 1.00
-  };
-});
-
-// soma dos valores declarados (seguro)
-const totalInsurance = products.reduce((acc, p) => {
-  const qty  = Number(p.quantity || 1);
-  const unit = Number(p.unitary_value || 0);
-  return acc + (qty * unit);
-}, 0);
-
-// peso total (aqui mantive 4kg por unidade, ajusta se quiser)
-const totalWeight = itens.reduce((acc, it) => {
-  const qty = Number(it.quantidade || 1);
-  const pesoUnit = 4; // kg por unidade
-  return acc + (pesoUnit * qty);
-}, 0);
-
-const serviceId = Number(process.env.MELHOR_ENVIO_DEFAULT_SERVICE_ID || 3);
-
-const payloadCart = {
-  service: serviceId,
-  from: remetente,
-  to: destinatario,
-  products, // já no formato certo
-
-  volumes: [
-    {
-      format: 'box',
-      height: 24,
-      width: 38,
-      length: 102,
-      weight: totalWeight
-    }
-  ],
-
-  options: {
-    // identifica de onde veio (opcional, mas útil)
-    platform: 'BlackBass Marketplace',
-    tags: [pedido.codigo || String(pedido.id)],
-
-    // AQUI está o valor segurado corretinho 👇
-    insurance_value: Math.max(1, Number(totalInsurance.toFixed(2))),
-
-    receipt: false,
-    own_hand: false,
-    collect: false
-    // se você tiver NF depois:
-    // invoice: { key: 'CHAVE_DA_NF' }
+  if (itensErr || !itens || !itens.length) {
+    console.error('[ME][PEDIDO] Erro ao buscar itens do pedido:', itensErr);
+    throw new Error('Itens do pedido não encontrados para etiqueta.');
   }
-};
 
+  // Produtos no formato esperado pelo Melhor Envio
+  const products = itens.map((it) => {
+    const qty      = Number(it.quantidade || 1);
+    const unitario = Number(it.unit_price_cents || 0) / 100;
+
+    return {
+      id: it.produto_id,
+      name: it.nome || 'Produto',
+      quantity: String(qty),
+      unitary_value: Number(unitario.toFixed(2))
+    };
+  });
+
+  // soma dos valores declarados (seguro)
+  const totalInsurance = products.reduce((acc, p) => {
+    const qty  = Number(p.quantity || 1);
+    const unit = Number(p.unitary_value || 0);
+    return acc + (qty * unit);
+  }, 0);
+
+  // peso total (aqui mantive 4kg por unidade – ajusta depois se quiser)
+  const totalWeight = itens.reduce((acc, it) => {
+    const qty = Number(it.quantidade || 1);
+    const pesoUnit = 4; // kg por unidade
+    return acc + (pesoUnit * qty);
+  }, 0);
+
+  const serviceId = Number(process.env.MELHOR_ENVIO_DEFAULT_SERVICE_ID || 3);
+
+  const payloadCart = {
+    service: serviceId,
+    from: remetente,
+    to: destinatario,
+    products,
+    volumes: [
+      {
+        format: 'box',
+        height: 24,
+        width: 38,
+        length: 102,
+        weight: totalWeight
+      }
+    ],
+    options: {
+      platform: 'BlackBass Marketplace',
+      tags: [pedido.codigo || String(pedido.id)],
+      insurance_value: Math.max(1, Number(totalInsurance.toFixed(2))),
+      receipt: false,
+      own_hand: false,
+      collect: false
+      // invoice: { key: 'CHAVE_DA_NF' } // se você tiver NF depois
+    }
+  };
 
   console.log('[ME][PEDIDO] Payload carrinho para pedido', pedidoId, JSON.stringify(payloadCart, null, 2));
+
   // 5) /me/cart
   const cartResp = await inserirFreteNoCarrinho(accessToken, payloadCart);
 
@@ -336,7 +325,7 @@ const payloadCart = {
     const s = cartResp[0];
     companyName = s.company?.name || null;
     serviceName = s.service || s.name || null;
-  } else if (cartResp.company) {
+  } else if (cartResp && cartResp.company) {
     companyName = cartResp.company.name || null;
     serviceName = cartResp.service || cartResp.name || null;
   }
@@ -349,13 +338,17 @@ const payloadCart = {
   const generateResp = await gerarEtiquetas(accessToken, [shipmentId]);
   console.log('[ME][PEDIDO] Geração de etiquetas OK para', shipmentId, generateResp);
 
-  // 8) Tenta achar URL da etiqueta (formato pode variar)
+  // 8) imprimir etiquetas (gera link público)
+  const printResp = await imprimirEtiquetas(accessToken, [shipmentId], 'public');
+  console.log('[ME][PEDIDO] Impressão de etiquetas OK para', shipmentId, printResp);
+
+  // 8.1) Tenta achar URL da etiqueta (formato pode variar)
   let labelUrl = null;
-  if (Array.isArray(generateResp) && generateResp[0]) {
-    const g = generateResp[0];
-    labelUrl = g.label_url || g.label || g.url || g.file || null;
-  } else if (generateResp && typeof generateResp === 'object') {
-    labelUrl = generateResp.label_url || generateResp.label || generateResp.url || generateResp.file || null;
+  if (Array.isArray(printResp) && printResp[0]) {
+    const p = printResp[0];
+    labelUrl = p.url || p.link || p.file || null;
+  } else if (printResp && typeof printResp === 'object') {
+    labelUrl = printResp.url || printResp.link || printResp.file || null;
   }
 
   // 9) Atualiza o pedido no banco
@@ -368,7 +361,8 @@ const payloadCart = {
         me_label_url: labelUrl,
         me_company: companyName,
         me_service: serviceName,
-        me_label_payload: generateResp
+        me_label_payload: generateResp,
+        me_print_payload: printResp
       })
       .eq('id', pedidoId);
 
@@ -382,11 +376,13 @@ const payloadCart = {
     cartResp,
     checkoutResp,
     generateResp,
+    printResp,
     companyName,
     serviceName,
     labelUrl
   };
 }
+
 
 // =============================
 // MEUS PEDIDOS (comprador)
