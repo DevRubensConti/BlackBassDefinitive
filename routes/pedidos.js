@@ -352,24 +352,27 @@ async function criarGerarEtiquetaParaPedido(pedidoId) {
   }
 
   // 9) Atualiza o pedido no banco
-  try {
-    await supabaseDb
-      .from('pedidos')
-      .update({
-        me_order_id: shipmentId,
-        me_service_id: serviceId,
-        me_label_url: labelUrl,
-        me_company: companyName,
-        me_service: serviceName,
-        me_label_payload: generateResp,
-        me_print_payload: printResp
-      })
-      .eq('id', pedidoId);
+const { data: pedUpdateData, error: pedUpdateErr } = await supabaseDb
+  .from('pedidos')
+  .update({
+    me_order_id: shipmentId,
+    me_service_id: serviceId,
+    me_label_url: labelUrl,
+    me_company: companyName,
+    me_service: serviceName,
+    me_label_payload: generateResp,
+    me_print_payload: printResp
+  })
+  .eq('id', pedidoId)
+  .select('id, me_order_id, me_label_url')
+  .maybeSingle();
 
-    console.log('[ME][PEDIDO] Campos de etiqueta atualizados no pedido', pedidoId);
-  } catch (e) {
-    console.error('[ME][PEDIDO] Erro ao atualizar pedido com dados de etiqueta:', e);
-  }
+if (pedUpdateErr) {
+  console.error('[ME][PEDIDO] Erro ao atualizar pedido com dados de etiqueta:', pedUpdateErr);
+} else {
+  console.log('[ME][PEDIDO] Atualizado OK:', pedUpdateData);
+}
+
 
   return {
     shipmentId,
