@@ -6,10 +6,33 @@
   <link rel="stylesheet" href="/css/pedidos.css">
   <style>
     /* Estilos do botão de avaliação (pode mover para pedidos.css) */
-    .btn-acao { display:inline-block; padding:8px 12px; border-radius:6px; border:1px solid #ccc; text-decoration:none; font-size:.9rem; line-height:1; background:#fff; color:#222; }
-    .btn-acao.btn-avaliar.enabled { background: var(--cor-primaria, #2e7d32); color:#fff; border-color: transparent; cursor:pointer; }
-    .btn-acao.btn-avaliar.enabled:hover { filter: brightness(0.95); }
-    .btn-acao.btn-avaliar.disabled { background:#ddd; color:#666; border:1px solid #ccc; cursor:not-allowed; opacity:.8; }
+    .btn-acao {
+      display:inline-block;
+      padding:8px 12px;
+      border-radius:6px;
+      border:1px solid #ccc;
+      text-decoration:none;
+      font-size:.9rem;
+      line-height:1;
+      background:#fff;
+      color:#222;
+    }
+    .btn-acao.btn-avaliar.enabled {
+      background: var(--cor-primaria, #2e7d32);
+      color:#fff;
+      border-color: transparent;
+      cursor:pointer;
+    }
+    .btn-acao.btn-avaliar.enabled:hover {
+      filter: brightness(0.95);
+    }
+    .btn-acao.btn-avaliar.disabled {
+      background:#ddd;
+      color:#666;
+      border:1px solid #ccc;
+      cursor:not-allowed;
+      opacity:.8;
+    }
   </style>
 </head>
 <body>
@@ -78,25 +101,28 @@
                 <%= Number(grupo.total || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }) %>
               </p>
               <p><strong>Status:</strong> <%= grupo.status %></p>
+
               <% if (grupo.me_status_envio) { %>
-  <p>
-    <strong>Status do envio:</strong>
-    <%= grupo.me_status_envio %>
-  </p>
-<% } %>
+                <p>
+                  <strong>Status do envio:</strong>
+                  <%= grupo.me_status_envio %>
+                </p>
+              <% } %>
 
-<% if (grupo.me_tracking_code) { %>
-  <p>
-    <strong>Código de rastreio:</strong>
-    <%= grupo.me_tracking_code %>
-    &nbsp;
-    <a href="https://www.melhorrastreio.com.br/rastreio/<%= grupo.me_tracking_code %>"
-       target="_blank" rel="noopener noreferrer">
-      🔍 acompanhar
-    </a>
-  </p>
-<% } %>
-
+              <% if (grupo.me_tracking_code) { %>
+                <p>
+                  <strong>Código de rastreio:</strong>
+                  <%= grupo.me_tracking_code %>
+                  &nbsp;
+                  <a
+                    href="https://www.melhorrastreio.com.br/rastreio/<%= grupo.me_tracking_code %>"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    🔍 acompanhar
+                  </a>
+                </p>
+              <% } %>
             </div>
           </div>
 
@@ -137,45 +163,48 @@
                   <p class="sub-info" style="margin:0 0 4px 0; color:#666;">
                     Qtd: <%= Number(item.quantidade || 0) %>
                   </p>
-                 <p class="status-info" style="margin:0; color:#666;">
-                  Unit.: <%= toBRL(item.unitario) %> |
-                  Subtotal: <%= toBRL(item.subtotal) %>
-                </p>
+                  <p class="status-info" style="margin:0; color:#666;">
+                    Unit.: <%= toBRL(item.unitario) %> |
+                    Subtotal: <%= toBRL(item.subtotal) %>
+                  </p>
                 </div>
 
                 <div class="pedido-actions" style="display:flex; gap:8px; align-items:center;">
-  <a href="/item/<%= item.produto_id %>" class="btn-acao">Ver produto</a>
+                  <a href="/item/<%= item.produto_id %>" class="btn-acao">Ver produto</a>
 
-  <%
-    // Normaliza status do grupo (se você tiver status por item, use-o aqui)
-    const _rawGrp = (grupo.status || '').toString().trim();
-    const _normGrp = _rawGrp.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
-    const _isEntregueGrp = _normGrp.includes('entregue') || _normGrp.includes('concluido') || _normGrp.includes('finalizado');
+                  <%
+                    // Normaliza status do grupo (se você tiver status por item, use-o aqui)
+                    const _rawGrp2 = (grupo.status || '').toString().trim();
+                    const _normGrp2 = _rawGrp2.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+                    const _isEntregueGrp2 = _normGrp2.includes('entregue') || _normGrp2.includes('concluido') || _normGrp2.includes('finalizado');
 
-    // ID correto para avaliação: o UUID de pedido_itens
-    const pedidoItemId = item.pedido_item_id || item.id || null;
+                    // ID correto para avaliação: o UUID de pedido_itens
+                    const pedidoItemId = item.pedido_item_id || item.id || null;
 
-    const podeAvaliar = Boolean(_isEntregueGrp && pedidoItemId);
-  %>
+                    const podeAvaliar = Boolean(_isEntregueGrp2 && pedidoItemId);
+                  %>
 
-  <% if (pedidoItemId) { %>
-    <form method="GET" action="/avaliar/<%= pedidoItemId %>" style="display:inline;">
-      <button
-        type="submit"
-        class="btn-acao btn-avaliar <%= podeAvaliar ? 'enabled' : 'disabled' %>"
-        <%= podeAvaliar ? '' : 'disabled title="Disponível após a entrega"' %>
-      >
-        Avaliar este produto
-      </button>
-    </form>
-  <% } else { %>
-    <button type="button" class="btn-acao btn-avaliar disabled" disabled title="Item sem ID (pedido_itens.id) para avaliação">
-      Avaliar este produto
-    </button>
-  <% } %>
-</div>
-
-
+                  <% if (pedidoItemId) { %>
+                    <form method="GET" action="/avaliar/<%= pedidoItemId %>" style="display:inline;">
+                      <button
+                        type="submit"
+                        class="btn-acao btn-avaliar <%= podeAvaliar ? 'enabled' : 'disabled' %>"
+                        <%= podeAvaliar ? '' : 'disabled title="Disponível após a entrega"' %>
+                      >
+                        Avaliar este produto
+                      </button>
+                    </form>
+                  <% } else { %>
+                    <button
+                      type="button"
+                      class="btn-acao btn-avaliar disabled"
+                      disabled
+                      title="Item sem ID (pedido_itens.id) para avaliação"
+                    >
+                      Avaliar este produto
+                    </button>
+                  <% } %>
+                </div>
               </div>
             <% }) %>
           </div>
