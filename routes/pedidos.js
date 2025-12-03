@@ -7,7 +7,8 @@ const {
   checkoutFretes,
   gerarEtiquetas,
   refreshAccessToken,
-  imprimirEtiquetas     
+  imprimirEtiquetas,
+  rastrearEtiquetas    
 } = require('../services/melhorEnvio');
 
 
@@ -395,11 +396,11 @@ router.get('/meus-pedidos', requireLogin, async (req, res) => {
     const compradorId = req.session.usuario.id;
 
     // 1) Cabeçalhos
-    const { data: pedidos, error: pedErr } = await supabaseDb
-      .from('pedidos')
-      .select('id, codigo, status, data_pedido, preco_total')
-      .or(`comprador_pf_id.eq.${compradorId},comprador_pj_id.eq.${compradorId}`)
-      .order('data_pedido', { ascending: false });
+  const { data: pedidos, error: pedErr } = await supabaseDb
+    .from('pedidos')
+    .select('id, codigo, status, data_pedido, preco_total, loja_id, me_order_id')
+    .or(`comprador_pf_id.eq.${compradorId},comprador_pj_id.eq.${compradorId}`)
+    .order('data_pedido', { ascending: false });
 
     if (pedErr) {
       console.error('Erro ao buscar pedidos:', pedErr);
@@ -475,11 +476,19 @@ router.get('/meus-pedidos', requireLogin, async (req, res) => {
           status: p.status,
           total: Number(p.preco_total || 0),
           pedidos_ids: new Set(),
-          itens: []
+          itens: [],
+          lojaPorPedido: {},         // 👈 novo
+          me_status_envio: null,     // 👈 novo
+          me_tracking_code: null     // 👈 novo
         };
       }
 
       gruposMap[key].pedidos_ids.add(p.id);
+
+      gruposMap[key].lojaPorPedido[p.id] = {
+        loja_id: p.loja_id,
+        me_order_id: p.me_order_id
+      };
 
       // Anexa itens deste pedido
       const itensDoPedido = itensByPedido[p.id] || [];
@@ -506,6 +515,42 @@ router.get('/meus-pedidos', requireLogin, async (req, res) => {
 
     // 5) Ordena grupos por data desc
     const grupos = Object.values(gruposMap).sort((a, b) => new Date(b.data) - new Date(a.data));
+
+
+    // 5.1) Enriquecer grupos com status de envio + código de rastreio (Melhor Envio)
+    // 5) Enriquecer grupos com status de envio + código de rastreio (Melhor Envio)
+for (const grupo of grupos) {
+  if (!grupo.pedido_id) continue;
+
+  const metaPorPedido = grupo.lojaPorPedido || {};
+  const meta = metaPorPedido[grupo.pedido_id];
+
+  if (!meta || !meta.loja_id || !meta.me_order_id) continue;
+
+  try {
+    const accessToken = await getValidAccessTokenForLoja(meta.loja_id);
+
+    const trackResp = await rastrearEtiquetas(accessToken, meta.me_order_id);
+
+    let info = null;
+    if (Array.isArray(trackResp) && trackResp.length) {
+      info = trackResp[0];
+    } else if (trackResp && Array.isArray(trackResp.data)) {
+      info = trackResp.data[0];
+    } else if (trackResp && (trackResp.order || trackResp.tracking)) {
+      info = trackResp;
+    }
+
+    grupo.me_status_envio  = info?.status   || null;
+    grupo.me_tracking_code = info?.tracking || null;
+
+  } catch (e) {
+    console.error('[ME][RASTREIO] Erro ao buscar rastreio para grupo', grupo.codigo, e);
+    grupo.me_status_envio  = null;
+    grupo.me_tracking_code = null;
+  }
+}
+
 
     // Render
     res.render('meus-pedidos', { grupos, pedidos });

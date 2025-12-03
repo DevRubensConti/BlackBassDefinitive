@@ -308,6 +308,35 @@ async function imprimirEtiquetas(accessToken, shipmentIds = []) {
   return { url };
 }
 
+// Rastrear etiquetas (status + código de rastreio)
+// POST /api/v2/me/shipment/tracking
+async function rastrearEtiquetas(accessToken, shipmentIds = []) {
+  if (!accessToken) {
+    throw new Error('[MELHOR_ENVIO][TRACK] accessToken não informado');
+  }
+
+  const orders = Array.isArray(shipmentIds) ? shipmentIds : [shipmentIds];
+
+  if (!orders.length) {
+    throw new Error('[MELHOR_ENVIO][TRACK] Nenhum shipmentId informado para rastreio.');
+  }
+
+  const body = JSON.stringify({ orders });
+
+  console.log('[ME][TRACK] Rastreando envios:', orders);
+
+  const resp = await melhorEnvioRequest(
+    '/api/v2/me/shipment/tracking',
+    accessToken,
+    {
+      method: 'POST',
+      body
+    }
+  );
+
+  console.log('[ME][TRACK] Resposta rastreio:', resp);
+  return resp;
+}
 
 
 
@@ -319,5 +348,6 @@ module.exports = {
   inserirFreteNoCarrinho,
   checkoutFretes,
   gerarEtiquetas,
-  imprimirEtiquetas
+  imprimirEtiquetas,
+  rastrearEtiquetas
 };

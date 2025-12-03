@@ -78,6 +78,25 @@
                 <%= Number(grupo.total || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }) %>
               </p>
               <p><strong>Status:</strong> <%= grupo.status %></p>
+              <% if (grupo.me_status_envio) { %>
+  <p>
+    <strong>Status do envio:</strong>
+    <%= grupo.me_status_envio %>
+  </p>
+<% } %>
+
+<% if (grupo.me_tracking_code) { %>
+  <p>
+    <strong>Código de rastreio:</strong>
+    <%= grupo.me_tracking_code %>
+    &nbsp;
+    <a href="https://www.melhorrastreio.com.br/rastreio/<%= grupo.me_tracking_code %>"
+       target="_blank" rel="noopener noreferrer">
+      🔍 acompanhar
+    </a>
+  </p>
+<% } %>
+
             </div>
           </div>
 
