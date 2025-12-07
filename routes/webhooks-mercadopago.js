@@ -6,22 +6,26 @@ const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...ar
 const MP_BASE_URL = 'https://api.mercadopago.com';
 const MP_ACCESS_TOKEN = (process.env.MP_ACCESS_TOKEN || '').trim();
 
+// 🔹 Opcional, mas ajuda o teste do painel a não dar 404
+router.get('/webhooks/mercadopago', (req, res) => {
+  console.log('[WEBHOOK MP] GET de teste recebido:', req.query);
+  return res.sendStatus(200);
+});
+
+// 🔹 Aqui fica o POST real, usado pelas notificações de verdade
 router.post('/webhooks/mercadopago', async (req, res) => {
   try {
     const { type, id, topic } = req.query;
 
     if (!id) {
       console.warn('[WEBHOOK MP] Chamada sem id na query:', req.query);
-      return res.sendStatus(200); // não quebra o webhook
+      return res.sendStatus(200);
     }
 
-    // Assinaturas (preapproval)
     if (type === 'preapproval' || topic === 'preapproval') {
       const url = `${MP_BASE_URL}/preapproval/${id}`;
       const resp = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${MP_ACCESS_TOKEN}`
-        }
+        headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` }
       });
 
       const subs = await resp.json();
