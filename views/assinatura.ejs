@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Assinar Plano</title>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+</head>
+<body>
+
+<h2>Assinar plano: <%= plano.nome %></h2>
+<p>Valor: R$ <%= (plano.preco_cents / 100).toFixed(2) %> / mês</p>
+
+<!-- Container do Brick -->
+<div id="subscription-payment-brick"></div>
+
+<script>
+  const planoId = '<%= plano.id %>';
+  const payerEmail = '<%= usuario.email %>';
+
+  const mp = new MercadoPago('<%= MP_PUBLIC_KEY %>', {
+    locale: 'pt-BR'
+  });
+
+  mp.bricks().create("cardPayment", "subscription-payment-brick", {
+    initialization: {
+      amount: <%= plano.preco_cents / 100 %>, 
+      payer: { email: payerEmail }
+    },
+    callbacks: {
+      onSubmit: async (cardFormData) => {
+        try {
+          const resp = await fetch('/assinaturas/subscribe-brick', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              planoId,
+              cardTokenId: cardFormData.token,
+              payerEmail: cardFormData.payer.email
+            })
+          });
+
+          const json = await resp.json();
+          if (!resp.ok || !json.ok) {
+            console.error(json);
+            alert('Erro ao criar assinatura');
+            return;
+          }
+
+          window.location.href = '/minha-conta?ok=assinatura_criada';
+        } catch (err) {
+          console.error(err);
+          alert('Erro ao processar pagamento.');
+        }
+      },
+
+      onError: (error) => {
+        console.error('Erro no Brick:', error);
+        alert('Erro ao inicializar pagamento.');
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

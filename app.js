@@ -72,6 +72,10 @@ app.use('/', require('./routes/ofertas'));
 app.use('/api/checkout', require('./routes/mercadopago'));
 app.use('/', require('./routes/frete'));
 app.use('/', require('./routes/melhorenvio'));
+const assinaturasRouter = require('./routes/assinaturas');
+app.use(assinaturasRouter);
+const webhooksMpRouter = require('./routes/webhooks-mercadopago');
+app.use(webhooksMpRouter);
 
 // ===========================
 //  Socket.io
