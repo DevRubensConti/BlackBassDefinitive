@@ -2,64 +2,74 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Assinar Plano</title>
+  <title>Assinar plano</title>
+  <!-- SDK Mercado Pago -->
   <script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
 <body>
+  <h2>Assinar plano: <%= plano.nome %></h2>
+  <p>Valor: R$ <%= (plano.preco_cents / 100).toFixed(2) %> / <%= plano.periodicidade %></p>
 
-<h2>Assinar plano: <%= plano.nome %></h2>
-<p>Valor: R$ <%= (plano.preco_cents / 100).toFixed(2) %> / mês</p>
+  <!-- Container onde o Brick vai entrar -->
+  <div id="subscription-payment-brick"></div>
 
-<!-- Container do Brick -->
-<div id="subscription-payment-brick"></div>
+  <script>
+    const planoId = '<%= plano.id %>';
+    const payerEmail = '<%= usuario.email %>';
+    const publicKey = '<%= MP_PUBLIC_KEY %>';
 
-<script>
-  const planoId = '<%= plano.id %>';
-  const payerEmail = '<%= usuario.email %>';
+    console.log('[SUBS][VIEW] planoId=', planoId, 'payerEmail=', payerEmail, 'PK=', publicKey);
 
-  const mp = new MercadoPago('<%= MP_PUBLIC_KEY %>', {
-    locale: 'pt-BR'
-  });
+    const mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
 
-  mp.bricks().create("cardPayment", "subscription-payment-brick", {
-    initialization: {
-      amount: <%= plano.preco_cents / 100 %>, 
-      payer: { email: payerEmail }
-    },
-    callbacks: {
-      onSubmit: async (cardFormData) => {
-        try {
-          const resp = await fetch('/assinaturas/subscribe-brick', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              planoId,
-              cardTokenId: cardFormData.token,
-              payerEmail: cardFormData.payer.email
-            })
-          });
+    (async function initBrick() {
+      const bricksBuilder = mp.bricks();
 
-          const json = await resp.json();
-          if (!resp.ok || !json.ok) {
-            console.error(json);
-            alert('Erro ao criar assinatura');
-            return;
+      await bricksBuilder.create('cardPayment', 'subscription-payment-brick', {
+        initialization: {
+          amount: <%= plano.preco_cents / 100 %>,
+          payer: { email: payerEmail }
+        },
+        callbacks: {
+          // ⚠️ PRECISA retornar uma Promise pro Brick não ficar travado
+          onSubmit: ({ formData }) => {
+            return new Promise(async (resolve, reject) => {
+              try {
+                const resp = await fetch('/assinaturas/subscribe-brick', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    planoId,
+                    cardTokenId: formData.token,          // token gerado pelo Brick
+                    payerEmail: formData.payer.email      // email do pagador
+                  })
+                });
+
+                const json = await resp.json();
+                console.log('[SUBS][onSubmit] resp', resp.status, json);
+
+                if (!resp.ok || !json.ok) {
+                  alert(json.error || 'Erro ao criar assinatura, tente novamente.');
+                  return reject(json);
+                }
+
+                // Se chegou aqui, assinatura criada com sucesso
+                resolve(); // avisa o Brick que concluiu
+                window.location.href = '/minha-conta?ok=assinatura_criada';
+              } catch (err) {
+                console.error('[SUBS][onSubmit] erro', err);
+                alert('Erro ao processar pagamento.');
+                reject(err); // avisa o Brick que deu ruim
+              }
+            });
+          },
+          onError: (error) => {
+            console.error('[SUBS][Brick onError]', error);
+            alert('Erro ao inicializar pagamento.');
           }
-
-          window.location.href = '/minha-conta?ok=assinatura_criada';
-        } catch (err) {
-          console.error(err);
-          alert('Erro ao processar pagamento.');
         }
-      },
-
-      onError: (error) => {
-        console.error('Erro no Brick:', error);
-        alert('Erro ao inicializar pagamento.');
-      }
-    }
-  });
-</script>
-
+      });
+    })();
+  </script>
 </body>
 </html>
