@@ -31,73 +31,80 @@
   <!-- Container onde o Brick será renderizado -->
   <div id="subscription-payment-brick"></div>
 
-  <script>
-    const planoId    = '<%= plano.id %>';
-    const payerEmail = '<%= usuario.email %>';
-    const publicKey  = '<%= MP_PUBLIC_KEY %>';
+<script>
+  const planoId    = '<%= plano.id %>';
+  const payerEmail = '<%= usuario.email %>';
+  const publicKey  = '<%= MP_PUBLIC_KEY %>';
 
-    console.log('[SUBS][VIEW] planoId=', planoId, 'payerEmail=', payerEmail, 'PK=', publicKey);
+  console.log('[SUBS][VIEW] planoId=', planoId, 'payerEmail=', payerEmail, 'PK=', publicKey);
 
-    const mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
-    const bricksBuilder = mp.bricks();
+  const mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
+  const bricksBuilder = mp.bricks();
 
-    async function renderCardPaymentBrick() {
-      await bricksBuilder.create('cardPayment', 'subscription-payment-brick', {
-        initialization: {
-          amount: <%= plano.preco_cents %> / 100,
-          payer: {
-            email: payerEmail
-          }
-        },
-        callbacks: {
-          onReady: () => {
-            console.log('[SUBS][VIEW] Payment Brick pronto');
-          },
-          onSubmit: (cardFormData) => {
-            console.log('[SUBS][VIEW] onSubmit', cardFormData);
-
-            return new Promise((resolve, reject) => {
-              fetch('/assinaturas/subscribe-brick', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  planoId,
-                  payerEmail,
-                  cardFormData
-                })
-              })
-                .then(res => res.json())
-                .then(json => {
-                  if (!json.ok) {
-                    console.error('[SUBS][VIEW] Erro ao assinar', json);
-                    alert('Erro ao criar assinatura.');
-                    return reject(json);
-                  }
-                  alert('Assinatura criada com sucesso!');
-                  resolve();
-                })
-                .catch(err => {
-                  console.error('[SUBS][VIEW] Erro fetch subscribe-brick', err);
-                  alert('Erro de comunicação com o servidor.');
-                  reject(err);
-                });
-            });
-          },
-          onError: (error) => {
-            console.error('[SUBS][VIEW] Erro no Payment Brick', error);
-            alert('Ocorreu um erro ao carregar o pagamento. Tente novamente.');
-          }
+  async function renderCardPaymentBrick() {
+    await bricksBuilder.create('cardPayment', 'subscription-payment-brick', {
+      initialization: {
+        amount: <%= plano.preco_cents %> / 100,
+        payer: {
+          email: payerEmail
         }
-      });
-    }
+      },
+      callbacks: {
+        onReady: () => {
+          console.log('[SUBS][VIEW] Payment Brick pronto');
+        },
+        onSubmit: (cardFormData) => {
+          console.log('[SUBS][VIEW] onSubmit', cardFormData);
 
-    // Garante que o DOM já existe
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', renderCardPaymentBrick);
-    } else {
-      renderCardPaymentBrick();
-    }
-  </script>
+          // 🔴 AQUI: pegamos o token gerado pelo Brick
+          const { token } = cardFormData;
+
+          return new Promise((resolve, reject) => {
+            fetch('/assinaturas/subscribe-brick', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                planoId,
+                payerEmail,
+                cardTokenId: token,   // ✅ NOME QUE O BACKEND ESPERA
+                // se quiser, manda o resto junto:
+                // cardFormData
+              })
+            })
+              .then(async (res) => {
+                const json = await res.json().catch(() => ({}));
+
+                if (!res.ok || !json.ok) {
+                  console.error('[SUBS][VIEW] Erro ao assinar', res.status, json);
+                  alert(json.error || 'Erro ao criar assinatura.');
+                  return reject(json);
+                }
+
+                alert('Assinatura criada com sucesso!');
+                resolve();
+              })
+              .catch(err => {
+                console.error('[SUBS][VIEW] Erro fetch subscribe-brick', err);
+                alert('Erro de comunicação com o servidor.');
+                reject(err);
+              });
+          });
+        },
+        onError: (error) => {
+          console.error('[SUBS][VIEW] Erro no Payment Brick', error);
+          alert('Ocorreu um erro ao carregar o pagamento. Tente novamente.');
+        }
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderCardPaymentBrick);
+  } else {
+    renderCardPaymentBrick();
+  }
+</script>
+
 
 </body>
 </html>

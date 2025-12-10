@@ -40,6 +40,7 @@ router.get('/assinaturas/:planoId', requireLogin, async (req, res) => {
  */
 router.post('/assinaturas/subscribe-brick', requireLogin, async (req, res) => {
   try {
+    console.log('[SUBS][POST] Body recebido:', req.body);
     const usuario = req.session.usuario;
     const {
       planoId,
