@@ -31,70 +31,73 @@
   <!-- Container onde o Brick será renderizado -->
   <div id="subscription-payment-brick"></div>
 
-<script>
-  const planoId   = '<%= plano.id %>';
-  const payerEmail = '<%= usuario.email %>';
-  const publicKey  = '<%= MP_PUBLIC_KEY %>';
+  <script>
+    const planoId    = '<%= plano.id %>';
+    const payerEmail = '<%= usuario.email %>';
+    const publicKey  = '<%= MP_PUBLIC_KEY %>';
 
-  console.log('[SUBS][VIEW] planoId=', planoId, 'payerEmail=', payerEmail, 'PK=', publicKey);
+    console.log('[SUBS][VIEW] planoId=', planoId, 'payerEmail=', payerEmail, 'PK=', publicKey);
 
-  const mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
-  const bricksBuilder = mp.bricks();
+    const mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
+    const bricksBuilder = mp.bricks();
 
-  const renderCardPaymentBrick = async () => {
-    await bricksBuilder.create('cardPayment', 'paymentBrick_container', {
-      initialization: {
-        amount: <%= plano.preco_cents %> / 100,
-        payer: {
-          email: payerEmail
-        }
-      },
-      callbacks: {
-        // 👉 OBRIGATÓRIOS pra tirar o erro
-        onReady: () => {
-          console.log('[SUBS][VIEW] Payment Brick pronto');
-          // aqui você pode esconder spinner de “carregando”, se tiver
+    async function renderCardPaymentBrick() {
+      await bricksBuilder.create('cardPayment', 'subscription-payment-brick', {
+        initialization: {
+          amount: <%= plano.preco_cents %> / 100,
+          payer: {
+            email: payerEmail
+          }
         },
-        onSubmit: (cardFormData) => {
-          console.log('[SUBS][VIEW] onSubmit', cardFormData);
+        callbacks: {
+          onReady: () => {
+            console.log('[SUBS][VIEW] Payment Brick pronto');
+          },
+          onSubmit: (cardFormData) => {
+            console.log('[SUBS][VIEW] onSubmit', cardFormData);
 
-          // Exemplo de envio pro backend:
-          return new Promise((resolve, reject) => {
-            fetch('/assinaturas/subscribe-brick', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                planoId: planoId,
-                payerEmail: payerEmail,
-                cardFormData
+            return new Promise((resolve, reject) => {
+              fetch('/assinaturas/subscribe-brick', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  planoId,
+                  payerEmail,
+                  cardFormData
+                })
               })
-            })
-              .then(res => res.json())
-              .then(json => {
-                if (!json.ok) {
-                  console.error('[SUBS][VIEW] Erro ao assinar', json);
-                  return reject(json);
-                }
-                alert('Assinatura criada com sucesso!');
-                resolve();
-              })
-              .catch(err => {
-                console.error('[SUBS][VIEW] Erro fetch subscribe-brick', err);
-                reject(err);
-              });
-          });
-        },
-        onError: (error) => {
-          console.error('[SUBS][VIEW] Erro no Payment Brick', error);
-          alert('Ocorreu um erro ao carregar o pagamento. Tente novamente.');
+                .then(res => res.json())
+                .then(json => {
+                  if (!json.ok) {
+                    console.error('[SUBS][VIEW] Erro ao assinar', json);
+                    alert('Erro ao criar assinatura.');
+                    return reject(json);
+                  }
+                  alert('Assinatura criada com sucesso!');
+                  resolve();
+                })
+                .catch(err => {
+                  console.error('[SUBS][VIEW] Erro fetch subscribe-brick', err);
+                  alert('Erro de comunicação com o servidor.');
+                  reject(err);
+                });
+            });
+          },
+          onError: (error) => {
+            console.error('[SUBS][VIEW] Erro no Payment Brick', error);
+            alert('Ocorreu um erro ao carregar o pagamento. Tente novamente.');
+          }
         }
-      }
-    });
-  };
+      });
+    }
 
-  renderCardPaymentBrick();
-</script>
-
+    // Garante que o DOM já existe
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderCardPaymentBrick);
+    } else {
+      renderCardPaymentBrick();
+    }
+  </script>
 
 </body>
 </html>
