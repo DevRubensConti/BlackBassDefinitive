@@ -36,8 +36,6 @@
   const payerEmail = '<%= usuario.email %>';
   const publicKey  = '<%= MP_PUBLIC_KEY %>';
 
-  console.log('[SUBS][VIEW] planoId=', planoId, 'payerEmail=', payerEmail, 'PK=', publicKey);
-
   const mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
   const bricksBuilder = mp.bricks();
 
@@ -45,19 +43,18 @@
     await bricksBuilder.create('cardPayment', 'subscription-payment-brick', {
       initialization: {
         amount: <%= plano.preco_cents %> / 100,
-        payer: {
-          email: payerEmail
-        }
+        payer: { email: payerEmail }
       },
       callbacks: {
         onReady: () => {
-          console.log('[SUBS][VIEW] Payment Brick pronto');
+          console.log('[SUBS][VIEW] Brick pronto');
         },
+
+        /**  🔥 ESTE É O onSubmit NOVO  **/
         onSubmit: (cardFormData) => {
           console.log('[SUBS][VIEW] onSubmit', cardFormData);
 
-          // 🔴 AQUI: pegamos o token gerado pelo Brick
-          const { token } = cardFormData;
+          const { token } = cardFormData;   // ⬅️ token do cartão
 
           return new Promise((resolve, reject) => {
             fetch('/assinaturas/subscribe-brick', {
@@ -66,13 +63,13 @@
               body: JSON.stringify({
                 planoId,
                 payerEmail,
-                cardTokenId: token,   // ✅ NOME QUE O BACKEND ESPERA
-                // se quiser, manda o resto junto:
-                // cardFormData
+                cardTokenId: token   // ⬅️ NOME QUE O BACKEND ESPERA
               })
             })
               .then(async (res) => {
                 const json = await res.json().catch(() => ({}));
+
+                console.log('[SUBS][VIEW] Resposta subscribe-brick:', res.status, json);
 
                 if (!res.ok || !json.ok) {
                   console.error('[SUBS][VIEW] Erro ao assinar', res.status, json);
@@ -90,9 +87,9 @@
               });
           });
         },
+
         onError: (error) => {
-          console.error('[SUBS][VIEW] Erro no Payment Brick', error);
-          alert('Ocorreu um erro ao carregar o pagamento. Tente novamente.');
+          console.error('[SUBS][VIEW] Erro no Brick', error);
         }
       }
     });

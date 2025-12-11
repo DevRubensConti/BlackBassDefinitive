@@ -18,9 +18,16 @@ router.get('/assinaturas/:planoId', requireLogin, async (req, res) => {
       .maybeSingle();
 
     if (error || !plano) {
-      console.error('[SUBS] Plano não encontrado:', error);
+      console.error('[SUBS] Plano não encontrado:', { planoId, error });
       return res.status(404).send('Plano não encontrado');
     }
+
+    console.log('[SUBS][VIEW] Render assinatura', {
+      userId: usr.id,
+      planoId,
+      mp_plan_id: plano.mp_plan_id,
+      preco_cents: plano.preco_cents
+    });
 
     return res.render('assinatura', {
       usuario: usr,
@@ -28,32 +35,32 @@ router.get('/assinaturas/:planoId', requireLogin, async (req, res) => {
       MP_PUBLIC_KEY: process.env.MP_PUBLIC_KEY
     });
   } catch (e) {
-    console.error('[SUBS] Erro GET /assinaturas/:planoId', e);
+    console.error('[SUBS] Erro ao carregar página de assinatura:', e);
     return res.status(500).send('Erro ao carregar página de assinatura.');
   }
 });
 
-/**
- * POST /assinaturas/subscribe-brick
- * Recebe dados do Payment Brick (card_token, email, planoId)
- * e cria a assinatura no Mercado Pago.
- */
+// POST /assinaturas/subscribe-brick -> recebe token do cartão e cria assinatura
 router.post('/assinaturas/subscribe-brick', requireLogin, async (req, res) => {
   try {
-    console.log('[SUBS][POST] Body recebido:', req.body);
     const usuario = req.session.usuario;
-    const {
+    const { planoId, cardTokenId, payerEmail } = req.body;
+
+    console.log('[SUBS][POST] Body recebido:', {
       planoId,
-      cardTokenId,
-      payerEmail
-      // se quiser, também installments, paymentMethodId, issuerId, etc.
-    } = req.body;
+      cardTokenId: cardTokenId ? '***' : null,
+      payerEmail,
+      usuarioId: usuario?.id
+    });
 
     if (!planoId || !cardTokenId || !payerEmail) {
-      return res.status(400).json({ error: 'Dados incompletos para assinatura.' });
+      return res.status(400).json({
+        ok: false,
+        error: 'Dados incompletos para assinatura (planoId, cardTokenId, payerEmail).'
+      });
     }
 
-    // 1) Carrega plano
+    // 1) Carrega o plano
     const { data: plano, error: planoErr } = await supabaseDb
       .from('planos_assinatura')
       .select('*')
@@ -61,29 +68,11 @@ router.post('/assinaturas/subscribe-brick', requireLogin, async (req, res) => {
       .maybeSingle();
 
     if (planoErr || !plano) {
-      console.error('[SUBS] Plano não encontrado:', planoErr);
-      return res.status(404).json({ error: 'Plano não encontrado.' });
+      console.error('[SUBS] Plano não encontrado no POST:', { planoId, planoErr });
+      return res.status(400).json({ ok: false, error: 'Plano não encontrado.' });
     }
 
-    if (!plano.mp_plan_id) {
-      console.error('[SUBS] Plano sem mp_plan_id!');
-      return res.status(500).json({ error: 'Plano sem integração Mercado Pago.' });
-    }
-
-    // 2) Verifica se já existe assinatura ativa para esse plano
-    const { data: subAtiva } = await supabaseDb
-      .from('assinaturas')
-      .select('*')
-      .eq('usuario_id', usuario.id)
-      .eq('plano_id', plano.id)
-      .in('status', ['authorized', 'active'])
-      .maybeSingle();
-
-    if (subAtiva) {
-      return res.status(409).json({ error: 'Já existe assinatura ativa para este plano.' });
-    }
-
-    // 3) Cria assinatura no Mercado Pago
+    // 2) Cria preapproval no Mercado Pago
     const mpSubs = await criarAssinaturaComCardToken({
       plano,
       cardTokenId,
@@ -91,25 +80,33 @@ router.post('/assinaturas/subscribe-brick', requireLogin, async (req, res) => {
       usuarioId: usuario.id
     });
 
-    // 4) Salva no Supabase
-    const { data: novaAssinatura, error: insertErr } = await supabaseDb
+    // 3) Salva assinatura no Supabase
+    const insertPayload = {
+      usuario_id: usuario.id,
+      plano_id: plano.id,
+      mp_preapproval_id: mpSubs.id,
+      status: mpSubs.status || 'authorized',
+      valor_cents: plano.preco_cents,
+      created_at: new Date().toISOString()
+    };
+
+    console.log('[SUBS] Salvando assinatura no Supabase:', insertPayload);
+
+    const { data: novaAssinatura, error: dbErr } = await supabaseDb
       .from('assinaturas')
-      .insert({
-        usuario_id: usuario.id,
-        plano_id: plano.id,
-        mp_preapproval_id: mpSubs.id,
-        status: mpSubs.status || 'pending',
-        raw_payload: mpSubs
-      })
-      .select()
+      .insert(insertPayload)
+      .select('*')
       .maybeSingle();
 
-    if (insertErr) {
-      console.error('[SUBS] Erro ao salvar assinatura no banco:', insertErr);
-      return res.status(500).json({ error: 'Erro ao salvar assinatura.' });
+    if (dbErr) {
+      console.error('[SUBS] Erro salvando assinatura no Supabase:', dbErr);
+      return res.status(500).json({
+        ok: false,
+        error: 'Erro ao salvar assinatura no banco.'
+      });
     }
 
-    // 5) Responde pro front
+    // 4) Responde pro front
     return res.json({
       ok: true,
       assinatura: novaAssinatura,
@@ -117,7 +114,10 @@ router.post('/assinaturas/subscribe-brick', requireLogin, async (req, res) => {
     });
   } catch (e) {
     console.error('[SUBS] Erro geral subscribe-brick:', e);
-    return res.status(500).json({ error: 'Erro ao processar assinatura.' });
+    return res.status(500).json({
+      ok: false,
+      error: e.message || 'Erro ao processar assinatura.'
+    });
   }
 });
 
