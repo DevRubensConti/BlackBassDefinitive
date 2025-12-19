@@ -58,9 +58,9 @@ router.post('/login', async (req, res) => {
     });
   }
 
-  const uid = loginData.user.id;
+    const uid = loginData.user.id;
 
-  // 2) Busca PF (SERVICE ROLE)
+  // Busca PF
   const pfResp = await supabaseDb
     .from('usuarios_pf')
     .select('*')
@@ -68,50 +68,57 @@ router.post('/login', async (req, res) => {
     .maybeSingle();
   const pf = pfResp.data;
 
-  // 3) Se não for PF, tenta PJ (SERVICE ROLE)
-  let usuario = pf;
-  let tipo = 'pf';
+  // Busca PJ (opcional)
+  const pjResp = await supabaseDb
+    .from('usuarios_pj')
+    .select('*')
+    .eq('id', uid)
+    .maybeSingle();
+  const pj = pjResp.data;
 
-  if (!usuario) {
-    const pjResp = await supabaseDb
-      .from('usuarios_pj')
-      .select('*')
-      .eq('id', uid)
-      .maybeSingle();
-    const pj = pjResp.data;
+  // Busca loja (prioridade)
+  const lojaResp = await supabaseDb
+    .from('lojas')
+    .select('id, nome_fantasia, icone_url, cidade, estado, cnpj, cpf, tipo')
+    .eq('usuario_id', uid)
+    .maybeSingle();
+  const loja = lojaResp.data;
 
-    if (!pj) {
-      return res.status(401).render('login', { erroLogin: 'Usuário não encontrado.', email });
-    }
-    usuario = pj;
-    tipo = 'pj';
+  const temLoja = !!loja || !!pj;
+  const usuarioBase = pf || pj;
+
+  if (!usuarioBase) {
+    return res.status(401).render('login', { erroLogin: 'Usuário não encontrado.', email });
   }
 
-  // 4) Regenera a sessão para não herdar dados antigos
+  const tipo = temLoja ? 'pj' : 'pf';
+  const nomeSessao = temLoja
+    ? (loja?.nome_fantasia || pj?.nomeFantasia || pj?.razaoSocial || usuarioBase.nome || '')
+    : (`${pf?.nome || ''} ${pf?.sobrenome || ''}`.trim());
+
+  const iconeValida =
+    (loja?.icone_url || usuarioBase.icone_url) &&
+    (loja?.icone_url || usuarioBase.icone_url) !== 'null' &&
+    String(loja?.icone_url || usuarioBase.icone_url).trim() !== '';
+
+  // mantém sua regeneração de sessão aqui:
   req.session.regenerate(err => {
     if (err) {
       console.error('Erro ao regenerar sessão:', err);
       return res.status(500).send('Erro de sessão.');
     }
 
-    // 5) Seta a sessão limpa (normalizando tipo)
-    const iconeValida =
-      usuario.icone_url &&
-      usuario.icone_url !== 'null' &&
-      String(usuario.icone_url).trim() !== '';
-
     req.session.usuario = {
       id: uid,
-      nome: usuario.nome || usuario.nome_fantasia || usuario.nomeFantasia || '',
-      tipo: (tipo || '').toLowerCase(), // 'pf' ou 'pj'
-      email: usuario.email,
-      telefone: usuario.telefone,
+      nome: nomeSessao,
+      tipo,
+      email: usuarioBase.email,
+      telefone: usuarioBase.telefone,
       icone_url: iconeValida
-        ? usuario.icone_url
+        ? (loja?.icone_url || usuarioBase.icone_url)
         : (tipo === 'pj' ? '/images/store_logos/store.png' : '/images/user_default.png')
     };
 
-    // 6) Garante persistência antes do redirect
     req.session.save(saveErr => {
       if (saveErr) {
         console.error('Erro ao salvar sessão:', saveErr);
@@ -120,7 +127,208 @@ router.post('/login', async (req, res) => {
       res.redirect('/');
     });
   });
+
 });
+
+// ================================
+// CADASTRO ÚNICO (PF + opcional loja)
+// ================================
+router.get('/cadastro', (req, res) => {
+  return res.render('cadastro', { mensagemErro: null });
+});
+
+router.post('/cadastro', async (req, res) => {
+  try {
+    const {
+      // pessoais (sempre)
+      nome,
+      sobrenome,
+      cpf,
+      data_nascimento,
+
+      // conta
+      email,
+      senha,
+      telefone,
+
+      // endereço
+      cep,
+      estado,
+      cidade,
+      endereco,
+      numero,
+      bairro,
+      complemento,
+
+      // switch
+      tenho_loja,
+
+      // loja (se tenho_loja)
+      nomeFantasia,
+      razaoSocial,
+      cnpj,
+      descricao
+    } = req.body;
+
+    const temLoja =
+      String(tenho_loja) === 'on' ||
+      String(tenho_loja) === 'true' ||
+      String(tenho_loja) === '1';
+
+    // -------- validações básicas --------
+    if (!nome || !sobrenome || !cpf || !data_nascimento || !email || !senha || !telefone) {
+      return res.status(400).render('cadastro', { mensagemErro: 'Preencha todos os campos obrigatórios.' });
+    }
+    if (!cep || !estado || !cidade || !endereco || !numero || !bairro) {
+      return res.status(400).render('cadastro', { mensagemErro: 'Preencha o endereço completo.' });
+    }
+
+    const cpfDigits = onlyDigits(cpf);
+    const cnpjDigits = onlyDigits(cnpj || '');
+
+
+    if (!cpfDigits || cpfDigits.length !== 11) {
+      return res.status(400).render('cadastro', { mensagemErro: 'CPF inválido.' });
+    }
+
+    if (temLoja) {
+      if (!nomeFantasia || !razaoSocial || !cnpjDigits || cnpjDigits.length !== 14) {
+        return res.status(400).render('cadastro', { mensagemErro: 'Preencha corretamente os dados da loja (Nome Fantasia, Razão Social e CNPJ válido).' });
+      }
+    }
+
+    // -------- checagens de duplicidade --------
+    // E-mail único entre PF e PJ
+    const [{ data: ePF }, { data: ePJ }] = await Promise.all([
+      supabaseDb.from('usuarios_pf').select('id').eq('email', email).maybeSingle(),
+      supabaseDb.from('usuarios_pj').select('id').eq('email', email).maybeSingle()
+    ]);
+    if (ePF || ePJ) {
+      return res.status(400).render('cadastro', { mensagemErro: 'Já existe uma conta com esse e-mail.' });
+    }
+
+    // CPF único (recomendado conferir em ambas)
+    const [{ data: cpfPF }, { data: cpfPJ }] = await Promise.all([
+      supabaseDb.from('usuarios_pf').select('id').eq('cpf', cpfDigits).maybeSingle(),
+      supabaseDb.from('usuarios_pj').select('id').eq('cpf', cpfDigits).maybeSingle()
+    ]);
+    if (cpfPF || cpfPJ) {
+      return res.status(400).render('cadastro', { mensagemErro: 'Já existe uma conta com esse CPF.' });
+    }
+
+    // CNPJ único (se for loja)
+    if (temLoja) {
+      const { data: cnpjExist } = await supabaseDb
+        .from('usuarios_pj')
+        .select('id')
+        .eq('cnpj', cnpjDigits)
+        .maybeSingle();
+
+      if (cnpjExist) {
+        return res.status(400).render('cadastro', { mensagemErro: 'Já existe uma loja com esse CNPJ.' });
+      }
+    }
+
+    // -------- Auth signUp (Supabase Auth) --------
+    const { data: signUp, error: signErr } = await supabaseAuth.auth.signUp({
+      email,
+      password: senha,
+      options: { emailRedirectTo: CONFIRM_URL }
+    });
+
+    if (signErr || !signUp?.user) {
+      console.error('[CADASTRO] signUp error:', signErr);
+      return res.status(500).render('cadastro', { mensagemErro: 'Erro ao registrar no sistema de autenticação.' });
+    }
+
+    const uid = signUp.user.id;
+
+// -------- Inserir em PF OU PJ (dependendo do switch) --------
+if (!temLoja) {
+  // ===== PF =====
+  const pfRow = {
+    id: uid,
+    nome,
+    sobrenome,
+    cpf: cpfDigits,
+    data_nascimento,
+    email,
+    telefone,
+    cep,
+    estado,
+    cidade,
+    endereco,
+    numero,
+    bairro,
+    complemento: complemento || null
+  };
+
+  const { error: insertPFError } = await supabaseDb.from('usuarios_pf').insert([pfRow]);
+  if (insertPFError) {
+    console.error('[CADASTRO] Insert usuarios_pf error:', insertPFError);
+    return res.status(500).render('cadastro', { mensagemErro: 'Erro ao salvar os dados do usuário (PF).' });
+  }
+
+} else {
+  // ===== PJ =====
+  const pjRow = {
+    id: uid,
+
+    // dados pessoais (puxados do cadastro)
+    nome,
+    sobrenome,
+    cpf: cpfDigits,
+    data_nascimento,
+
+    // dados da loja
+    nomeFantasia,
+    razaoSocial,
+    cnpj: cnpjDigits,
+    descricao: descricao || null,
+
+    // contato/endereço (se sua tabela PJ tiver essas colunas)
+    email,
+    telefone,
+    cep,
+    estado,
+    cidade,
+    endereco,
+    numero,
+    bairro,
+    complemento: complemento || null,
+
+    // legado (se existir na tabela)
+    cpf_responsavel: cpfDigits
+  };
+
+  const { error: insertPJError } = await supabaseDb.from('usuarios_pj').insert([pjRow]);
+  if (insertPJError) {
+    console.error('[CADASTRO] Insert usuarios_pj error:', insertPJError);
+    return res.status(500).render('cadastro', { mensagemErro: 'Erro ao salvar os dados do usuário (PJ).' });
+  }
+
+  // cria/garante registro em "lojas"
+  await ensureLoja({
+    usuarioId: uid,
+    tipo: 'PJ',
+    nomeFantasia: nomeFantasia || razaoSocial,
+    cnpj: cnpjDigits,
+    cpf: cpfDigits,
+    cidade: cidade || null,
+    estado: estado || null,
+    descricao: descricao || null
+  });
+}
+
+    // -------- redirect --------
+    return res.redirect(`/verifique-email?email=${encodeURIComponent(email)}`);
+  } catch (err) {
+    console.error('[CADASTRO] Erro no cadastro:', err);
+    return res.status(500).render('cadastro', { mensagemErro: err.message || 'Erro interno ao processar cadastro.' });
+  }
+});
+
+
 
 // (Opcional) Reenviar e-mail de confirmação – usa supabaseAuth
 router.post('/auth/reenviar-confirmacao', async (req, res) => {
@@ -157,177 +365,7 @@ router.get('/logout', (req, res) => {
   });
 });
 
-// ================================
-// CADASTRO PJ
-// ================================
-router.post('/cadastro-pj', async (req, res) => {
-  const {
-    nomeFantasia, razaoSocial, cnpj, email, senha, telefone,
-    cep, estado, endereco, numero, bairro, complemento, cidade, descricao
-  } = req.body;
 
-  try {
-    // 1) e-mail único entre PF e PJ
-    const [{ data: ePF }, { data: ePJ }] = await Promise.all([
-      supabaseDb.from('usuarios_pf').select('id').eq('email', email).maybeSingle(),
-      supabaseDb.from('usuarios_pj').select('id').eq('email', email).maybeSingle()
-    ]);
-    if (ePF || ePJ) {
-      return res.render('cadastro-pj', { mensagemErro: 'Já existe uma conta com esse e-mail.' });
-    }
-
-    // 2) CNPJ único
-    const cnpjDigits = onlyDigits(cnpj);
-    if (cnpjDigits) {
-      const { data: cnpjExist } = await supabaseDb
-        .from('usuarios_pj')
-        .select('id')
-        .eq('cnpj', cnpjDigits)
-        .maybeSingle();
-      if (cnpjExist) {
-        return res.render('cadastro-pj', { mensagemErro: 'Já existe uma loja com esse CNPJ.' });
-      }
-    }
-
-    // 3) Auth signUp (envia e-mail de confirmação)
-    const { data: signUp, error: signErr } = await supabaseAuth.auth.signUp({
-      email,
-      password: senha,
-      options: { emailRedirectTo: CONFIRM_URL }
-    });
-    if (signErr || !signUp?.user) {
-      console.error('Auth signUp (PJ) error:', signErr);
-      return res.render('cadastro-pj', { mensagemErro: 'Erro ao registrar no sistema de autenticação.' });
-    }
-    const uid = signUp.user.id;
-
-    // 4) Inserir em usuarios_pj
-    const pjRow = {
-      id: uid,
-      nomeFantasia,
-      razaoSocial,
-      cnpj: cnpjDigits || null,
-      email,
-      telefone,
-      cep,
-      estado,
-      endereco,
-      numero,
-      bairro,
-      complemento,
-      cidade: cidade || null,
-      descricao: descricao || null
-    };
-    const { error: insertPJError } = await supabaseDb.from('usuarios_pj').insert([pjRow]);
-    if (insertPJError) {
-      console.error('Insert usuarios_pj error:', insertPJError);
-      return res.status(500).render('cadastro-pj', { mensagemErro: 'Erro ao cadastrar loja (dados PJ).' });
-    }
-
-    // 5) Loja 1:1 (com cidade e icone_url)
-    await ensureLoja({
-      usuarioId: uid,
-      tipo: 'PJ',
-      nomeFantasia: nomeFantasia || razaoSocial,
-      cnpj: cnpjDigits || null,
-      cidade: cidade || null,
-      estado: estado || null,
-      descricao: descricao || null
-    });
-
-    // 6) Redireciona para aviso de confirmação
-    return res.redirect(`/verifique-email?email=${encodeURIComponent(email)}`);
-  } catch (err) {
-    console.error('Erro no cadastro PJ:', err);
-    return res.status(500).render('cadastro-pj', { mensagemErro: err.message || 'Erro interno ao processar cadastro' });
-  }
-});
-
-// ================================
-// CADASTRO PF
-// ================================
-router.post('/cadastro-pf', async (req, res) => {
-  try {
-    const {
-      nome, sobrenome, cpf, data_nascimento,
-      email, senha, telefone,
-      cep, estado, cidade, endereco, numero, bairro, complemento
-    } = req.body;
-
-    // 1) e-mail único entre PF e PJ
-    const [{ data: ePF }, { data: ePJ }] = await Promise.all([
-      supabaseDb.from('usuarios_pf').select('id').eq('email', email).maybeSingle(),
-      supabaseDb.from('usuarios_pj').select('id').eq('email', email).maybeSingle()
-    ]);
-    if (ePF || ePJ) {
-      return res.render('cadastro-pf', { mensagemErro: 'Já existe uma conta com esse e-mail.' });
-    }
-
-    // 2) CPF único
-    const cpfDigits = onlyDigits(cpf);
-    if (cpfDigits) {
-      const { data: cpfExist } = await supabaseDb
-        .from('usuarios_pf')
-        .select('id')
-        .eq('cpf', cpfDigits)
-        .maybeSingle();
-      if (cpfExist) {
-        return res.render('cadastro-pf', { mensagemErro: 'Já existe uma conta com esse CPF.' });
-      }
-    }
-
-    // 3) Auth signUp (e-mail de confirmação)
-    const { data: signUp, error: signErr } = await supabaseAuth.auth.signUp({
-      email,
-      password: senha,
-      options: { emailRedirectTo: CONFIRM_URL }
-    });
-    if (signErr || !signUp?.user) {
-      console.error('Auth signUp (PF) error:', signErr);
-      return res.render('cadastro-pf', { mensagemErro: 'Erro ao registrar no sistema de autenticação.' });
-    }
-    const uid = signUp.user.id;
-
-    // 4) Inserir em usuarios_pf
-    const pfRow = {
-      id: uid,
-      nome,
-      sobrenome,
-      cpf: cpfDigits || null,
-      data_nascimento: data_nascimento || null,
-      email,
-      telefone,
-      cep,
-      estado,
-      cidade: cidade || null,
-      endereco,
-      numero,
-      bairro,
-      complemento
-    };
-    const { error: dbError } = await supabaseDb.from('usuarios_pf').insert([pfRow]);
-    if (dbError) {
-      console.error('Insert usuarios_pf error:', dbError);
-      return res.status(500).render('cadastro-pf', { mensagemErro: 'Erro ao salvar os dados do usuário (PF).' });
-    }
-
-    // 5) Loja 1:1 (PF também ganha cidade e ícone)
-    await ensureLoja({
-      usuarioId: uid,
-      tipo: 'PF',
-      nomeFantasia: `${nome || ''} ${sobrenome || ''}`.trim(),
-      cpf: cpfDigits || null,
-      cidade: cidade || null,
-      estado: estado || null
-    });
-
-    // 6) Aviso para verificar o e-mail
-    return res.redirect(`/verifique-email?email=${encodeURIComponent(email)}`);
-  } catch (err) {
-    console.error('Erro no cadastro PF:', err);
-    return res.status(500).render('cadastro-pf', { mensagemErro: err.message || 'Erro interno ao processar cadastro' });
-  }
-});
 
 // ================================
 // PÁGINAS DE CADASTRO E CONFIRMAÇÃO
@@ -340,13 +378,6 @@ router.get('/escolher-cadastro', (req, res) => {
   res.render('escolher-cadastro');
 });
 
-router.get('/cadastro-pf', (req, res) => {
-  res.render('cadastro-pf', { mensagemErro: null });
-});
-
-router.get('/cadastro-pj', (req, res) => {
-  res.render('cadastro-pj', { mensagemErro: null });
-});
 
 // GET para "verifique seu e-mail"
 router.get('/verifique-email', (req, res) => {

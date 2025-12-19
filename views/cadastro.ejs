@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro</title>
+  <link rel="stylesheet" href="/css/signup.css" />
+  <style>
+    .mensagem-erro.topo { margin-bottom: 12px; }
+    .campo-bloqueado { background: #f6f6f6; }
+    .hint { font-size: 12px; color:#666; margin-top:4px; }
+    .switch-row { display:flex; align-items:center; gap:12px; margin: 10px 0 18px; }
+    .loja-box { border: 1px solid #e5e5e5; border-radius: 10px; padding: 12px; margin-top: 10px; }
+    .loja-box[hidden] { display:none; }
+  </style>
+</head>
+
+<body>
+<%- include('partials/navbar.ejs') %>
+
+<main class="form-etapas-wrapper">
+  <% if (mensagemErro) { %>
+    <div class="erro-cadastro">
+      <p><%= mensagemErro %></p>
+    </div>
+  <% } %>
+
+  <div id="mensagem-erro" class="mensagem-erro topo" style="display:none;"></div>
+
+  <h2><u>Cadastro</u></h2>
+
+  <form id="form-cadastro" method="POST" action="/cadastro" autocomplete="off">
+
+    <!-- ================= ETAPA 1 ================= -->
+    <details id="etapa-1" open>
+      <summary>Etapa 1 - Informações Pessoais</summary>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" required autocomplete="given-name">
+        </div>
+
+        <div class="form-group">
+          <label for="sobrenome">Sobrenome</label>
+          <input type="text" id="sobrenome" name="sobrenome" required autocomplete="family-name">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cpf">CPF</label>
+          <input type="text" id="cpf" name="cpf" required inputmode="numeric" placeholder="000.000.000-00" autocomplete="off">
+          <div class="hint">Formato: 000.000.000-00</div>
+        </div>
+
+        <div class="form-group">
+          <label for="data_nascimento">Data de Nascimento</label>
+          <input type="date" id="data_nascimento" name="data_nascimento" required autocomplete="bday">
+        </div>
+      </div>
+
+<div class="switch-row">
+  <span class="switch-label"><strong>Tenho loja</strong></span>
+
+  <div class="switch">
+    <input type="checkbox" id="tenho_loja" name="tenho_loja">
+    <label for="tenho_loja" class="slider"></label>
+  </div>
+
+  <span class="hint">Marque se você vai vender como loja (PJ).</span>
+</div>
+
+
+      <div id="campos-loja" class="loja-box" hidden>
+        <h3 style="margin: 0 0 10px;">Informações da Loja</h3>
+
+        <div class="form-group">
+          <label for="nomeFantasia">Nome Fantasia</label>
+          <input type="text" id="nomeFantasia" name="nomeFantasia">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cnpj">CNPJ</label>
+            <input type="text" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00" inputmode="numeric" autocomplete="off">
+            <div class="hint">Formato: 00.000.000/0000-00</div>
+          </div>
+
+          <div class="form-group">
+            <label for="razaoSocial">Razão Social</label>
+            <input type="text" id="razaoSocial" name="razaoSocial">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="descricao">Descrição (Opcional)</label>
+          <input type="text" id="descricao" name="descricao" placeholder="Conte um pouco sobre a loja">
+        </div>
+      </div>
+
+      <button type="button" onclick="proximaEtapa('etapa-1','etapa-2')">Continuar</button>
+    </details>
+
+    <!-- ================= ETAPA 2 ================= -->
+    <details id="etapa-2">
+      <summary>Etapa 2 - Conta e Contato</summary>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" required autocomplete="email" placeholder="seuemail@exemplo.com">
+        </div>
+
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <div class="senha-wrapper">
+            <input type="password" id="senha" name="senha" required autocomplete="new-password">
+            <img id="icone-senha" src="/images/eye-closed.png" alt="Mostrar senha" style="cursor:pointer;" onclick="toggleSenha()">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="telefone">Telefone</label>
+          <input type="text" id="telefone" name="telefone" required inputmode="tel" autocomplete="tel" placeholder="(00) 90000-0000">
+        </div>
+      </div>
+
+      <button type="button" onclick="proximaEtapa('etapa-2','etapa-3')">Continuar</button>
+    </details>
+
+    <!-- ================= ETAPA 3 ================= -->
+    <details id="etapa-3">
+      <summary>Etapa 3 - Endereço</summary>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cep">CEP</label>
+          <input type="text" id="cep" name="cep" placeholder="00000-000" required inputmode="numeric" autocomplete="postal-code">
+          <div id="cep-status" class="hint"></div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado" required disabled class="campo-bloqueado">
+            <option value="">Selecione o estado</option>
+            <option value="AC">Acre</option><option value="AL">Alagoas</option>
+            <option value="AP">Amapá</option><option value="AM">Amazonas</option>
+            <option value="BA">Bahia</option><option value="CE">Ceará</option>
+            <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option>
+            <option value="GO">Goiás</option><option value="MA">Maranhão</option>
+            <option value="MT">Mato Grosso</option><option value="MS">Mato Grosso do Sul</option>
+            <option value="MG">Minas Gerais</option><option value="PA">Pará</option>
+            <option value="PB">Paraíba</option><option value="PR">Paraná</option>
+            <option value="PE">Pernambuco</option><option value="PI">Piauí</option>
+            <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option>
+            <option value="RS">Rio Grande do Sul</option><option value="RO">Rondônia</option>
+            <option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
+            <option value="SP">São Paulo</option>
+            <option value="SE">Sergipe</option><option value="TO">Tocantins</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="cidade">Cidade</label>
+          <input type="text" id="cidade" name="cidade" placeholder="Sua cidade" required disabled class="campo-bloqueado">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="endereco">Endereço</label>
+          <input type="text" id="endereco" name="endereco" placeholder="Rua / Avenida" required disabled class="campo-bloqueado">
+        </div>
+        <div class="form-group">
+          <label for="numero">Número</label>
+          <input type="text" id="numero" name="numero" placeholder="Número" required disabled class="campo-bloqueado">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="bairro">Bairro</label>
+          <input type="text" id="bairro" name="bairro" placeholder="Seu bairro" required disabled class="campo-bloqueado">
+        </div>
+        <div class="form-group">
+          <label for="complemento">Complemento (Opcional)</label>
+          <input type="text" id="complemento" name="complemento" placeholder="Apto, Bloco, Referência..." disabled class="campo-bloqueado">
+        </div>
+      </div>
+
+      <button type="submit">Finalizar Cadastro</button>
+    </details>
+
+  </form>
+</main>
+
+<%- include('partials/footer.ejs') %>
+
+<script>
+/* ================== NAVEGAÇÃO ETAPAS ================== */
+function proximaEtapa(atual, proxima) {
+  document.getElementById(atual).removeAttribute('open');
+  document.getElementById(proxima).setAttribute('open', true);
+  document.getElementById(proxima).scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ================== SWITCH LOJA ================== */
+const chkLoja = document.getElementById('tenho_loja');
+const boxLoja = document.getElementById('campos-loja');
+const nomeFantasiaInput = document.getElementById('nomeFantasia');
+const razaoSocialInput = document.getElementById('razaoSocial');
+const cnpjInput = document.getElementById('cnpj');
+
+function atualizarLojaUI() {
+  const on = chkLoja.checked;
+  boxLoja.hidden = !on;
+
+  // Required dinâmico
+  [nomeFantasiaInput, razaoSocialInput, cnpjInput].forEach(el => {
+    el.required = on;
+    if (!on) el.value = '';
+  });
+}
+chkLoja.addEventListener('change', atualizarLojaUI);
+atualizarLojaUI();
+
+/* ================== MÁSCARAS ================== */
+document.getElementById('cpf').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '');
+  v = v.replace(/(\d{3})(\d)/, '$1.$2');
+  v = v.replace(/(\d{3})(\d)/, '$1.$2');
+  v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  e.target.value = v.slice(0, 14);
+});
+
+document.getElementById('telefone').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '');
+  v = (v.length <= 10)
+    ? v.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
+    : v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  e.target.value = v.slice(0, 15);
+});
+
+cnpjInput.addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '');
+  v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+  v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+  v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
+  v = v.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+  e.target.value = v.slice(0, 18);
+});
+
+const cepInput = document.getElementById('cep');
+cepInput.addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '');
+  v = v.replace(/(\d{5})(\d)/, '$1-$2');
+  e.target.value = v.slice(0, 9);
+});
+
+/* ================== VALIDADORES CPF/CNPJ ================== */
+function validarCPF(cpf) {
+  cpf = (cpf || '').replace(/[^\d]+/g,'');
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1+$/.test(cpf)) return false;
+  let soma = 0, resto;
+
+  for (let i=1; i<=9; i++) soma += parseInt(cpf.substring(i-1,i)) * (11-i);
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.substring(9,10))) return false;
+
+  soma = 0;
+  for (let i=1; i<=10; i++) soma += parseInt(cpf.substring(i-1,i)) * (12-i);
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  return resto === parseInt(cpf.substring(10,11));
+}
+
+function validarCNPJ(cnpj) {
+  cnpj = (cnpj || '').replace(/[^\d]+/g,'');
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1+$/.test(cnpj)) return false;
+
+  let tamanho = cnpj.length - 2;
+  let numeros = cnpj.substring(0, tamanho);
+  let digitos = cnpj.substring(tamanho);
+  let soma = 0;
+  let pos = tamanho - 7;
+
+  for (let i = tamanho; i >= 1; i--) {
+    soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+  if (resultado !== parseInt(digitos.charAt(0))) return false;
+
+  tamanho += 1;
+  numeros = cnpj.substring(0, tamanho);
+  soma = 0;
+  pos = tamanho - 7;
+
+  for (let i = tamanho; i >= 1; i--) {
+    soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+  return resultado === parseInt(digitos.charAt(1));
+}
+
+/* ================== VIA CEP (endereço travado) ================== */
+const estadoSelect = document.getElementById('estado');
+const cidadeInput = document.getElementById('cidade');
+const enderecoInput = document.getElementById('endereco');
+const numeroInput = document.getElementById('numero');
+const bairroInput = document.getElementById('bairro');
+const complementoInput = document.getElementById('complemento');
+const cepStatus = document.getElementById('cep-status');
+
+function setEnderecoEnabled(enabled) {
+  [estadoSelect, cidadeInput, enderecoInput, numeroInput, bairroInput, complementoInput].forEach(el => {
+    el.disabled = !enabled;
+    el.classList.toggle('campo-bloqueado', !enabled);
+  });
+}
+
+function limparEndereco() {
+  cidadeInput.value = '';
+  enderecoInput.value = '';
+  bairroInput.value = '';
+  estadoSelect.value = '';
+  numeroInput.value = '';
+  complementoInput.value = '';
+}
+
+async function buscarCEP(cepNumerico) {
+  cepStatus.textContent = 'Buscando endereço pelo CEP…';
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cepNumerico}/json/`);
+    const data = await res.json();
+    if (data.erro) throw new Error('CEP não encontrado.');
+
+    enderecoInput.value = data.logradouro || '';
+    bairroInput.value = data.bairro || '';
+    cidadeInput.value = data.localidade || '';
+    estadoSelect.value = data.uf || '';
+
+    setEnderecoEnabled(true);
+    cepStatus.textContent = 'Endereço preenchido automaticamente.';
+    numeroInput.focus();
+  } catch (err) {
+    setEnderecoEnabled(true);
+    cepStatus.textContent = 'CEP não encontrado. Preencha o endereço manualmente.';
+  }
+}
+
+setEnderecoEnabled(false);
+
+cepInput.addEventListener('blur', () => {
+  const cepNum = (cepInput.value || '').replace(/\D/g, '');
+  if (cepNum.length === 8) buscarCEP(cepNum);
+});
+
+/* ================== SUBMIT (validação) ================== */
+document.getElementById('form-cadastro').addEventListener('submit', function (e) {
+  const erros = [];
+  const msg = document.getElementById('mensagem-erro');
+  msg.style.display = 'none';
+  msg.innerHTML = '';
+
+  if (!validarCPF(document.getElementById('cpf').value)) erros.push('CPF inválido');
+
+  const telDigits = (document.getElementById('telefone').value || '').replace(/\D/g,'');
+  if (telDigits.length < 10) erros.push('Telefone inválido');
+
+  const cep = (cepInput.value || '').trim();
+  if (!/^\d{5}-\d{3}$/.test(cep)) erros.push('CEP inválido (use 00000-000)');
+
+  if (!estadoSelect.value) erros.push('Selecione o Estado (UF)');
+  if (!cidadeInput.value.trim()) erros.push('Informe a cidade');
+  if (!enderecoInput.value.trim()) erros.push('Informe o endereço');
+  if (!bairroInput.value.trim()) erros.push('Informe o bairro');
+  if (!numeroInput.value.trim()) erros.push('Informe o número');
+
+  if (chkLoja.checked) {
+    if (!nomeFantasiaInput.value.trim()) erros.push('Informe o Nome Fantasia');
+    if (!razaoSocialInput.value.trim()) erros.push('Informe a Razão Social');
+    if (!validarCNPJ(cnpjInput.value)) erros.push('CNPJ inválido');
+  }
+
+  if (erros.length > 0) {
+    e.preventDefault();
+    msg.innerHTML = 'Cadastro não foi possível pois:<br>– ' + erros.join('<br>– ');
+    msg.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+/* ================== MOSTRAR/OCULTAR SENHA ================== */
+function toggleSenha() {
+  const senhaInput = document.getElementById('senha');
+  const icone = document.getElementById('icone-senha');
+  const vaiMostrar = senhaInput.type === 'password';
+  senhaInput.type = vaiMostrar ? 'text' : 'password';
+  icone.src = vaiMostrar ? '/images/eye-open.png' : '/images/eye-closed.png';
+  icone.alt = vaiMostrar ? 'Esconder senha' : 'Mostrar senha';
+}
+window.toggleSenha = toggleSenha;
+</script>
+
+</body>
+</html>
