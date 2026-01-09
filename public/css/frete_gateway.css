@@ -1,320 +1,345 @@
-/* frete_gateway.css */
-/* Reaproveita variáveis e base do style.css */
 @import url('/css/style.css');
-* {
-  box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
+
+:root{
+  --bb-accent: var(--cor-primaria, #F26B3A);
+  --bb-text: var(--cor-secundaria, #ffffff);
+
+  --bb-muted: rgba(255,255,255,.75);
+  --bb-border: rgba(255,255,255,.14);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-soft: rgba(0,0,0,.45);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
 }
 
-/* --------------------------
-   PÁGINA DE FRETE
---------------------------- */
+*{ box-sizing: border-box; }
 
-.frete-page {
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body{
+  margin: 0;
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  /* ✅ regra do projeto */
+  background: url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center center fixed;
+  background-size: cover;
+}
+
+/* =========================
+   PÁGINA
+========================= */
+.frete-page{
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 16px 40px;
+  padding: 34px 18px 40px;
 }
 
-.frete-title {
+.frete-title{
+  margin: 10px 0 22px;
+  text-align: center;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
+
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bb-accent);
+}
+
+/* =========================
+   LAYOUT
+========================= */
+.frete-layout{
+  display: grid;
+  grid-template-columns: minmax(0,1.4fr) minmax(0,1fr);
+  gap: 22px;
+}
+
+@media (max-width: 900px){
+  .frete-layout{ grid-template-columns: 1fr; }
+}
+
+/* =========================
+   CARD BASE
+========================= */
+.frete-card{
+  background: var(--bb-card);
+  border-radius: 20px;
+  border: 1px solid var(--bb-border);
+
+  padding: 22px 22px 24px;
+  box-shadow: var(--bb-shadow);
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.frete-card h2{
+  margin: 0 0 6px;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 26px;
+  letter-spacing: 2px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--cor-letras-navbar, #f5f5f5);
-  margin: 8px 0 20px;
-  text-shadow: 2px 2px #28573F;
+  color: rgba(255,255,255,.95);
 }
 
-/* layout principal: resumo + opções */
-
-.frete-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 24px;
-}
-
-@media (max-width: 900px) {
-  .frete-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* --------------------------
-   CARD BASE
---------------------------- */
-
-.frete-card {
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.1);
-  box-shadow: 0 14px 30px rgba(0,0,0,.45);
-  padding: 18px 20px 20px;
-  backdrop-filter: blur(6px);
-}
-
-.frete-card h2 {
-  margin: 0 0 12px;
-  font-size: 18px;
-  color: var(--cor-primaria, #57BD89);
-}
-
-.frete-card small {
-  color: #b8b8b8;
+.frete-card small{
+  display: block;
+  margin-bottom: 12px;
   font-size: 12px;
+  color: var(--bb-muted);
 }
 
-/* estado carrinho vazio */
-
-.frete-empty {
-  padding: 30px 0;
+/* vazio */
+.frete-empty{
   text-align: center;
-  color: #cccccc;
+  color: var(--bb-muted);
 }
 
-/* --------------------------
-   LISTA DE ITENS
---------------------------- */
-
-.frete-items-list {
+/* =========================
+   ITENS
+========================= */
+.frete-items-list{
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-top: 10px;
 }
 
-.frete-item {
+.frete-item{
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 12px;
+  grid-template-columns: 80px 1fr auto;
+  gap: 14px;
   align-items: center;
-  padding: 10px 8px;
-  border-radius: 12px;
-  background: rgba(0,0,0,.35);
-  border: 1px solid rgba(255,255,255,.06);
+
+  padding: 12px;
+  background: var(--bb-soft);
+  border: 1px solid var(--bb-border);
+  border-radius: 16px;
 }
 
-.frete-item img {
-  width: 70px;
-  height: 70px;
+.frete-item img{
+  width: 80px;
+  height: 80px;
+  border-radius: 14px;
   object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.18);
 }
 
-.frete-item-info h3 {
+.frete-item-info h3{
   margin: 0 0 4px;
   font-size: 14px;
-  color: var(--cor-secundaria, #f5f5f5);
+  color: rgba(255,255,255,.95);
 }
 
-.frete-item-info p {
+.frete-item-info p{
   margin: 0;
   font-size: 12px;
-  color: #c0c0c0;
+  color: var(--bb-muted);
 }
 
-.frete-item-price {
+.frete-item-price{
   text-align: right;
   font-size: 13px;
-  color: var(--cor-secundaria, #f5f5f5);
 }
 
-.frete-item-price small {
+.frete-item-price span{
+  font-weight: 700;
+  color: var(--bege-analogico, #F6E0B3);
+}
+
+.frete-item-price small{
   display: block;
   font-size: 11px;
-  color: #b0b0b0;
+  color: var(--bb-muted);
 }
 
-/* --------------------------
-   RESUMO VALORES
---------------------------- */
+/* =========================
+   RESUMO
+========================= */
+.frete-resumo{
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bb-border);
+}
 
-.frete-resumo {
-  margin-top: 16px;
-  border-top: 1px solid rgba(255,255,255,.08);
-  padding-top: 12px;
+.frete-resumo-row{
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
   font-size: 14px;
 }
 
-.frete-resumo-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
+.frete-resumo-row.total{
+  margin-top: 8px;
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--bege-analogico, #F6E0B3);
 }
 
-.frete-resumo-row.total {
-  margin-top: 6px;
-  font-weight: 700;
-  color: var(--cor-primaria, #57BD89);
-  font-size: 15px;
-}
-
-/* --------------------------
+/* =========================
    OPÇÕES DE FRETE
---------------------------- */
-
-.frete-options {
+========================= */
+.frete-options{
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
-.frete-option {
+.frete-option{
   position: relative;
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: rgba(0,0,0,.5);
-  border: 1px solid rgba(255,255,255,.07);
-  cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: border-color .15s ease, background .15s ease, transform .08s ease;
+
+  padding: 12px 14px;
+  border-radius: 16px;
+
+  background: var(--bb-soft);
+  border: 1px solid var(--bb-border);
+  cursor: pointer;
+
+  transition: border-color .15s ease, transform .1s ease, box-shadow .15s ease;
 }
 
-.frete-option:hover {
-  border-color: var(--cor-primaria, #57BD89);
-  background: rgba(0,0,0,.65);
+.frete-option:hover{
   transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--bb-accent) 40%, var(--bb-border));
 }
 
-.frete-option input[type="radio"] {
+.frete-option.checked{
+  border-color: var(--bb-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--bb-accent) 45%, transparent);
+}
+
+.frete-option input[type="radio"]{
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.frete-option-left {
+.frete-option-left{
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.frete-option-nome {
+.frete-option-nome{
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.frete-option-prazo {
+.frete-option-prazo{
   font-size: 12px;
-  color: #cccccc;
+  color: var(--bb-muted);
 }
 
-.frete-option-right {
+.frete-option-right{
   text-align: right;
   font-size: 13px;
 }
 
-.frete-option-preco {
-  font-weight: 700;
+.frete-option-preco{
+  font-weight: 900;
+  color: var(--bege-analogico, #F6E0B3);
 }
 
-.frete-option-tag {
+.frete-option-tag{
   font-size: 11px;
-  color: #f0c674;
+  color: var(--bb-muted);
 }
 
-.frete-option.checked {
-  border-color: var(--cor-primaria, #57BD89);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cor-primaria, #57BD89) 45%, transparent);
-}
-
-/* --------------------------
-   BOTÕES / AÇÕES
---------------------------- */
-
-.frete-actions {
+/* =========================
+   AÇÕES
+========================= */
+.frete-actions{
   margin-top: 18px;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.btn {
-  border: none;
-  border-radius: 999px;
-  padding: 10px 18px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .15s ease, transform .08s ease, box-shadow .15s ease;
+.btn{
   display: inline-flex;
+  justify-content: center;
   align-items: center;
   gap: 6px;
+
+  padding: 14px 18px;
+  border-radius: 14px;
+  cursor: pointer;
+  border: none;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  transition: filter .15s ease, transform .1s ease;
+}
+
+.btn:active{ transform: translateY(1px); }
+
+.btn-secundario{
+  background: transparent;
+  border: 2px solid rgba(255,255,255,.65);
+  color: rgba(255,255,255,.92);
   text-decoration: none;
 }
 
-.btn:active {
-  transform: translateY(1px);
+.btn-secundario:hover{
+  background: var(--bb-accent);
+  border-color: var(--bb-accent);
+  color: #000;
 }
 
-.btn-secundario {
-  background: rgba(0,0,0,.7);
-  color: var(--cor-secundaria, #f5f5f5);
-  border: 1px solid rgba(255,255,255,.2);
+.btn-primario{
+  background: var(--bb-accent);
+  color: #000;
+  box-shadow: 0 12px 26px rgba(0,0,0,.30);
 }
 
-.btn-secundario:hover {
-  background: rgba(0,0,0,.9);
-  box-shadow: 0 4px 14px rgba(0,0,0,.45);
-}
+.btn-primario:hover{ filter: brightness(1.08); }
 
-.btn-primario {
-  background: var(--cor-primaria, #57BD89);
-  color: #fff;
-  box-shadow: 0 6px 18px rgba(0,0,0,.5);
-}
-
-.btn-primario:hover {
-  background: var(--cor-primaria-escura, #3b8c63);
-  box-shadow: 0 8px 22px rgba(0,0,0,.6);
-}
-
-.btn-primario:disabled {
+.btn-primario:disabled{
   opacity: .6;
   cursor: not-allowed;
   box-shadow: none;
 }
 
-/* --------------------------
+/* =========================
    ALERTA
---------------------------- */
-
-.frete-alert {
-  margin-top: 6px;
+========================= */
+.frete-alert{
+  margin-top: 8px;
   font-size: 12px;
-  color: #f0c674;
+  color: var(--bb-muted);
 }
 
-/* --------------------------
+/* =========================
    RESPONSIVO EXTRA
---------------------------- */
-
-@media (max-width: 600px) {
-  .frete-card {
-    padding: 16px 14px 18px;
-  }
-
-  .frete-item {
-    grid-template-columns: auto 1fr;
+========================= */
+@media (max-width: 600px){
+  .frete-item{
+    grid-template-columns: 70px 1fr;
     grid-template-rows: auto auto;
   }
 
-  .frete-item-price {
-    grid-column: 2 / span 1;
+  .frete-item-price{
+    grid-column: 2;
     text-align: left;
-    margin-top: 4px;
+    margin-top: 6px;
   }
 
-  .frete-actions {
-    flex-direction: column-reverse;
-    align-items: stretch;
-  }
-
-  .btn {
-    width: 100%;
-    justify-content: center;
+  .frete-actions{
+    grid-template-columns: 1fr;
   }
 }

@@ -1,231 +1,298 @@
-/* ===========================
-   Financeiro (Vendedor)
-   arquivo: /public/css/fin.css
-   =========================== */
+@import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
-:root {
-  /* usa as suas variáveis se já existirem no projeto */
-  --fin-primaria: var(--cor-primaria, #57BD89);
-  --fin-secundaria: var(--cor-secundaria, #FF814A);
-  --fin-fg: #1f2937;        /* texto principal */
-  --fin-fg-soft: #6b7280;   /* texto secundário */
-  --fin-bg-card: rgba(0, 0, 0, 0.05);
-  --fin-bg-soft: rgba(0, 0, 0, 0.03);
-  --fin-border: rgba(0, 0, 0, 0.08);
-  --fin-shadow: 0 5px 18px rgba(0,0,0,.08);
-  --fin-radius: 14px;
+:root{
+  --bb-accent: var(--cor-primaria, #F26B3A);
+  --bb-text: var(--cor-secundaria, #ffffff);
+
+  --bb-muted: rgba(255,255,255,.75);
+  --bb-border: rgba(255,255,255,.14);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-soft: rgba(0,0,0,.45);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
 }
 
-/* Container geral */
-.fin-container {
+*{ box-sizing: border-box; }
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body{
+  margin: 0;
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  /* ✅ regra do projeto */
+  background: url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center center fixed;
+  background-size: cover;
+}
+
+/* =========================
+   CONTAINER
+========================= */
+.fin-container{
   max-width: 1200px;
-  margin: 24px auto;
+  margin: 60px auto 34px;
   padding: 0 20px;
-  color: var(--fin-fg);
 }
 
-/* Header + filtros */
-.fin-header {
+/* =========================
+   HEADER
+========================= */
+.fin-header{
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: flex-end;
   gap: 18px;
-  margin-bottom: 16px;
+  margin-bottom: 22px;
 }
 
-.fin-filtros {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.fin-header h1{
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
 }
 
-.fin-filtros label {
+.fin-header small{
+  color: var(--bb-muted);
   font-size: 12px;
-  color: var(--fin-fg-soft);
+}
+
+/* filtros */
+.fin-filtros{
   display: flex;
+  gap: 10px;
   align-items: center;
-  gap: 6px;
 }
 
-.fin-filtros input[type="date"] {
+.fin-filtros label{
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--bb-muted);
+}
+
+.fin-filtros input[type="date"]{
   padding: 8px 10px;
-  border: 1px solid var(--fin-border);
   border-radius: 10px;
-  background: #fff;
-  color: var(--fin-fg);
+  border: 1px solid var(--bb-border);
+  background: rgba(255,255,255,.95);
+  color: #111;
+}
+
+.fin-filtros input:focus{
   outline: none;
+  border-color: var(--bb-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bb-accent) 30%, transparent);
 }
 
-.fin-filtros input[type="date"]:focus {
-  border-color: var(--fin-primaria);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fin-primaria) 30%, transparent);
-}
-
-/* Botões */
-.btn {
+/* =========================
+   BOTÕES
+========================= */
+.btn{
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 10px 14px;
-  border-radius: 12px;
+
+  padding: 10px 16px;
+  border-radius: 14px;
   border: none;
-  background: var(--fin-primaria);
-  color: #fff;
   cursor: pointer;
-  font-weight: 600;
-  box-shadow: var(--fin-shadow);
-  transition: transform .06s ease, filter .2s ease;
-  text-decoration: none; /* para <a> com classe btn */
+
+  background: var(--bb-accent);
+  color: #000;
+  text-decoration: none;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  box-shadow: 0 12px 26px rgba(0,0,0,.30);
+  transition: filter .15s ease, transform .1s ease;
 }
 
-.btn:hover { filter: brightness(1.05); }
-.btn:active { transform: translateY(1px); }
+.btn:hover{ filter: brightness(1.08); }
+.btn:active{ transform: translateY(1px); }
 
-.btn.sec {
-  background: #fff;
-  color: var(--fin-primaria);
-  border: 1px solid var(--fin-primaria);
+.btn.sec{
+  background: transparent;
+  border: 2px solid rgba(255,255,255,.65);
+  color: rgba(255,255,255,.92);
   box-shadow: none;
 }
 
-/* Cards (KPIs) */
-.fin-cards {
+.btn.sec:hover{
+  background: var(--bb-accent);
+  border-color: var(--bb-accent);
+  color: #000;
+}
+
+/* =========================
+   KPI CARDS
+========================= */
+.fin-cards{
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  margin: 18px 0 26px;
+  margin-bottom: 28px;
 }
 
-.card {
-  background: var(--fin-bg-card);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+.card{
+  background: var(--bb-soft);
+  border: 1px solid var(--bb-border);
+  border-radius: 18px;
   padding: 16px;
-  border-radius: var(--fin-radius);
-  box-shadow: var(--fin-shadow);
-  min-height: 82px;
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--bb-shadow);
 }
 
-.card .label {
+.card .label{
   display: block;
   font-size: 12px;
-  color: var(--fin-fg-soft);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--bb-muted);
   margin-bottom: 6px;
 }
 
-/* Grid de conteúdo principal */
-.grid-2 {
+.card strong{
+  font-size: 20px;
+  color: var(--bege-analogico, #F6E0B3);
+}
+
+/* =========================
+   GRID PRINCIPAL
+========================= */
+.grid-2{
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 18px;
-  align-items: start;
-  margin-bottom: 18px;
+  margin-bottom: 26px;
 }
 
-/* Tabelas */
-.fin-tabelas h2,
-.grid-2 h2 {
-  margin: 10px 0 8px;
-  font-size: 18px;
+.grid-2 h2,
+.fin-tabelas h2{
+  margin: 0 0 10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
-.tabela-wrapper {
-  overflow-x: auto;
-}
-
-.tabela {
+/* =========================
+   TABELAS
+========================= */
+.tabela{
   width: 100%;
   border-collapse: collapse;
-  background: var(--fin-bg-soft);
-  border-radius: var(--fin-radius);
+  background: var(--bb-soft);
+  border-radius: 18px;
   overflow: hidden;
+  box-shadow: var(--bb-shadow);
 }
 
-.tabela thead th {
-  text-align: left;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.06);
-  font-size: 13px;
-  color: var(--fin-fg);
+.tabela thead th{
+  padding: 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--bb-muted);
+  background: rgba(0,0,0,.55);
 }
 
-.tabela td {
-  padding: 10px;
-  border-top: 1px solid var(--fin-border);
+.tabela td{
+  padding: 12px;
+  border-top: 1px solid var(--bb-border);
   font-size: 14px;
 }
 
-/* Chips de status */
-.chip {
-  text-transform: uppercase;
-  font-size: 11px;
-  font-weight: 700;
+.tabela tr:hover{
+  background: rgba(255,255,255,.03);
+}
+
+/* =========================
+   CHIPS
+========================= */
+.chip{
+  display: inline-block;
   padding: 4px 10px;
   border-radius: 999px;
-  display: inline-block;
-  letter-spacing: .4px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .6px;
+  text-transform: uppercase;
 }
 
-.chip.realizado { background: #d2f3dc; color: #146c2e; border: 1px solid #b7e7c6; }
-.chip.previsto  { background: #fff3cd; color: #8a6d3b; border: 1px solid #ffe29b; }
+.chip.realizado{
+  background: rgba(255,255,255,.12);
+  color: var(--bege-analogico, #F6E0B3);
+  border: 1px solid rgba(255,255,255,.25);
+}
 
-/* Top produtos */
-.top-produto {
-  display: inline-flex;
+.chip.previsto{
+  background: rgba(255,255,255,.08);
+  color: var(--bb-muted);
+  border: 1px solid rgba(255,255,255,.18);
+}
+
+/* =========================
+   TOP PRODUTOS
+========================= */
+.top-produto{
+  display: flex;
   align-items: center;
   gap: 10px;
-  text-decoration: none;
   color: inherit;
+  text-decoration: none;
 }
 
-.top-produto img {
+.top-produto img{
   width: 40px;
   height: 40px;
-  object-fit: cover;
-  border-radius: 8px;
-  background: #f4f4f4;
-  border: 1px solid var(--fin-border);
-}
-
-/* Caixas vazias */
-.empty {
-  padding: 12px;
-  background: var(--fin-bg-soft);
-  border: 1px solid var(--fin-border);
   border-radius: 10px;
-  color: var(--fin-fg-soft);
+  object-fit: cover;
+  background: #111;
+  border: 1px solid var(--bb-border);
 }
 
-/* Área de ações no header */
-.fin-actions { display: flex; gap: 10px; align-items: center; }
-
-/* Responsividade */
-@media (max-width: 1080px) {
-  .fin-cards { grid-template-columns: repeat(3, 1fr); }
+/* =========================
+   EMPTY
+========================= */
+.empty{
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--bb-soft);
+  border: 1px solid var(--bb-border);
+  color: var(--bb-muted);
 }
 
-@media (max-width: 860px) {
-  .fin-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .grid-2 { grid-template-columns: 1fr; }
-  .fin-cards { grid-template-columns: repeat(2, 1fr); }
+/* =========================
+   RESPONSIVO
+========================= */
+@media (max-width: 1080px){
+  .fin-cards{ grid-template-columns: repeat(3, 1fr); }
 }
 
-@media (max-width: 520px) {
-  .fin-cards { grid-template-columns: 1fr; }
-  .fin-filtros { flex-wrap: wrap; }
+@media (max-width: 860px){
+  .fin-header{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .grid-2{ grid-template-columns: 1fr; }
+  .fin-cards{ grid-template-columns: repeat(2, 1fr); }
 }
 
-/* Acessibilidade foco */
-a:focus, button:focus, input:focus {
-  outline: 3px solid color-mix(in srgb, var(--fin-primaria) 40%, transparent);
-  outline-offset: 2px;
-  border-radius: 8px;
+@media (max-width: 520px){
+  .fin-cards{ grid-template-columns: 1fr; }
+  .fin-filtros{ flex-wrap: wrap; }
 }
-
-/* Impressão (remove fundos e sombras) */
-@media print {
-  .fin-container { max-width: 100%; margin: 0; padding: 0; }
-  .card, .tabela { box-shadow: none !important; background: #fff !important; }
-  .fin-header .fin-actions { display: none; }
-}
-

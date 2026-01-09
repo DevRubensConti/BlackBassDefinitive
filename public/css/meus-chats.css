@@ -1,135 +1,229 @@
-body {
-  background: linear-gradient(rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.9)),
-              url('/images/background.png') no-repeat center center fixed;
-  background-size: cover;
-  font-family: 'Arial', sans-serif;
+@import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
+
+:root{
+  --bb-accent: var(--cor-primaria);
+  --bb-text: var(--cor-secundaria);
+
+  --bb-muted: rgba(255,255,255,.72);
+  --bb-border: rgba(255,255,255,.14);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-soft: rgba(0,0,0,.45);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
+}
+
+*{ box-sizing: border-box; }
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body{
   margin: 0;
-  color: var(--cor-letras-navbar);
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  /* padrão do projeto */
+  background: url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center center fixed;
+  background-size: cover;
 }
 
-.chats-container {
+/* =========================
+   CONTAINER
+========================= */
+.chats-container{
   max-width: 1300px;
-  margin: 100px auto;
-  padding: 40px 20px;
-  background-color: rgba(255, 255, 255, 0.07);
+  margin: 80px auto 60px;
+  padding: 34px 26px;
+
+  background: var(--bb-card);
+  border-radius: 22px;
+  border: 1px solid var(--bb-border);
+
   backdrop-filter: blur(14px);
-  border-radius: 20px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--bb-shadow);
 }
 
-.chats-header {
-  font-size: 28px;
+/* =========================
+   HEADER
+========================= */
+.chats-header{
+  margin: 0 0 26px;
+  text-align: center;
+
   font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  letter-spacing: 3px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 30px;
-  color: var(--cor-letras-navbar);
-  text-shadow: 2px 2px 0 var(--cor-primaria-escura);
+  color: rgba(255,255,255,.95);
+
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bb-accent);
 }
 
-.chat-list {
+/* =========================
+   LISTA
+========================= */
+.chat-list{
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
-/* NOVO LAYOUT VISUAL DO CARD */
-.chat-card {
-  display: flex;
+/* =========================
+   CARD CHAT
+========================= */
+.chat-card{
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  background-color: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 16px 20px;
-  border-radius: 12px;
-  transition: background-color 0.3s;
-  gap: 20px;
+  gap: 18px;
+
+  padding: 16px 18px;
+  border-radius: 18px;
+
+  background: var(--bb-soft);
+  border: 1px solid var(--bb-border);
+
+  transition: transform .12s ease, border-color .15s ease, box-shadow .15s ease;
 }
 
-.chat-card:hover {
-  background-color: rgba(255, 255, 255, 0.12);
+.chat-card:hover{
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--bb-accent) 35%, var(--bb-border));
+  box-shadow: 0 14px 34px rgba(0,0,0,.45);
 }
 
-/* Container das imagens */
-.chat-imagens {
+/* =========================
+   IMAGENS
+========================= */
+.chat-imagens{
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
 }
 
-.img-produto {
-  width: 60px;
-  height: 60px;
+.img-produto{
+  width: 56px;
+  height: 56px;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid var(--cor-destaque);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.35);
 }
 
-.img-usuario {
-  width: 60px;
-  height: 60px;
+.img-usuario{
+  width: 56px;
+  height: 56px;
   object-fit: cover;
   border-radius: 50%;
-  border: 2px solid var(--cor-secundaria);
+  border: 2px solid rgba(255,255,255,.75);
 }
 
-/* Informações à direita das imagens */
-.chat-info {
-  flex-grow: 1;
+/* =========================
+   INFO
+========================= */
+.chat-info{
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.nome-produto{
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nome-usuario{
+  font-size: 13px;
+  color: var(--bb-muted);
+}
+
+.ultima-mensagem{
+  margin-top: 4px;
+  font-size: 13px;
+  color: rgba(255,255,255,.85);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ultima-mensagem.vazio{
+  color: var(--bb-muted);
+  font-style: italic;
+}
+
+/* =========================
+   AÇÃO
+========================= */
+.chat-actions a{
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  color: var(--cor-letras-navbar);
-}
 
-.nome-produto {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
+  padding: 12px 22px;
+  border-radius: 16px;
 
-.nome-usuario {
-  font-size: 14px;
-  opacity: 0.85;
-}
-
-.chat-actions a {
-  background-color: var(--cor-secundaria);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background: var(--bb-accent);
+  color: #000;
   text-decoration: none;
-  font-weight: bold;
-  transition: background-color 0.3s;
-}
 
-.chat-actions a:hover {
-  background-color: var(--cor-secundaria-escura);
-}
-
-.sem-chats {
-  text-align: center;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 18px;
-  opacity: 0.8;
-  margin-top: 40px;
-  color: var(--cor-letras-navbar);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  box-shadow: 0 10px 24px rgba(0,0,0,.30);
+  transition: filter .15s ease, transform .1s ease;
 }
 
-/* Responsividade mínima */
-@media (max-width: 768px) {
-  .chat-card {
-    flex-direction: column;
-    align-items: flex-start;
+.chat-actions a:hover{
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* =========================
+   EMPTY
+========================= */
+.sem-chats{
+  text-align: center;
+  font-size: 16px;
+  color: var(--bb-muted);
+  padding: 30px 0;
+}
+
+/* =========================
+   RESPONSIVO
+========================= */
+@media (max-width: 900px){
+  .chat-card{
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
   }
 
-  .chat-imagens {
+  .chat-actions{
+    grid-column: 1 / -1;
+    justify-self: flex-end;
+  }
+
+  .chat-imagens{
     flex-direction: row;
-    gap: 16px;
   }
+}
 
-  .chat-actions {
-    align-self: flex-end;
-    margin-top: 10px;
+@media (max-width: 520px){
+  .chats-header{
+    font-size: 34px;
   }
 }

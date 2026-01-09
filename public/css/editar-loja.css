@@ -1,330 +1,288 @@
-/* ===============================
-   BlackBass • Painel da Loja (Editar)
-   Visual moderno, vidro + foco acessível
-   =============================== */
-
 @import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
 :root{
-  --bb-bg: rgba(18,18,18,.65);
-  --bb-card: rgba(28,28,28,.66);
-  --bb-stroke: rgba(255,255,255,.08);
-  --bb-soft: rgba(255,255,255,.04);
-  --bb-shadow: 0 10px 30px rgba(0,0,0,.35);
-  --bb-round: 16px;
+  --preto-bass: #1B1B1B;
+  --laranja-vintage: #F26B3A;
+  --bege-analogico: #F6E0B3;
 
-  /* fallbacks se não houver no theme */
+  --bb-accent: var(--cor-primaria, var(--laranja-vintage));
+  --bb-text: var(--cor-secundaria, #ffffff);
 
-  --cor-primaria-clara: #6ad49e; /* Coral pastel */
-  --cor-primaria: #57BD89; /* Coral pastel */
-  --cor-primaria-escura: #3e835f; /* Coral mais fechado */
-  --cor-primaria-escura-2: #215038; /* Coral mais fechado */
-  --cor-secundaria: #FF814A; /* Verde menta pastel */
-  --cor-secundaria-escura-2: #dd4200; /* Verde menta pastel */
-  --cor-secundaria-escura: #fd6524; /* Verde menta pastel */
-  --cor-secundaria-clara: #fa8d5e; /* Verde menta pastel */
-  --cor-fundo: #fffaf5; /* Fundo bege clarinho, aconchegante */
-  --cor-texto: #4b4b4b; /* Cinza escuro para contraste suave */
-  --cor-destaque: #ffdd99; /* Amarelo pastel para detalhes */
-  --cor-letras-navbar: #ffecd2;
-  --bege-claro: #e4c08f;
-
-
+  --bb-muted: rgba(255,255,255,.78);
+  --bb-border: rgba(255,255,255,.12);
+  --bb-soft: rgba(255,255,255,.06);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
 }
 
-/* ===============================
-   Base
-   =============================== */
-* { box-sizing: border-box; }
+*{ box-sizing: border-box; }
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 body{
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color: var(--cor-secundaria-escura);
-  background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.75)),
-              url('/images/background.png') no-repeat center center fixed;
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  /* ✅ regra do wallpaper (sem gradiente global) */
+  background: url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center center fixed;
   background-size: cover;
 }
 
-/* ===============================
-   Container & Títulos
-   =============================== */
+/* =========================
+   CONTAINER
+========================= */
 .painel-container{
-  max-width: 1180px;
-  margin: 40px auto;
-  padding: 0 22px 40px;
-  display: grid;
-  gap: 22px;
-}
-
-.painel-container > h2{
-  margin: 0 0 6px;
-  font-family: 'Bebas Neue', sans-serif;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--cor-letras-navbar);
-  font-size: clamp(26px, 3.5vw, 40px);
-  text-shadow: 0 2px 0 #1c2f25;
-}
-
-/* pequenina trilha/breadcrumb opcional (pode remover se não quiser) */
-.painel-breadcrumb{
-  font-size: .9rem;
-  color: #b6b6b6;
-}
-
-/* ===============================
-   Cartões (dados, produtos, etc.)
-   =============================== */
-.dados-loja,
-.produtos-listados{
-  background: var(--bb-card);
-  border: 1px solid var(--bb-stroke);
-  border-radius: var(--bb-round);
-  padding: 22px;
-  box-shadow: var(--bb-shadow);
-  backdrop-filter: blur(8px);
-}
-
-/* ===============================
-   Botões • estilo unificado
-   =============================== */
-.btn-editar, .btn-voltar-painel, .btn-filtrar, .btn-novo-produto, .btn-excluir{
-  --btn-bg: var(--cor-secundaria-escura);
-  --btn-fg: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: var(--btn-bg);
-  color: var(--btn-fg);
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-  transition: transform .08s ease, box-shadow .15s ease, background .2s ease, border-color .2s ease;
-  box-shadow: 0 6px 16px rgba(0,0,0,.25);
-}
-.btn-editar:hover,
-.btn-filtrar:hover,
-.btn-novo-produto:hover{ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.3); }
-.btn-editar:active,
-.btn-filtrar:active,
-.btn-novo-produto:active{ transform: translateY(0); }
-
-.btn-voltar-painel{
-  --btn-bg: transparent;
-  --btn-fg: #eaeaea;
-  border-color: var(--bb-stroke);
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-}
-.btn-voltar-painel:hover{ border-color: rgba(255,255,255,.16); }
-
-.btn-filtrar{ --btn-bg: var(--cor-secundaria-escura); }
-.btn-novo-produto{ --btn-bg: #3498db; }
-.btn-excluir{ --btn-bg: #e74c3c; }
-
-.botoes-painel{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-/* ===============================
-   Grid de Produtos
-   =============================== */
-.grid-produtos{
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 18px;
-  margin-top: 16px;
-}
-
-.card-produto{
-  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-  border: 1px solid var(--bb-stroke);
-  border-radius: 14px;
-  padding: 14px;
-  box-shadow: 0 6px 18px rgba(0,0,0,.25);
-  transition: transform .12s ease, box-shadow .15s ease, border-color .2s ease;
-}
-@media (hover:hover){
-  .card-produto:hover{ transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,.28); border-color: rgba(255,255,255,.12); }
-}
-
-.card-produto img{
   width: 100%;
-  height: 180px;
-  object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.06);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
-}
+  max-width: 1100px;
 
-.card-produto h4{
-  margin: 10px 0 4px;
-  font-weight: 700;
-  color: var(--cor-letras-navbar);
-}
+  margin: 60px auto 34px;
+  padding: 46px;
 
-.card-produto p{
-  margin: 0;
-  font-weight: 700;
-  color: var(--cor-secundaria-escura);
-}
-
-.botoes{
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-/* ===============================
-   Formulário • Layout responsivo
-   =============================== */
-.form-loja{
   background: var(--bb-card);
-  border: 1px solid var(--bb-stroke);
-  border-radius: var(--bb-round);
-  padding: 22px;
-  box-shadow: var(--bb-shadow);
-  backdrop-filter: blur(8px);
+  border: 1px solid var(--bb-border);
+  border-radius: 20px;
 
-  /* grid inteligente: 2 colunas em telas médias+ */
+  box-shadow: var(--bb-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* TÍTULO */
+.painel-container > h2{
+  margin: 0 0 22px;
+  text-align: center;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 44px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
+
+  display: inline-block;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bb-accent);
+  width: 100%;
+}
+
+/* =========================
+   FORM (GRID)
+========================= */
+.form-loja{
+  width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px 18px;
-  max-width: 900px;
-  margin: 8px 0 0;
+
+  padding: 18px 18px 16px;
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.35);
 }
 
-/* linhas inteiras */
-.form-loja .botoes-painel,
-.form-loja textarea,
-.form-loja .linha-cheia{ grid-column: 1 / -1; }
-
+/* Labels */
 .form-loja label{
-  font-size: .92rem;
-  color: #cfcfcf;
-  margin-bottom: 6px;
   display: block;
+  margin-bottom: 8px;
+
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.78);
 }
 
-/* inputs */
+/* Inputs / textarea */
 .form-loja input,
 .form-loja textarea{
   width: 100%;
-  height: 46px;
-  padding: 10px 12px;
-  font-size: 16px;
-  color: #f2f2f2;
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-  border: 1px solid var(--bb-stroke);
-  border-radius: 12px;
+  padding: 12px 12px;
+
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.18);
+
+  background: rgba(255,255,255,.95);
+  color: #111;
+
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 14px;
+
   outline: none;
-  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
-.form-loja textarea{ min-height: 120px; resize: vertical; }
 
-.form-loja input::placeholder,
-.form-loja textarea::placeholder{ color: #9aa1a6; }
+.form-loja textarea{
+  resize: vertical;
+  min-height: 120px;
+}
 
+/* Focus */
 .form-loja input:focus,
 .form-loja textarea:focus{
-  border-color: color-mix(in srgb, var(--cor-secundaria-escura) 50%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-secundaria-escura) 24%, transparent);
+  border-color: var(--bb-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bb-accent) 25%, transparent);
 }
 
-/* avatar/logo atual */
-.logo-loja,
-.form-loja img[alt*="Logo"]{
-  width: 120px;
-  height: 120px;
-  border-radius: 16px;
+/* =========================
+   IMAGEM ATUAL
+   (seu EJS aplica style inline, mas reforço aqui)
+========================= */
+.form-loja img[alt*="Logo"],
+.form-loja img[alt*="Foto"],
+.form-loja img{
+  width: 110px;
+  height: 110px;
   object-fit: cover;
-  border: 2px solid rgba(255,255,255,.18);
-  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  border-radius: 16px;
+
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 14px 26px rgba(0,0,0,.25);
 }
 
-/* input file mais apresentável */
+/* Faz a “Foto atual” ocupar linha inteira e centralizar o bloco */
+.form-loja label:nth-of-type(1),
+.form-loja img{
+  grid-column: 1 / -1;
+}
+.form-loja img{
+  justify-self: start;
+}
+
+/* Input file mais bonito */
 .form-loja input[type="file"]{
+  grid-column: 1 / -1;
+
   padding: 0;
   height: auto;
   background: transparent;
-  border: 1px dashed var(--bb-stroke);
-  border-radius: 12px;
-  color: #ccc;
+  border: 1px dashed rgba(255,255,255,.22);
+  border-radius: 14px;
+  color: rgba(255,255,255,.85);
 }
-.form-loja input[type="file"]::-webkit-file-upload-button{
-  margin: 6px;
-  border: 0;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-weight: 700;
-  cursor: pointer;
-  color: #fff;
-  background: var(--cor-secundaria-escura);
-}
+
 .form-loja input[type="file"]::file-selector-button{
-  margin: 6px;
+  margin: 8px;
   border: 0;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-weight: 700;
-  cursor: pointer;
-  color: #fff;
-  background: var(--cor-secundaria-escura);
-}
-.form-loja input[type="file"]:hover{
-  border-color: rgba(255,255,255,.16);
-}
-
-/* bloco de botões no form */
-.form-loja .botoes-painel{
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid var(--bb-stroke);
-  justify-content: flex-start;
-}
-
-/* mensagens/alertas opcionais */
-.alert{
-  grid-column: 1 / -1;
-  padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(255,200,0,.08);
-  border: 1px solid rgba(255,200,0,.22);
-  color: #ffe299;
-  font-size: .95rem;
+  padding: 10px 14px;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+
+  background: var(--bb-accent);
+  color: #000;
+
+  cursor: pointer;
 }
 
-/* ===============================
-   Responsivo
-   =============================== */
+.form-loja input[type="file"]:hover{
+  border-color: rgba(255,255,255,.32);
+}
+
+/* Descrição ocupa linha inteira */
+.form-loja textarea{
+  grid-column: 1 / -1;
+}
+
+/* =========================
+   BOTÕES
+========================= */
+.botoes-painel{
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+
+/* Voltar (outline) */
+.btn-voltar-painel{
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+
+  padding: 14px 18px;
+  border-radius: 14px;
+
+  background: transparent;
+  border: 2px solid rgba(255,255,255,.65);
+  color: rgba(255,255,255,.92);
+  text-decoration: none;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  transition: transform .10s ease, filter .15s ease, background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.btn-voltar-painel:hover{
+  background: var(--bb-accent);
+  border-color: var(--bb-accent);
+  color: #000;
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+.btn-voltar-painel:active{ transform: translateY(0); }
+
+/* Salvar (primário) */
+.btn-filtrar{
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+
+  padding: 16px 18px;
+
+  background: var(--bb-accent);
+  color: #000;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  box-shadow: 0 12px 26px rgba(0,0,0,.30);
+  transition: transform .10s ease, filter .15s ease;
+}
+
+.btn-filtrar:hover{ filter: brightness(1.08); }
+.btn-filtrar:active{ transform: translateY(1px); }
+
+/* =========================
+   RESPONSIVO
+========================= */
 @media (max-width: 900px){
+  .painel-container{
+    margin: 40px 16px 24px;
+    padding: 34px 20px;
+  }
+  .painel-container > h2{
+    font-size: 38px;
+  }
+}
+
+@media (max-width: 768px){
   .form-loja{
     grid-template-columns: 1fr;
-    max-width: 680px;
   }
-  .form-loja img[alt*="Logo"]{ justify-self: start; }
+  .botoes-painel{
+    grid-template-columns: 1fr;
+  }
 }
 
-@media (max-width: 640px){
-  .painel-container{ padding: 0 16px 32px; }
-  .btn-editar, .btn-voltar-painel, .btn-filtrar, .btn-novo-produto, .btn-excluir{
-    height: 42px; padding: 0 16px;
-  }
-  .grid-produtos{ grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-  .card-produto img{ height: 160px; }
-}
-
-/* Altos contrastes e preferências */
 @media (prefers-reduced-motion: reduce){
-  * { transition: none !important; animation: none !important; }
+  *{ transition: none !important; animation: none !important; }
 }

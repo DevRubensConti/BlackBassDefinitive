@@ -1,142 +1,175 @@
 @import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
-* {
-  box-sizing: border-box;
+:root{
+  --bb-accent: var(--cor-primaria);
+  --bb-text: var(--cor-secundaria);
+
+  --bb-muted: rgba(255,255,255,.75);
+  --bb-border: rgba(255,255,255,.14);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
+
+  --bb-radius: 22px;
 }
 
-body {
+*{ box-sizing: border-box; }
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body{
   margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background: url('/images/background.png') no-repeat center center fixed;
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  background: url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center center fixed;
   background-size: cover;
+
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Container principal centralizado */
-.main-recovery {
+/* =========================
+   CONTAINER CENTRAL
+========================= */
+.main-recovery{
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  margin-top: 120px;
-  margin-bottom: 120px;
+  margin: 120px 0;
 }
 
-/* Bloco do conteúdo */
-.recovery-container {
-  background-color: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 40px;
-  max-width: 400px;
-  width: 90%;
-  color: var(--cor-secundaria);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+/* =========================
+   CARD
+========================= */
+.recovery-container{
+  width: min(420px, 92vw);
+  padding: 32px 28px;
+
+  background: var(--bb-card);
+  border-radius: var(--bb-radius);
+  border: 1px solid var(--bb-border);
+
+  box-shadow: var(--bb-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
   text-align: center;
 }
 
-.recovery-container h2 {
-  margin-bottom: 25px;
-  color: var(--cor-secundaria);
+/* =========================
+   TEXTO
+========================= */
+.recovery-container h2{
+  margin: 0 0 16px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
 }
 
-.recovery-container p {
-  font-size: 15px;
+.recovery-container p{
+  font-size: 14px;
+  color: var(--bb-muted);
   line-height: 1.6;
-  margin-bottom: 25px;
+  margin-bottom: 22px;
 }
 
-/* Formulário */
-.recovery-form .form-group {
-  margin-bottom: 20px;
+/* =========================
+   FORM
+========================= */
+.recovery-form .form-group{
+  margin-bottom: 18px;
   text-align: left;
 }
 
-.recovery-form label {
+.recovery-form label{
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,.9);
+  margin-bottom: 6px;
   display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
 }
 
 .recovery-form input[type="email"],
-.recovery-form input[type="password"] {
+.recovery-form input[type="password"]{
   width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #333;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.18);
+
+  background: rgba(0,0,0,.35);
+  color: #fff;
+  font-size: 14px;
 }
 
+.recovery-form input::placeholder{
+  color: rgba(255,255,255,.55);
+}
+
+/* =========================
+   BOTÕES
+========================= */
 #enviar-email,
-#salvar-senha {
+#salvar-senha{
   width: 100%;
-  background-color: var(--cor-primaria);
-  color: var(--cor-secundaria);
-  border: none;
-  padding: 15px;
-  font-size: 16px;
-  border-radius: 8px;
+  margin-top: 6px;
+
+  padding: 14px 18px;
+  border-radius: 999px;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+
+  background: rgba(0,0,0,.35);
+  color: rgba(255,255,255,.95);
+  border: 2px solid rgba(255,255,255,.18);
+
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: filter .12s ease, transform .12s ease, box-shadow .15s ease;
 }
 
 #enviar-email:hover,
-#salvar-senha:hover {
-  background-color: var(--cor-primaria-escura);
+#salvar-senha:hover{
+  filter: brightness(1.15);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.18);
 }
 
-/* Mensagem de sucesso/erro */
-.mensagem-status {
-  margin-top: 15px;
-  font-size: 14px;
-  color: var(--cor-secundaria-escura);
+#enviar-email:active,
+#salvar-senha:active{
+  transform: translateY(1px);
 }
 
-/* Link de voltar */
-.back-link {
+/* =========================
+   STATUS / LINKS
+========================= */
+.mensagem-status{
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--bb-muted);
+}
+
+.back-link{
   margin-top: 20px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-.back-link a {
-  color: var(--cor-primaria);
+.back-link a{
+  color: rgba(255,255,255,.85);
   text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,.35);
 }
 
-.back-link a:hover {
-  text-decoration: underline;
-}
-
-/* Mensagem final (forgot_done.ejs) */
-.done-container h2 {
-  color: var(--cor-secundaria);
-  margin-bottom: 15px;
-}
-
-.done-container p {
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.done-container a {
-  display: inline-block;
-  margin-top: 25px;
-  background: var(--cor-primaria);
-  color: var(--cor-secundaria);
-  padding: 12px 25px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: bold;
-  transition: background 0.3s ease;
-}
-
-.done-container a:hover {
-  background: var(--cor-primaria-escura);
+.back-link a:hover{
+  border-color: var(--bb-accent);
 }

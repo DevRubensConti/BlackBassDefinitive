@@ -1,319 +1,354 @@
 @import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
-html, body {
+/* =========================
+   TOKENS (fallback)
+========================= */
+:root{
+  --preto-bass: #1B1B1B;
+  --laranja-vintage: #F26B3A;
+  --verde-bass: #5FBF74;
+  --bege-analogico: #F6E0B3;
+
+  --texto-claro: #FFFFFF;
+  --texto-suave: rgba(255,255,255,0.78);
+  --borda-suave: rgba(255,255,255,0.12);
+
+  --bb-accent: var(--cor-primaria, var(--laranja-vintage));
+  --bb-text: var(--cor-secundaria, var(--texto-claro));
+}
+
+/* =========================
+   BASE
+========================= */
+*{ box-sizing: border-box; }
+
+html, body{
   max-width: 100%;
-  height: 100%;
   overflow-x: hidden;
 }
 
-* {
-  box-sizing: border-box;
+body{
+  margin: 0;
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  background:
+    linear-gradient(rgba(0,0,0,.82), rgba(0,0,0,.82)),
+    url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center fixed;
+  background-size: cover;
 }
 
-a,
-a:visited {
-  color: var(--cor-secundaria); /* branco */
+/* Links dentro do card */
+.form-etapas-wrapper a{
+  color: var(--bb-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+.form-etapas-wrapper a:hover{ text-decoration: underline; }
+
+/* =========================
+   CONTAINER PRINCIPAL
+========================= */
+.form-etapas-wrapper{
+  max-width: 980px;
+  margin: 60px auto;
+  padding: 56px;
+
+  background: rgba(27,27,27,.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 18px 45px rgba(0,0,0,.45);
+}
+
+/* =========================
+   TÍTULO
+========================= */
+.form-etapas-wrapper h2{
+  margin: 0 0 26px 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 44px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
+  text-shadow: none;
+
+  display: inline-block;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bb-accent);
+}
+
+/* remove o <u> (pra não ficar “duplo” com a borda) */
+.form-etapas-wrapper h2 u{
   text-decoration: none;
 }
 
-body {
-  background: url('/images/background.png') no-repeat center center fixed;
-  background-size: cover;
-  color: var(--cor-secundaria); /* branco */
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
+/* =========================
+   LAYOUT DE FORM (ROWS/GROUPS)
+========================= */
+.form-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  margin-bottom: 16px;
 }
 
-main.form-etapas-wrapper {
-  min-height: 100%;
-  padding: 80px;
-  backdrop-filter: blur(10px);
-  background-color: rgba(0, 0, 0, 0.5); /* fundo escuro translúcido */
-  display: absolute;
+.form-group{
+  display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-}
-h2 {
-  font-size: 32px;
-  margin-bottom: 20px;
-}
-
-form {
+  gap: 8px;
   width: 100%;
-  height: 100%;
 }
 
-form details {
-  margin-bottom: 20px;
-  border: none;
-  border-top: 4px solid var(--cor-primaria); /* #ff4800 */
-  padding-top: 20px;
-  background-color: transparent;
+/* quando tiver um único campo na row */
+.form-row .form-group:only-child{
+  grid-column: 1 / -1;
 }
 
-details summary {
-  font-size: 20px;
-  font-weight: bold;
-  padding: 10px 0;
+/* =========================
+   LABELS
+========================= */
+.form-group label{
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .9px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.78);
+}
+
+/* =========================
+   INPUTS / SELECTS
+========================= */
+.form-group input,
+.form-group select{
+  height: 46px;
+  padding: 0 14px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.95);
+  color: #111;
+
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+.form-group input::placeholder{
+  color: #8a8f98;
+}
+
+.form-group input:focus,
+.form-group select:focus{
+  border-color: var(--bb-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bb-accent) 25%, transparent);
+}
+
+/* SELECT com setinha */
+.form-group select{
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 42px;
+  cursor: pointer;
+
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='%23111'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+/* Tipo de cadastro (id #tipo do seu EJS) */
+#tipo{
+  max-width: 340px;
+  font-weight: 800;
+}
+
+/* Campos disabled (ex: nome-fantasia-auto / razao-social-auto) */
+.form-group input:disabled{
+  background: rgba(255,255,255,.75);
+  color: rgba(0,0,0,.65);
+  border-color: rgba(255,255,255,.22);
+  cursor: not-allowed;
+}
+
+/* =========================
+   DETAILS / ETAPAS
+========================= */
+form details{
+  margin-top: 18px;
+  border-radius: 16px;
+  padding: 22px;
+
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+/* summary = header da etapa */
+form summary{
   cursor: pointer;
   list-style: none;
-  color: var(--cor-primaria); /* #ff4800 */
-  transition: color 0.3s;
+  user-select: none;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--bb-accent);
 }
 
-details[open] summary {
-  color: var(--cor-secundaria); /* branco */
+/* remove marker padrão */
+summary::-webkit-details-marker{ display: none; }
+
+/* seta custom */
+form summary::after{
+  content: "▾";
+  float: right;
+  opacity: .85;
+  transform: translateY(1px);
+  transition: transform .15s ease, opacity .15s ease;
 }
 
-.form-row {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+form details[open] summary{
+  color: rgba(255,255,255,.95);
+  margin-bottom: 14px;
 }
 
-.form-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group label {
-  margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-/* <<< AJUSTE: aplica o branco translúcido somente quando NÃO estiver desabilitado */
-input:not(:disabled),
-select:not(:disabled),
-textarea:not(:disabled) {
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  font-size: 16px;
-  background-color: rgba(255, 255, 255, 0.9); /* mantém branco translúcido */
-  color: #333;
-}
-
-/* mantém as demais propriedades também quando desabilitado (bordas/raio etc.) */
-input,
-select,
-textarea {
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  font-size: 16px;
-}
-
-textarea {
-  resize: vertical;
-}
-
-button {
-  padding: 14px 24px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background-color: var(--cor-primaria); 
-  color: var(--cor-secundaria); 
-  cursor: pointer;
-  margin-top: 20px;
-  transition: background 0.3s;
-}
-
-button:hover {
-  background-color: var(--cor-primaria-escura); /* #e63f00 */
-}
-
-select#tipo {
-  margin-bottom: 30px;
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 6px;
-  border: none;
-}
-
-.mensagem-erro {
-  color: #ff4d4d;
-  font-size: 13px;
-  margin-top: 6px;
-  margin-bottom: 8px;
-}
-
-.mensagem-erro.topo {
-  background: #ffe6e6;
-  color: #900;
-  padding: 10px;
-  border: 1px solid #f00;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.senha-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.senha-wrapper input {
-  flex: 1;
-  padding-right: 40px;
-  height: 45px; /* opcional: garanta altura mínima */
-}
-
-.senha-wrapper img {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 24px;
-  width: 24px;
-  cursor: pointer;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
-}
-
-.senha-wrapper img:hover {
+form details[open] summary::after{
+  transform: rotate(180deg) translateY(-2px);
   opacity: 1;
 }
 
-.toggle-senha {
-  position: absolute;
-  right: 10px;
-  background: none;
+/* =========================
+   BOTÕES
+========================= */
+form button{
+  margin-top: 8px;
+  width: fit-content;
+  min-width: 220px;
+
   border: none;
+  border-radius: 14px;
   cursor: pointer;
-  padding: 0;
+
+  padding: 14px 18px;
+  background: var(--bb-accent);
+  color: #000;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  box-shadow: 0 12px 26px rgba(0,0,0,.30);
+  transition: transform .10s ease, filter .15s ease;
 }
 
-.toggle-senha img {
-  height: 60px;
+form button:hover{ filter: brightness(1.08); }
+form button:active{ transform: translateY(1px); }
+
+/* Botão "Finalizar Cadastro" / "Cadastrar Loja" */
+details:last-of-type button[type="submit"]{
+  background: var(--bb-accent);
 }
 
-/* <<< GARANTIA: aparência cinza quando desabilitado (alta especificidade) */
-main.form-etapas-wrapper input:disabled,
-main.form-etapas-wrapper select:disabled,
-main.form-etapas-wrapper textarea:disabled,
-main.form-etapas-wrapper .campo-bloqueado {
-  background-color: #eeeeee !important;   /* cor de fundo cinza */
-  border: 1px solid #c9c9c9 !important;   /* borda cinza */
-  color: #666666 !important;              /* texto cinza */
-  -webkit-text-fill-color: #666666 !important; /* Safari */
-  opacity: 1 !important;                  /* evita reduzir opacidade automática */
-  cursor: not-allowed !important;
-  background-image: none !important;      /* remove gradientes default do SO */
-  background-clip: padding-box;           /* garante borda sólida */
+/* =========================
+   AJUSTES DE ESPAÇAMENTO
+========================= */
+#form-pf, #form-pj{
+  margin-top: 18px;
 }
 
-/* Placeholder mais suave quando desabilitado */
-main.form-etapas-wrapper input:disabled::placeholder,
-main.form-etapas-wrapper textarea:disabled::placeholder {
-  color: #999 !important;
+/* separador leve entre o selector e o form */
+.form-etapas-wrapper > .form-group{
+  padding: 14px 14px 18px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
 }
 
-/* Transição suave quando habilita */
-main.form-etapas-wrapper input,
-main.form-etapas-wrapper select,
-main.form-etapas-wrapper textarea {
-  transition: background-color .25s ease, color .25s ease, border-color .25s ease;
-}
-/* ---- Garantir cinza quando desabilitado (alta especificidade, sem quebrar o resto) ---- */
-
-/* 1) Inputs habilitados continuam brancos translúcidos */
-:where(main.form-etapas-wrapper) :is(input, select, textarea):not([disabled]) {
-  background-color: rgba(255, 255, 255, 0.9);
-  color: #333;
-}
-
-/* 2) Inputs desabilitados (e/ou com .campo-bloqueado) ficam cinza */
-:where(main.form-etapas-wrapper) :is(input, select, textarea)[disabled],
-:where(main.form-etapas-wrapper) .campo-bloqueado {
-  background-color: #eeeeee !important;
-  border: 1px solid #c9c9c9 !important;
-  color: #666666 !important;
-  -webkit-text-fill-color: #666666 !important; /* Safari */
-  opacity: 1 !important;                      /* não escurece o componente inteiro */
-  cursor: not-allowed !important;
-  background-image: none !important;
-  background-clip: padding-box;
+/* =========================
+   RESPONSIVO
+========================= */
+@media (max-width: 900px){
+  .form-etapas-wrapper{
+    padding: 42px 26px;
+    margin: 40px 16px;
+  }
+  .form-etapas-wrapper h2{
+    font-size: 36px;
+  }
+  .form-row{
+    grid-template-columns: 1fr;
+  }
+  form button{
+    width: 100%;
+    min-width: 0;
+  }
 }
 
-/* 3) Placeholder mais suave no estado desabilitado */
-:where(main.form-etapas-wrapper) input[disabled]::placeholder,
-:where(main.form-etapas-wrapper) textarea[disabled]::placeholder {
-  color: #999 !important;
+@media (max-width: 480px){
+  .form-etapas-wrapper{
+    padding: 32px 18px;
+  }
+  .form-etapas-wrapper h2{
+    font-size: 32px;
+  }
+  form details{
+    padding: 18px;
+  }
 }
+/* =========================
+   ÍCONE MOSTRAR / OCULTAR SENHA
+========================= */
 
-/* 4) Transição suave ao habilitar */
-:where(main.form-etapas-wrapper) :is(input, select, textarea) {
-  transition: background-color .25s ease, color .25s ease, border-color .25s ease;
-}
-
-.switch-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 12px 0 18px;
-  flex-wrap: wrap;
-}
-
-/* container do switch */
-.switch {
+/* wrapper implícito: quando input + ícone estão no mesmo form-group */
+.form-group{
   position: relative;
-  width: 48px;
-  height: 26px;
 }
 
-/* esconde o checkbox real */
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+/* input de senha precisa de espaço à direita */
+.form-group input[type="password"],
+.form-group input[type="text"]#senha{
+  padding-right: 46px;
 }
 
-/* trilho */
-.switch .slider {
+/* ícone do olho */
+#icone-senha{
   position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 22px;
+  height: 22px;
+
   cursor: pointer;
-  inset: 0;
-  background-color: #ccc;
-  border-radius: 999px;
-  transition: background-color 0.25s ease;
+  opacity: .75;
+  transition: opacity .15s ease, transform .15s ease;
+
+  /* garante que fique acima do input */
+  z-index: 2;
 }
 
-/* bolinha */
-.switch .slider::before {
-  content: "";
-  position: absolute;
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: #fff;
-  border-radius: 50%;
-  transition: transform 0.25s ease;
+/* hover */
+#icone-senha:hover{
+  opacity: 1;
+  transform: translateY(-50%) scale(1.08);
 }
 
-.switch input:checked + .slider {
-  background-color: #fd6524;
+/* estado acessível (teclado) */
+#icone-senha:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bb-accent) 25%, transparent);
+  border-radius: 6px;
 }
 
-/* bolinha quando ligado */
-.switch input:checked + .slider::before {
-  transform: translateX(22px);
+/* quando input está desabilitado (não deve acontecer, mas previne bug) */
+.form-group input:disabled + #icone-senha{
+  opacity: .35;
+  pointer-events: none;
 }
-
-/* foco acessível */
-.switch input:focus + .slider {
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.35);
-}
-
-/* label do texto */
-.switch-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-

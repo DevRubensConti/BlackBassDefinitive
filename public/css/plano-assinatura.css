@@ -1,78 +1,171 @@
 @import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
-body {
+/* ===============================
+   Brandbook BlackBass – Assinatura
+=============================== */
+
+:root{
+  --bb-accent: var(--cor-primaria);
+  --bb-text: var(--cor-secundaria);
+
+  --bb-muted: rgba(255,255,255,.75);
+  --bb-border: rgba(255,255,255,.14);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
+
+  --bb-radius: 22px;
+}
+
+*{ box-sizing: border-box; }
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body{
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: url('/images/background.png') no-repeat center center fixed;
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  /* mesmo fundo dos outros painéis */
+  background: url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center center fixed;
   background-size: cover;
-  color: var(--cor-letras-navbar);
 }
 
-.assinatura-container {
-  max-width: 600px;
-  margin: 120px auto;
-  padding: 40px;
-  background-color: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
+/* ===============================
+   CONTAINER
+=============================== */
+.assinatura-container{
+  max-width: 640px;
+  margin: 110px auto 80px;
+  padding: 40px 34px;
+
+  background: var(--bb-card);
+  border-radius: var(--bb-radius);
+  border: 1px solid var(--bb-border);
+
+  box-shadow: var(--bb-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
   text-align: center;
-  color: white;
 }
 
-.assinatura-container h2 {
+/* ===============================
+   ILUSTRAÇÃO
+=============================== */
+.peixe-img{
+  width: 160px;
+  margin: 0 auto 12px;
+  filter: drop-shadow(0 10px 22px rgba(0,0,0,.45));
+}
+
+/* ===============================
+   TÍTULOS
+=============================== */
+.assinatura-container h2{
+  margin: 6px 0 10px;
+
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 40px;
+  font-size: 44px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+
+  color: rgba(255,255,255,.95);
+}
+
+.assinatura-container p{
+  margin: 0 0 26px;
+  font-size: 16px;
+  color: var(--bb-muted);
+}
+
+.assinatura-container p strong{
+  color: rgba(255,255,255,.95);
+  font-size: 18px;
+}
+
+/* ===============================
+   BOTÃO PRINCIPAL
+=============================== */
+.btn-assinar{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 14px 26px;
+  border-radius: 999px;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
   letter-spacing: 1px;
   text-transform: uppercase;
-  font-weight: normal;
-  color: var(--cor-letras-navbar);
-  text-shadow: 
-    1px 1px 0 #28573F,
-    2px 2px 0 #28573F,
-    3px 3px 0 #28573F,
-    4px 4px 0 #28573F;
-}
 
-.assinatura-container p {
-  font-size: 18px;
-  margin-bottom: 30px;
-}
+  color: rgba(255,255,255,.95);
+  background: rgba(0,0,0,.35);
+  border: 2px solid rgba(255,255,255,.18);
 
-.btn-assinar {
-  padding: 14px 28px;
-  font-size: 18px;
-  background-color: #ff4800;
-  color: white;
-  border: none;
-  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.3s;
-}
-
-.btn-assinar:hover {
-  background-color: #e63f00;
-}
-
-.peixe-img {
-  width: 160px;
-  margin-bottom: 10px;
-}
-
-.saiba-mais-btn {
-  display: inline-block;
-  margin-top: 20px;
-  font-size: 16px;
-  padding: 10px 20px;
-  background-color: transparent;
-  border: 2px solid var(--cor-letras-navbar);
-  border-radius: 8px;
-  color: var(--cor-letras-navbar);
   text-decoration: none;
-  font-weight: bold;
-  transition: all 0.3s ease;
+
+  transition: transform .12s ease,
+              filter .12s ease,
+              box-shadow .15s ease;
 }
 
-.saiba-mais-btn:hover {
-  background-color: var(--cor-letras-navbar);
-  color: #333;
+.btn-assinar:hover{
+  filter: brightness(1.15);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.18);
+}
+
+.btn-assinar:active{
+  transform: translateY(1px);
+}
+
+/* ===============================
+   LINK "SAIBA MAIS"
+=============================== */
+.saiba-mais-btn{
+  display: inline-block;
+  margin-top: 22px;
+
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+
+  color: rgba(255,255,255,.85);
+  text-decoration: none;
+
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,.35);
+
+  transition: color .2s ease, border-color .2s ease;
+}
+
+.saiba-mais-btn:hover{
+  color: rgba(255,255,255,.95);
+  border-color: var(--bb-accent);
+}
+
+/* ===============================
+   RESPONSIVO
+=============================== */
+@media (max-width: 600px){
+  .assinatura-container{
+    margin: 80px 16px 60px;
+    padding: 28px 22px;
+  }
+
+  .assinatura-container h2{
+    font-size: 34px;
+  }
+
+  .btn-assinar{
+    font-size: 18px;
+    padding: 12px 22px;
+  }
 }

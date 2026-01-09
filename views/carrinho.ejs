@@ -14,8 +14,8 @@
     </div>
 
     <% if (itens.length === 0) { %>
-      <p>Seu carrinho está vazio.</p>
-    <% } else { 
+      <p class="carrinho-vazio">Seu carrinho está vazio.</p>
+    <% } else {
       let total = 0;
       itens.forEach(item => {
         total += item.preco * item.quantidade;
@@ -25,12 +25,12 @@
       <% itens.forEach(item => { %>
         <div class="item-carrinho">
           <img src="<%= item.imagem_url.split(',')[0] %>" alt="Imagem do Produto" />
+
           <div class="item-info">
-            <h4><%= item.nome %></h4>
+            <h4 title="<%= item.nome %>"><%= item.nome %></h4>
             <p class="quantidade">Qtd: <%= item.quantidade %></p>
           </div>
 
-          <!-- Preço formatado -->
           <p class="preco">
             <%= (item.preco * item.quantidade).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
           </p>
@@ -42,16 +42,14 @@
       <% }) %>
 
       <div class="total">
-        <strong>
-          Total: <%= total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
-        </strong>
+        <span>Total:</span>
+        <strong><%= total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></strong>
       </div>
 
-      <!-- Novo fluxo: leva direto para o checkout com Bricks -->
-<!-- carrinho.ejs -->
-<form method="GET" action="/checkout">
-  <button type="submit" class="btn-finalizar">Finalizar Compra</button>
-</form>
+      <!-- leva direto para o checkout -->
+      <form method="GET" action="/checkout">
+        <button type="submit" class="btn-finalizar">Finalizar Compra</button>
+      </form>
     <% } %>
   </main>
 

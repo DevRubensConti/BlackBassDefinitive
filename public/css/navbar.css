@@ -506,9 +506,13 @@ a, a:visited { text-decoration: none; }
 
 /* garante que o miolo (navbar) fica sólido por cima */
 .navbar-shell > .navbar{
-  border-radius: 16px; /* um pouco menor que o shell */
-  overflow: hidden;     /* evita o background vazar nos cantos */
-  width: 100%;
+  border-radius: 16px;
+  overflow: visible;
+}
+
+.navbar-top,
+.navbar-bottom{
+  border-radius: 16px;
 }
 
 /* se o seu .navbar já tem background, beleza.

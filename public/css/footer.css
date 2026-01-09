@@ -1,101 +1,147 @@
 @import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
-.footer {
+:root{
+  --bb-accent: var(--cor-primaria);
+  --bb-text: var(--cor-secundaria);
+
+  --bb-muted: rgba(255,255,255,.72);
+  --bb-border: rgba(255,255,255,.14);
+  --bb-glass: rgba(27,27,27,.78);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
+}
+
+.footer{
+  width: 100%;
+  margin-top: 60px;
+
+  background: var(--bb-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-top: 1px solid var(--bb-border);
+  box-shadow: var(--bb-shadow);
+
+  color: var(--bb-text);
+}
+
+/* =========================
+   INNER
+========================= */
+.footer-inner{
+  max-width: 1300px;
+  margin: auto;
+  padding: 34px 28px;
+
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  background-color: var(--cor-primaria);
-  color: var(--cor-secundaria);
-  padding: 15px 30px; /* diminuído de 40px 60px */
+  gap: 32px;
   flex-wrap: wrap;
-  gap: 20px; /* diminuído de 40px */
-  width: 100%;
 }
 
-.footer-left {
+/* =========================
+   LEFT
+========================= */
+.footer-left{
   flex: 1;
-  min-width: 250px;
+  min-width: 240px;
 }
 
-.footer-left h3 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 20px; /* AUMENTO DA FONTE */
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  font-weight: normal;
-  color: var(--cor-letras-navbar);
-
-  text-shadow: 
-    1px 1px 0 #28573F,
-    2px 2px 0 #28573F,
-    3px 3px 0 #28573F,
-    4px 4px 0 #28573F;
+.footer-logo{
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 14px;
 }
 
-.footer-socials {
-  margin-top: 20px;
+/* socials */
+.footer-socials{
   display: flex;
-  gap: 15px;
+  gap: 14px;
 }
 
-.footer-socials a img {
-  width: 32px;
-  height: 32px;
-  background-color: #2e2e2e;
-  padding: 8px;
+.footer-socials a{
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
-  transition: transform 0.2s ease;
+
+  display: grid;
+  place-items: center;
+
+  background: rgba(255,255,255,.08);
+  border: 1px solid var(--bb-border);
+
+  transition: transform .15s ease, background-color .15s ease, filter .15s ease;
 }
 
-.footer-socials a img:hover {
-  transform: scale(1.1);
+.footer-socials a:hover{
+  background: var(--bb-accent);
+  filter: brightness(1.05);
+  transform: translateY(-2px);
 }
 
-.footer-right {
-  display: flex;
+.footer-socials img{
+  width: 18px;
+  height: 18px;
+}
+
+/* =========================
+   RIGHT
+========================= */
+.footer-right{
   flex: 2;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
 }
 
-.footer-column {
+.footer-column{
   display: flex;
   flex-direction: column;
-  min-width: 150px;
+  gap: 8px;
 }
 
-.footer-column h4 {
+/* títulos */
+.footer-column h4{
+  margin: 0 0 8px;
+
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 24px; /* AUMENTO DA FONTE */
-  letter-spacing: 3px;
+  font-size: 22px;
+  letter-spacing: 2px;
   text-transform: uppercase;
-  font-weight: normal;
-  color: var(--cor-letras-navbar);
-
-  text-shadow: 
-    1px 1px 0 #28573F,
-    2px 2px 0 #28573F,
-    3px 3px 0 #28573F,
-    4px 4px 0 #28573F;
+  color: #fff;
 }
 
-.footer-column a {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px; /* AUMENTO DA FONTE */
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  font-weight: normal;
-  color: var(--cor-letras-navbar);
+/* links */
+.footer-column a{
+  font-size: 13px;
+  letter-spacing: .4px;
+  text-decoration: none;
+  color: var(--bb-muted);
 
-  text-shadow: 
-    1px 1px 0 #28573F,
-    2px 2px 0 #28573F,
-    3px 3px 0 #28573F,
-    4px 4px 0 #28573F;
+  transition: color .15s ease, transform .1s ease;
 }
 
-.footer-column a:hover {
-  color: var(--cor-secundaria);
+.footer-column a:hover{
+  color: var(--bb-accent);
+  transform: translateX(2px);
+}
 
+/* =========================
+   RESPONSIVO
+========================= */
+@media (max-width: 900px){
+  .footer-inner{
+    flex-direction: column;
+  }
+  .footer-right{
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px){
+  .footer-right{
+    grid-template-columns: 1fr;
+  }
 }

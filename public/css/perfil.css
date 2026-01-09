@@ -1,106 +1,173 @@
-@import url('/css/style.css'); /* Usa variáveis e fontes globais */
+@import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
-body {
+:root{
+  --bb-accent: var(--cor-primaria);
+  --bb-text: var(--cor-secundaria);
+
+  --bb-muted: rgba(255,255,255,.75);
+  --bb-border: rgba(255,255,255,.14);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
+
+  --bb-radius: 22px;
+}
+
+*{ box-sizing: border-box; }
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body{
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
-              url('/images/background.png') no-repeat center center fixed;
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  /* mesmo vibe dos painéis */
+  background: url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center center fixed;
   background-size: cover;
-  color: var(--cor-letras-navbar);
 }
 
-.perfil-container {
-  max-width: 800px;
-  margin: 100px auto;
-  padding: 20px;
+/* ====== LAYOUT ====== */
+.perfil-container{
+  max-width: 900px;
+  margin: 70px auto 60px;
+  padding: 0 22px;
 }
 
-.perfil-card {
-  background-color: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  padding: 40px;
-  color: white;
+/* ====== CARD ====== */
+.perfil-card{
+  background: var(--bb-card);
+  border: 1px solid var(--bb-border);
+  border-radius: var(--bb-radius);
+  padding: 28px;
   text-align: center;
-  box-shadow: 0 0 12px rgba(0,0,0,0.3);
+
+  box-shadow: var(--bb-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
-.perfil-avatar {
+.perfil-avatar{
   width: 120px;
   height: 120px;
-  border-radius: 50%;
+  border-radius: 999px;
   object-fit: cover;
-  margin-bottom: 20px;
-  border: 3px solid var(--cor-destaque);
+  margin: 6px auto 14px;
+  border: 3px solid rgba(255,255,255,.18);
+  box-shadow: 0 10px 26px rgba(0,0,0,.45);
 }
 
-.perfil-card h2 {
+/* ====== TIPOGRAFIA ====== */
+.perfil-card h2{
+  margin: 8px 0 6px;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px;
-  margin: 10px 0;
-  color: var(--cor-letras-navbar);
-  text-shadow: 2px 2px 0 #28573F;
+  font-size: 42px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
 }
 
-.perfil-card h3 {
-  margin-top: 30px;
-  font-size: 22px;
-  color: var(--cor-destaque);
-  font-weight: 600;
+.perfil-card h3{
+  margin: 18px 0 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
+
+  display: inline-block;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--bb-accent);
 }
 
-.perfil-card p {
-  font-size: 16px;
-  margin: 5px 0;
-  color: #fffdf5;
+.perfil-card p{
+  margin: 6px 0;
+  font-size: 14px;
+  color: var(--bb-muted);
 }
 
-.cpf {
+.cpf{
   font-style: italic;
-  font-size: 15px;
-  color: #ccc;
+  color: rgba(255,255,255,.65);
 }
 
-hr {
-  margin: 30px 0;
+/* ====== DIVISÓRIA ====== */
+hr{
+  margin: 22px 0;
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255,255,255,0.12);
 }
 
-.botoes-acao {
-  margin-top: 30px;
+/* ====== BOTÕES ====== */
+.botoes-acao{
+  margin-top: 18px;
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .btn-editar,
-.btn-excluir {
-  padding: 12px 24px;
-  border-radius: 8px;
-  border: none;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
+.btn-excluir{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 12px 18px;
+  border-radius: 999px;
+
   text-decoration: none;
-  transition: all 0.3s ease;
+  font-weight: 800;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+
+  border: 2px solid transparent;
+  cursor: pointer;
+
+  transition: transform .12s ease, filter .12s ease, box-shadow .15s ease;
 }
 
-.btn-editar {
-  background-color: var(--cor-secundaria);
-  color: white;
+.btn-editar{
+  background: rgba(0,0,0,.25);
+  color: rgba(255,255,255,.95);
+  border-color: rgba(255,255,255,.18);
 }
+.btn-editar:hover{ filter: brightness(1.12); }
+.btn-editar:active{ transform: translateY(1px); }
 
-.btn-editar:hover {
-  background-color: #e36f3a;
+.btn-excluir{
+  background: rgba(122,36,49,.55);
+  color: rgba(255,255,255,.95);
+  border-color: rgba(163,59,75,.85);
 }
+.btn-excluir:hover{ filter: brightness(1.08); }
+.btn-excluir:active{ transform: translateY(1px); }
 
-.btn-excluir {
-  background-color: #aa0000;
-  color: white;
-}
+/* ====== RESPONSIVO ====== */
+@media (max-width: 600px){
+  .perfil-container{
+    margin: 54px auto 52px;
+    padding: 0 16px;
+  }
 
-.btn-excluir:hover {
-  background-color: #880000;
+  .perfil-card{
+    padding: 22px;
+  }
+
+  .perfil-card h2{
+    font-size: 34px;
+  }
+
+  .btn-editar,
+  .btn-excluir{
+    font-size: 16px;
+    padding: 10px 14px;
+  }
 }

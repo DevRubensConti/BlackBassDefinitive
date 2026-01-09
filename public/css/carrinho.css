@@ -1,133 +1,292 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+@import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
-:root {
-  --cor-primaria: #57BD89;
-  --cor-primaria-escura: #3e835f;
-  --cor-secundaria: #FF814A;
-  --cor-fundo: #fffaf5;
-  --cor-texto: #4b4b4b;
-  --cor-destaque: #ffdd99;
-  --cor-letras-navbar: #ffecd2;
-  --bege-claro: #e4c08f;
+/* =========================
+   TOKENS (fallback)
+========================= */
+:root{
+  --preto-bass: #1B1B1B;
+  --laranja-vintage: #F26B3A;
+  --bege-analogico: #F6E0B3;
+
+  --bb-accent: var(--cor-primaria, var(--laranja-vintage));
+  --bb-text: var(--cor-secundaria, #ffffff);
+
+  --bb-muted: rgba(255,255,255,.78);
+  --bb-border: rgba(255,255,255,.10);
+  --bb-soft: rgba(255,255,255,.04);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+*{ box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+  min-height: 100%;
 }
 
-html, body {
-  height: 100%;
-}
-
-body {
+body{
   display: flex;
   flex-direction: column;
-  font-family: Arial, sans-serif;
-  background: url('/images/background.png') no-repeat center center fixed;
+
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  background:
+    url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8') no-repeat center center fixed;
   background-size: cover;
-  color: var(--cor-secundaria);
 }
 
-main.carrinho-container {
+/* =========================
+   CONTAINER
+========================= */
+main.carrinho-container{
   flex: 1;
-  max-width: 1000px;
-  margin: 60px auto 30px auto;
-  padding: 30px;
-  background-color: #fff;
+  width: 100%;
+  max-width: 1100px;
+
+  margin: 60px auto 30px;
+  padding: 46px;
+
+  background: var(--bb-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
   border-radius: 20px;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--bb-border);
+  box-shadow: var(--bb-shadow);
 }
 
-.carrinho-header {
+/* =========================
+   HEADER
+========================= */
+.carrinho-header{
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 26px;
 }
 
-.carrinho-header h2 {
-  font-size: 32px;
-  letter-spacing: 1px;
-  color: var(--cor-secundaria);
-  text-shadow: 2px 2px 0 var(--bege-claro);
+.carrinho-header h2{
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 44px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
+
+  display: inline-block;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bb-accent);
 }
 
-.item-carrinho {
-  display: flex;
+/* =========================
+   EMPTY STATE
+========================= */
+.carrinho-vazio{
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  color: var(--bb-muted);
+  text-align: center;
+}
+
+/* =========================
+   ITEM ROW
+========================= */
+.item-carrinho{
+  display: grid;
+  grid-template-columns: 86px 1fr auto auto;
+  gap: 16px;
   align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--cor-destaque);
-  padding: 15px 0;
+
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
 }
 
-.item-carrinho img {
-  width: 80px;
-  height: auto;
-  border-radius: 10px;
-  margin-right: 20px;
+.item-carrinho:last-of-type{
+  border-bottom: none;
+}
+
+.item-carrinho img{
+  width: 86px;
+  height: 86px;
+  border-radius: 16px;
   object-fit: cover;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.05);
+
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 18px 35px rgba(0,0,0,.22);
 }
 
-.item-info {
-  flex-grow: 1;
+/* =========================
+   INFO
+========================= */
+.item-info{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
-.item-info h4 {
+.item-info h4{
   margin: 0;
-  font-size: 22px;
-  color: var(--cor-texto);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.quantidade {
-  font-size: 16px;
-  color: var(--cor-primaria-escura);
+.quantidade{
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.72);
 }
 
-.preco {
-  font-size: 18px;
-  min-width: 100px;
-  text-align: right;
-  color: var(--cor-texto);
-}
-
-.remover-btn {
-  background-color: var(--cor-secundaria);
-  color: #fff;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.remover-btn:hover {
-  background-color: #cc4f22;
-}
-
-.total {
-  text-align: right;
+/* =========================
+   PREÇO
+========================= */
+.preco{
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 24px;
-  margin-top: 30px;
-  color: var(--cor-primaria-escura);
-  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--bege-analogico);
+  text-align: right;
+  white-space: nowrap;
+
+  filter: drop-shadow(0 10px 14px rgba(0,0,0,.25));
 }
 
-.btn-finalizar {
-  display: block;
-  margin: 30px auto 0;
-  padding: 16px 30px;
-  font-size: 20px;
-  background-color: var(--cor-primaria);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
+/* =========================
+   REMOVER
+========================= */
+.remover-btn{
+  border: 2px solid rgba(255,255,255,.65);
+  background: transparent;
+  color: rgba(255,255,255,.92);
+
+  padding: 10px 14px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: background 0.3s;
-  text-shadow: 1px 1px 0 #3e835f;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  transition: filter .15s ease, transform .10s ease, background-color .15s ease, color .15s ease, border-color .15s ease;
 }
 
-.btn-finalizar:hover {
-  background-color: var(--cor-primaria-escura);
+.remover-btn:hover{
+  border-color: var(--bb-accent);
+  background: var(--bb-accent);
+  color: #000;
+  filter: brightness(1.05);
+}
+
+.remover-btn:active{
+  transform: translateY(1px);
+}
+
+/* =========================
+   TOTAL
+========================= */
+.total{
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,.08);
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 10px;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  color: rgba(255,255,255,.92);
+}
+
+.total strong{
+  color: var(--bege-analogico);
+}
+
+/* =========================
+   FINALIZAR
+========================= */
+.btn-finalizar{
+  display: block;
+  width: 100%;
+  margin: 18px auto 0;
+
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+
+  padding: 14px 18px;
+  background: var(--bb-accent);
+  color: #000;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  box-shadow: 0 12px 26px rgba(0,0,0,.30);
+  transition: transform .10s ease, filter .15s ease;
+}
+
+.btn-finalizar:hover{
+  filter: brightness(1.08);
+}
+
+.btn-finalizar:active{
+  transform: translateY(1px);
+}
+
+/* =========================
+   RESPONSIVO
+========================= */
+@media (max-width: 820px){
+  main.carrinho-container{
+    padding: 34px 20px;
+    margin: 40px 16px 24px;
+  }
+
+  .carrinho-header h2{
+    font-size: 38px;
+  }
+
+  .item-carrinho{
+    grid-template-columns: 76px 1fr;
+    grid-template-areas:
+      "img info"
+      "img price"
+      "img actions";
+    gap: 12px;
+    padding: 16px 0;
+  }
+
+  .item-carrinho img{ grid-area: img; width: 76px; height: 76px; }
+
+  .item-info{ grid-area: info; }
+  .preco{ grid-area: price; text-align: left; }
+
+  .item-carrinho form{ grid-area: actions; }
+  .remover-btn{ width: 100%; }
+}
+
+@media (max-width: 480px){
+  .carrinho-header h2{ font-size: 34px; }
+  .item-info h4{ font-size: 22px; }
+  .preco{ font-size: 22px; }
 }

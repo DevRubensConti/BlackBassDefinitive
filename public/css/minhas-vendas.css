@@ -1,357 +1,328 @@
 @import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
-* {
-  box-sizing: border-box;
+:root{
+  --bb-accent: var(--cor-primaria);
+  --bb-text: var(--cor-secundaria);
+
+  --bb-muted: rgba(255,255,255,.75);
+  --bb-border: rgba(255,255,255,.14);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-soft: rgba(0,0,0,.45);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
 }
 
-/* Fundo padrão BlackBass */
-body {
+*{ box-sizing: border-box; }
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body{
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(rgba(10,10,10,.75), rgba(10,10,10,.75)),
-              url('/images/background.png') no-repeat center center fixed;
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
+
+  /* padrão BlackBass */
+  background: url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center center fixed;
   background-size: cover;
-  color: var(--cor-secundaria);
 }
 
-/* --------------------------
-   CONTAINER / TÍTULO
---------------------------- */
-.vendas-container {
+/* =========================
+   CONTAINER
+========================= */
+.vendas-container{
   max-width: 1300px;
-  margin: 0 auto;
-  padding: 24px 18px 40px;
+  margin: 70px auto 60px;
+  padding: 0 22px;
 }
 
-.vendas-container h1 {
+/* =========================
+   TÍTULO
+========================= */
+.vendas-container h1{
+  margin: 0 0 28px;
+  text-align: center;
+
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px;
+  font-size: 42px;
+  letter-spacing: 3px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--cor-letras-navbar);
-  margin: 8px 0 24px;
-  text-shadow: 2px 2px #28573F;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  color: rgba(255,255,255,.95);
+
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bb-accent);
 }
 
-/* --------------------------
-   GRID DE VENDAS
---------------------------- */
-.vendas-grid {
+/* =========================
+   GRID
+========================= */
+.vendas-grid{
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 22px;
 }
 
-/* Card principal */
-.venda-card {
-  padding: 16px 16px 14px;
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
-  border: 1px solid rgba(255,255,255,.08);
-  box-shadow: 0 10px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
-  backdrop-filter: blur(6px);
+/* =========================
+   CARD
+========================= */
+.venda-card{
+  background: var(--bb-card);
+  border-radius: 22px;
+  border: 1px solid var(--bb-border);
+
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+
+  box-shadow: var(--bb-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
-/* --------------------------
-   HEADER DO CARD
---------------------------- */
-.venda-header {
+/* =========================
+   HEADER
+========================= */
+.venda-header{
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  padding-bottom: 8px;
+  gap: 18px;
+
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bb-border);
 }
 
-.venda-header h3 {
-  margin: 0 0 4px;
-  font-size: 15px;
-  color: var(--cor-secundaria);
+.venda-header h3{
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: var(--bb-muted);
 }
 
-.venda-header h3 span {
-  color: var(--cor-primaria);
+.venda-header h3 span{
+  color: var(--bb-accent);
+  font-weight: 700;
 }
 
-.venda-header p {
+.venda-header p{
   margin: 0;
-  font-size: 12px;
-  color: var(--cor-letras-navbar);
-}
-
-.venda-total {
-  text-align: right;
   font-size: 13px;
-  color: var(--cor-letras-navbar);
+  color: var(--bb-muted);
 }
 
-.venda-total .valor-total {
-  margin-top: 2px;
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--cor-primaria);
+.venda-total{
+  text-align: right;
 }
 
-/* status badge */
-.badge-status {
+.valor-total{
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 1px;
+  color: var(--bb-accent);
+}
+
+/* =========================
+   STATUS
+========================= */
+.badge-status{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 10px;
+
+  padding: 4px 12px;
   border-radius: 999px;
+
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .03em;
+  letter-spacing: .08em;
   text-transform: uppercase;
-  background: rgba(87, 189, 137, 0.12);
-  border: 1px solid rgba(87, 189, 137, 0.7);
-  color: #d4ffe8;
+
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.35);
+  color: rgba(255,255,255,.95);
 }
 
-/* se quiser diferenciar depois:
-.badge-status.em-processamento {...}
-.badge-status.criado {...}
-... */
-
-/* --------------------------
-   CORPO DO CARD
---------------------------- */
-.venda-body {
+/* =========================
+   BODY
+========================= */
+.venda-body{
   display: grid;
   grid-template-columns: 120px 1fr;
-  gap: 14px;
-  align-items: flex-start;
+  gap: 16px;
 }
 
-/* imagem principal */
-.venda-img {
+/* imagem */
+.venda-img{
   width: 120px;
   height: 120px;
   border-radius: 14px;
   overflow: hidden;
-  background: #222;
-  border: 1px solid rgba(255,255,255,.16);
-  box-shadow: 0 6px 16px rgba(0,0,0,.45);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(0,0,0,.5);
+  border: 1px solid var(--bb-border);
 }
 
-.venda-img img {
+.venda-img img{
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.no-img {
+.no-img{
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
   font-size: 12px;
-  color: var(--cor-letras-navbar);
-  opacity: .8;
+  color: var(--bb-muted);
 }
 
-/* lista de itens */
-.venda-itens ul {
+/* =========================
+   ITENS
+========================= */
+.venda-itens ul{
   list-style: none;
   padding: 0;
   margin: 0;
+
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.venda-item-linha {
+.venda-item-linha{
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  padding: 6px 8px;
-  border-radius: 10px;
-  background: rgba(0,0,0,.22);
-  border: 1px solid rgba(255,255,255,.06);
+
+  padding: 10px 12px;
+  border-radius: 12px;
+
+  background: var(--bb-soft);
+  border: 1px solid rgba(255,255,255,.08);
 }
 
-.venda-item-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 12px;
-}
-
-.item-nome {
+.item-nome{
+  font-size: 13px;
   font-weight: 600;
-  color: var(--cor-secundaria);
 }
 
-.item-qtd {
-  color: var(--cor-letras-navbar);
-  opacity: .9;
-}
-
-.venda-item-valores {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+.item-qtd{
   font-size: 12px;
-  gap: 2px;
+  color: var(--bb-muted);
 }
 
-.item-preco-unit {
-  color: var(--cor-letras-navbar);
-  opacity: .9;
-}
-
-.item-subtotal {
-  font-weight: 600;
-  color: var(--cor-primaria);
-}
-
-.nenhum-item {
+.venda-item-valores{
+  text-align: right;
   font-size: 12px;
-  color: var(--cor-letras-navbar);
-  opacity: .9;
 }
 
-/* --------------------------
-   FOOTER / AÇÕES
---------------------------- */
-.venda-footer {
+.item-subtotal{
+  font-weight: 700;
+  color: var(--bb-accent);
+}
+
+/* =========================
+   FOOTER
+========================= */
+.venda-footer{
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255,255,255,.08);
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bb-border);
 }
 
-.venda-footer form {
-  margin: 0;
-}
-
-.venda-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* Botões genéricos (mantendo padrão BlackBass) */
-.btn {
+/* =========================
+   BOTÕES
+========================= */
+.btn{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
+
+  padding: 12px 20px;
+  border-radius: 16px;
   border: none;
-  font-size: 13px;
-  font-weight: 600;
   cursor: pointer;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
   text-decoration: none;
-  transition: background .18s ease, transform .1s ease, box-shadow .18s ease, color .18s ease;
-  box-shadow: 0 6px 14px rgba(0,0,0,.45);
+  transition: filter .15s ease, transform .1s ease;
 }
 
 /* primário */
-.btn-primario {
-  background: var(--cor-primaria, #57BD89);
-  color: #fff;
-}
-
-.btn-primario:hover {
-  background: var(--cor-primaria-escura, #2e6b4f);
-  box-shadow: 0 8px 18px rgba(0,0,0,.55);
-}
-
-.btn-primario:active {
-  transform: translateY(1px);
-  box-shadow: 0 4px 10px rgba(0,0,0,.4);
-}
-
-/* secundário */
-.btn-secundario {
-  background: transparent;
-  color: var(--cor-secundaria);
-  border: 1px solid var(--cor-secundaria);
-}
-
-.btn-secundario:hover {
-  background: var(--cor-secundaria);
+.btn-primario{
+  background: var(--bb-accent);
   color: #000;
 }
 
-.btn[disabled],
-.btn.disabled {
+.btn-primario:hover{
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* secundário */
+.btn-secundario{
+  background: transparent;
+  border: 2px solid rgba(255,255,255,.6);
+  color: rgba(255,255,255,.9);
+}
+
+.btn-secundario:hover{
+  background: var(--bb-accent);
+  color: #000;
+}
+
+/* disabled */
+.btn.disabled,
+.btn:disabled{
   opacity: .6;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
-/* --------------------------
-   ESTADO SEM VENDAS
---------------------------- */
-.no-vendas {
+/* =========================
+   SEM VENDAS
+========================= */
+.no-vendas{
   margin-top: 40px;
-  padding: 18px 16px;
-  border-radius: 14px;
-  background: rgba(255,255,255,.04);
-  border: 1px dashed rgba(255,255,255,.25);
   text-align: center;
-  font-size: 14px;
-  color: var(--cor-letras-navbar);
+  font-size: 16px;
+  color: var(--bb-muted);
 }
 
-/* --------------------------
+/* =========================
    RESPONSIVO
---------------------------- */
-@media (max-width: 900px) {
-  .venda-body {
+========================= */
+@media (max-width: 900px){
+  .venda-body{
     grid-template-columns: 1fr;
   }
 
-  .venda-img {
+  .venda-img{
     width: 100%;
-    max-width: 280px;
     height: 180px;
-    margin: 0 auto;
+  }
+
+  .venda-header{
+    flex-direction: column;
+  }
+
+  .venda-total{
+    text-align: left;
   }
 }
 
-@media (max-width: 600px) {
-  .vendas-container {
-    padding-inline: 12px;
+@media (max-width: 520px){
+  .vendas-container h1{
+    font-size: 34px;
   }
 
-  .vendas-container h1 {
-    font-size: 22px;
-    justify-content: center;
-    text-align: center;
-  }
-
-  .venda-card {
-    padding: 14px 12px;
-  }
-
-  .venda-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .venda-total {
-    text-align: left;
-  }
-
-  .venda-footer {
-    flex-direction: column;
-  }
-
-  .btn {
+  .btn{
     width: 100%;
-    justify-content: center;
   }
 }

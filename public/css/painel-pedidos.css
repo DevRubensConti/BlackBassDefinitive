@@ -1,106 +1,166 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+@import url('/css/style.css');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap');
 
-:root {
-  --cor-primaria: #57BD89;
-  --cor-primaria-escura: #3e835f;
-  --cor-secundaria: #FF814A;
-  --cor-fundo: #fffaf5;
-  --cor-texto: #4b4b4b;
-  --cor-destaque: #ffdd99;
-  --bege-claro: #e4c08f;
+:root{
+  --bb-accent: var(--cor-primaria);
+  --bb-text: var(--cor-secundaria);
+
+  --bb-muted: rgba(255,255,255,.75);
+  --bb-border: rgba(255,255,255,.14);
+  --bb-card: rgba(27,27,27,.82);
+  --bb-soft: rgba(0,0,0,.45);
+  --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
 }
 
-* {
-  box-sizing: border-box;
+*{ box-sizing: border-box; }
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body{
   margin: 0;
-  padding: 0;
-}
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--bb-text);
 
-body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(rgba(43, 43, 43, 0.7), rgba(66, 66, 66, 0.7)),
-              url('/images/background.png') no-repeat center center fixed;
+  /* padrão BlackBass */
+  background: url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
+    no-repeat center center fixed;
   background-size: cover;
-  color: var(--cor-texto);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
-main {
-  flex-grow: 1;
-  max-width: 1000px;
-  margin: 60px auto;
-  padding: 40px 30px;
-  background-color: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+/* =========================
+   CONTAINER
+========================= */
+.painel-pedidos{
+  max-width: 1200px;
+  margin: 60px auto 60px;
+  padding: 0 22px;
 }
 
-h2 {
-  font-size: 32px;
-  color: var(--cor-secundaria);
+/* =========================
+   TÍTULO
+========================= */
+.painel-pedidos h2{
+  margin: 0 0 28px;
   text-align: center;
-  text-shadow: 2px 2px var(--bege-claro);
-  margin-bottom: 30px;
+
   font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
+
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bb-accent);
 }
 
-.pedido {
-  border: 2px solid var(--cor-destaque);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 30px;
-  background-color: #fffdf9;
+/* =========================
+   TEXTO VAZIO
+========================= */
+.painel-pedidos > p{
+  text-align: center;
+  font-size: 16px;
+  color: var(--bb-muted);
+  margin-top: 40px;
 }
 
-.pedido h3 {
-  margin-bottom: 10px;
-  font-size: 22px;
-  color: var(--cor-primaria-escura);
+/* =========================
+   CARD DO PEDIDO
+========================= */
+.pedido-card{
+  background: var(--bb-card);
+  border-radius: 22px;
+  border: 1px solid var(--bb-border);
+
+  padding: 22px;
+  margin-bottom: 22px;
+
+  box-shadow: var(--bb-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  transition: transform .12s ease, box-shadow .15s ease;
 }
 
-.pedido small {
-  color: #999;
+.pedido-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 22px 50px rgba(0,0,0,.55);
+}
+
+/* =========================
+   HEADER DO PEDIDO
+========================= */
+.pedido-card h3{
+  margin: 0 0 10px;
+
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.95);
+}
+
+.pedido-card p{
+  margin: 0 0 6px;
   font-size: 14px;
+  color: var(--bb-muted);
 }
 
-.itens-lista {
-  margin-top: 15px;
-  padding-left: 20px;
+.pedido-card p strong{
+  color: rgba(255,255,255,.9);
 }
 
-.item {
-  margin-bottom: 10px;
-  padding: 10px;
-  border-left: 4px solid var(--cor-primaria);
-  background-color: #f8f8f8;
-  border-radius: 6px;
-}
-
-.item strong {
-  display: block;
-  color: var(--cor-texto);
-}
-
-.item span {
-  display: inline-block;
-  margin-top: 4px;
-  color: #666;
-  font-size: 14px;
-}
-
-.status {
-  font-weight: bold;
-  margin-top: 10px;
-  color: var(--cor-secundaria);
+/* status */
+.pedido-card p:last-of-type{
+  font-weight: 600;
+  color: var(--bb-accent);
   text-transform: capitalize;
 }
 
-.footer {
-  text-align: center;
-  padding: 30px 0;
-  background-color: #f3ede3;
-  color: #777;
+/* =========================
+   LISTA DE ITENS
+========================= */
+.pedido-card ul{
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pedido-card li{
+  padding: 12px 14px;
+  border-radius: 14px;
+
+  background: var(--bb-soft);
+  border: 1px solid rgba(255,255,255,.10);
+
   font-size: 14px;
+  color: rgba(255,255,255,.9);
+
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* =========================
+   RESPONSIVO
+========================= */
+@media (max-width: 520px){
+  .painel-pedidos h2{
+    font-size: 34px;
+  }
+
+  .pedido-card{
+    padding: 18px;
+  }
+
+  .pedido-card li{
+    flex-direction: column;
+    gap: 4px;
+  }
 }
