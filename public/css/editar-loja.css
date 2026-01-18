@@ -62,8 +62,7 @@ body{
   font-size: 44px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.95);
-
+  color: var(--bege-analogico);
   display: inline-block;
   padding-bottom: 8px;
   border-bottom: 2px solid var(--bb-accent);
@@ -125,7 +124,7 @@ body{
 /* Focus */
 .form-loja input:focus,
 .form-loja textarea:focus{
-  border-color: var(--bb-accent);
+  border-color: var(--laranja-vintage);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--bb-accent) 25%, transparent);
 }
 
@@ -178,13 +177,14 @@ body{
   text-transform: uppercase;
 
   background: var(--bb-accent);
-  color: #000;
+  color: var(--laranja-vintage);
 
   cursor: pointer;
 }
 
 .form-loja input[type="file"]:hover{
-  border-color: rgba(255,255,255,.32);
+  border-color: var(--laranja-vintage);
+  cursor: pointer;
 }
 
 /* Descrição ocupa linha inteira */
@@ -230,8 +230,8 @@ body{
 
 .btn-voltar-painel:hover{
   background: var(--bb-accent);
-  border-color: var(--bb-accent);
-  color: #000;
+  border-color: var(--laranja-vintage);
+  color: var(--laranja-vintage);
   filter: brightness(1.06);
   transform: translateY(-1px);
 }
@@ -240,14 +240,14 @@ body{
 /* Salvar (primário) */
 .btn-filtrar{
   width: 100%;
-  border: none;
+  border: 2px solid rgba(255,255,255,.65);
   border-radius: 14px;
   cursor: pointer;
 
   padding: 16px 18px;
 
   background: var(--bb-accent);
-  color: #000;
+  color: var(--laranja-vintage);
 
   font-family: 'Bebas Neue', sans-serif;
   font-size: 22px;
@@ -258,7 +258,7 @@ body{
   transition: transform .10s ease, filter .15s ease;
 }
 
-.btn-filtrar:hover{ filter: brightness(1.08); }
+.btn-filtrar:hover{ filter: brightness(1.08); border-color: var(--laranja-vintage);}
 .btn-filtrar:active{ transform: translateY(1px); }
 
 /* =========================

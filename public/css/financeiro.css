@@ -4,7 +4,7 @@
 :root{
   --bb-accent: var(--cor-primaria, #F26B3A);
   --bb-text: var(--cor-secundaria, #ffffff);
-
+  --bege-analogico: #F6E0B3;
   --bb-muted: rgba(255,255,255,.75);
   --bb-border: rgba(255,255,255,.14);
   --bb-card: rgba(27,27,27,.82);

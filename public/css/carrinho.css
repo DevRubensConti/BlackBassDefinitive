@@ -8,7 +8,7 @@
   --preto-bass: #1B1B1B;
   --laranja-vintage: #F26B3A;
   --bege-analogico: #F6E0B3;
-
+   --verde-bass: #5FBF74;
   --bb-accent: var(--cor-primaria, var(--laranja-vintage));
   --bb-text: var(--cor-secundaria, #ffffff);
 
@@ -42,6 +42,11 @@ body{
 /* =========================
    CONTAINER
 ========================= */
+
+.checkout-container h1{
+  color: var(--bege-analogico);
+}
+
 main.carrinho-container{
   flex: 1;
   width: 100%;
@@ -233,7 +238,7 @@ main.carrinho-container{
   cursor: pointer;
 
   padding: 14px 18px;
-  background: var(--bb-accent);
+  background-color: var(--verde-bass);
   color: #000;
 
   font-family: 'Bebas Neue', sans-serif;

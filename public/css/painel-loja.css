@@ -10,6 +10,9 @@
   --bb-card: rgba(27,27,27,.82);
   --bb-soft: rgba(0,0,0,.45);
   --bb-shadow: 0 18px 45px rgba(0,0,0,.45);
+
+  /* Brandbook (fallback caso não exista no style.css) */
+  --bege-analogico: var(--bege-analogico, #F6E0B3);
 }
 
 *{ box-sizing: border-box; }
@@ -37,6 +40,35 @@ body{
   max-width: 1400px;
   margin: 60px auto 70px;
   padding: 0 22px;
+
+  /* TEXTO "PAI" (padrão dentro do painel) */
+  color: var(--bege-analogico);
+}
+
+/* TÍTULOS / TEXTOS PAI em bege */
+.painel-container h2,
+.painel-container h3,
+.painel-container summary,
+.painel-container .subtle,
+.painel-container .kpi span,
+.painel-container .tabela thead th,
+.painel-container label,
+.painel-container .toolbar strong,
+.painel-container .empty{
+  color: var(--bege-analogico);
+}
+
+/* TEXTOS "FILHO" (valores/dados) em branco */
+.painel-container .subtle strong,
+.painel-container .kpi strong,
+.painel-container .tabela tbody td,
+.painel-container #analiseResumo,
+.painel-container #tblAnaliseBody td,
+.painel-container .chip,
+.painel-container .top-produto span,
+.painel-container .top-produto,
+.painel-container .tabela a:not(.btn-primary):not(.btn-ghost):not(.btn-danger){
+  color: #fff;
 }
 
 /* =========================
@@ -80,12 +112,20 @@ body{
   font-size: 30px;
   letter-spacing: 2px;
   text-transform: uppercase;
+
+  /* título em bege */
+  color: var(--bege-analogico);
 }
 
 .subtle{
   margin: 0;
   font-size: 13px;
-  color: var(--bb-muted);
+  /* texto pai em bege (já herdaria, mas deixa explícito) */
+  color: var(--bege-analogico);
+}
+.subtle strong{
+  /* texto filho em branco */
+  color: #fff;
 }
 
 /* =========================
@@ -100,7 +140,6 @@ body{
 .tab{
   background: transparent;
   border: 2px solid rgba(255,255,255,.25);
-  color: rgba(255,255,255,.9);
 
   padding: 10px 18px;
   border-radius: 999px;
@@ -112,6 +151,9 @@ body{
   text-transform: uppercase;
 
   transition: background .15s ease, color .15s ease, border-color .15s ease;
+
+  /* título/aba em bege (pai) */
+  color: var(--bege-analogico);
 }
 
 .tab:hover{
@@ -120,8 +162,8 @@ body{
 
 .tab.active{
   background: var(--bb-accent);
-  border-color: var(--bb-accent);
-  color: #000;
+  border-color: var(--laranja-vintage);
+  color: var(--laranja-vintage);
 }
 
 .tab-pane{ display: none; }
@@ -149,10 +191,17 @@ body{
 .filters select{
   background: rgba(0,0,0,.45);
   border: 1px solid var(--bb-border);
-  color: var(--bb-text);
+
   padding: 10px 12px;
   border-radius: 12px;
   min-height: 40px;
+
+  /* inputs precisam ficar com texto branco para leitura */
+  color: #fff;
+}
+
+.filters input::placeholder{
+  color: rgba(255,255,255,.7);
 }
 
 /* =========================
@@ -179,7 +228,7 @@ body{
 }
 
 .btn-primary{
-  background: var(--bb-accent);
+  background: var(--verde-bass);
   color: #000;
   border: none;
 }
@@ -187,7 +236,7 @@ body{
 .btn-ghost{
   background: transparent;
   border: 2px solid rgba(255,255,255,.4);
-  color: rgba(255,255,255,.9);
+  color: rgba(255,255,255,.92);
 }
 
 .btn-danger{
@@ -226,7 +275,8 @@ body{
 
 .kpi span{
   font-size: 12px;
-  color: var(--bb-muted);
+  /* pai em bege */
+  color: var(--bege-analogico);
 }
 
 .kpi strong{
@@ -235,6 +285,9 @@ body{
   font-family: 'Bebas Neue', sans-serif;
   font-size: 26px;
   letter-spacing: 1px;
+
+  /* filho (valor) em branco */
+  color: #fff;
 }
 
 /* =========================
@@ -258,12 +311,18 @@ body{
   font-size: 13px;
   background: rgba(0,0,0,.55);
   border-bottom: 1px solid var(--bb-border);
+
+  /* título/coluna em bege */
+  color: var(--bege-analogico);
 }
 
 .tabela tbody td{
   padding: 14px;
   font-size: 14px;
   border-bottom: 1px solid rgba(255,255,255,.08);
+
+  /* dados em branco */
+  color: #fff;
 }
 
 .tabela tbody tr:hover{
@@ -317,6 +376,13 @@ body{
   padding: 20px;
   width: min(520px, 92vw);
   box-shadow: var(--bb-shadow);
+
+  /* texto pai em bege */
+  color: var(--bege-analogico);
+}
+
+.popup-conteudo #mensagem-confirmacao{
+  color: var(--bege-analogico);
 }
 
 .popup-botoes{

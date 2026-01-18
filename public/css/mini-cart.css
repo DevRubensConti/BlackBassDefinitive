@@ -9,7 +9,7 @@
   --preto-bass: #1B1B1B;
   --laranja-vintage: #F26B3A;
   --bege-analogico: #F6E0B3;
-
+  --verde-bass: #5FBF74;
   --bb-accent: var(--cor-primaria, var(--laranja-vintage));
   --bb-text: var(--cor-secundaria, #ffffff);
 
@@ -227,8 +227,8 @@
   cursor: pointer;
 
   padding: 12px 16px;
-  background: var(--bb-accent);
-  color: #000;
+  background: var(--verde-bass);
+  color: #000 !important;
 
   font-family: 'Bebas Neue', sans-serif;
   font-size: 20px;

@@ -78,7 +78,7 @@ body{
   border: 1px solid var(--bb-border);
 
   background: rgba(0,0,0,.45);
-  color: var(--bb-text);
+  color: white;
   font-size: 14px;
 
   outline: none;
@@ -99,7 +99,7 @@ body{
   letter-spacing: 2px;
   text-transform: uppercase;
 
-  background: var(--bb-accent);
+  background: var(--laranja-vintage);
   color: #000;
 
   transition: filter .15s ease, transform .1s ease;
@@ -183,7 +183,7 @@ body{
   padding: 10px 20px;
   border-radius: 16px;
 
-  background: var(--bb-accent);
+  background: var(--verde-bass);
   color: #000;
   text-decoration: none;
 

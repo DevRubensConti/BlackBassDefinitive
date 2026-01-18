@@ -50,7 +50,7 @@ body{
   font-size: 42px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.95);
+  color: var(--bege-analogico);
 
   padding-bottom: 8px;
   border-bottom: 2px solid var(--bb-accent);
@@ -102,7 +102,7 @@ body{
 }
 
 .venda-header h3 span{
-  color: var(--bb-accent);
+  color: var(--laranja-vintage);
   font-weight: 700;
 }
 
@@ -139,8 +139,8 @@ body{
   text-transform: uppercase;
 
   background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.35);
-  color: rgba(255,255,255,.95);
+  border: 1px solid var(--laranja-vintage);
+  color: var(--laranja-vintage);
 }
 
 /* =========================
@@ -202,7 +202,10 @@ body{
   border: 1px solid rgba(255,255,255,.08);
 }
 
+
+
 .item-nome{
+  color: var(--laranja-vintage);
   font-size: 13px;
   font-weight: 600;
 }
@@ -217,9 +220,13 @@ body{
   font-size: 12px;
 }
 
+.item-subtotal, .item-preco-unit{
+  color: white;
+}
+
 .item-subtotal{
   font-weight: 700;
-  color: var(--bb-accent);
+
 }
 
 /* =========================
@@ -257,7 +264,7 @@ body{
 
 /* primário */
 .btn-primario{
-  background: var(--bb-accent);
+  background: var(--laranja-vintage);
   color: #000;
 }
 
@@ -275,7 +282,7 @@ body{
 
 .btn-secundario:hover{
   background: var(--bb-accent);
-  color: #000;
+  color: var(--laranja-vintage);
 }
 
 /* disabled */

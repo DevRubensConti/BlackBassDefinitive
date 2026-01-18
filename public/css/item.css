@@ -6,6 +6,7 @@
   --preto-bass: #1B1B1B;
   --laranja-vintage: #F26B3A;
   --verde-bass: #5FBF74;
+  --verde-bass-2: #a0f8b3;
   --bege-analogico: #F6E0B3;
 
   --texto-claro: #FFFFFF;
@@ -86,7 +87,7 @@ body{
   font-size: 34px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.95);
+  color: var(--bege-analogico);
   text-shadow: none;
   display: inline-block;
   padding-bottom: 6px;
@@ -272,7 +273,7 @@ body{
   font-family: 'Bebas Neue', sans-serif;
   font-size: 38px;
   letter-spacing: 2px;
-  color: var(--bb-accent);
+  color: var(--laranja-vintage);
   text-shadow: none;
 }
 
@@ -299,7 +300,7 @@ body{
 }
 .star-item.filled{
   opacity: 1;
-  color: var(--bb-accent);
+  color: var(--laranja-vintage);
 }
 
 .view-icon{
@@ -361,7 +362,7 @@ body{
 
 /* Comprar (laranja) */
 .btn-buy{
-  background: var(--bb-accent);
+  background: var(--laranja-vintage);
   color: #000;
   box-shadow: 0 10px 22px rgba(0,0,0,0.28);
 }
@@ -378,14 +379,17 @@ body{
 
 /* Oferta (outline premium) */
 .btn-offer{
-  background: transparent;
-  color: rgba(255,255,255,0.92);
-  border: 1px solid rgba(255,255,255,0.22);
+  background: #2a2a2a;              /* cinza escuro */
+  color: #ffffff;                   /* letra branca */
+  border: 1px solid rgba(255,255,255,0.8); /* borda branca fina */
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
+
 .btn-offer:hover{
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(242,107,58,0.38);
+  background: #333333;              /* cinza um pouco mais claro no hover */
+  border-color: rgba(255,255,255,1);
 }
+
 
 /* Chat (verde) */
 .btn-chat{
@@ -449,7 +453,7 @@ button.disabled{
   font-size: 22px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.95);
+  color: var(--bege-analogico);
   display: inline-block;
   padding-bottom: 6px;
   border-bottom: 2px solid var(--bb-accent);
@@ -560,7 +564,7 @@ button.disabled{
 }
 .stars .star.filled{
   opacity: 1;
-  color: var(--bb-accent);
+  color: var(--laranja-vintage);
 }
 
 .seller-rating small{

@@ -32,13 +32,28 @@ body {
   font-family: 'Montserrat', Arial, sans-serif;
   padding: 0;
   margin: 0;
-
-  /* mantém seu wallpaper, mas com overlay escuro premium */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
   background:
-    
+    linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.55)),
     url('https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/Wallpapers/WallpaperTest1.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJXYWxscGFwZXJzL1dhbGxwYXBlclRlc3QxLnBuZyIsImlhdCI6MTc2NjE3MDk5NSwiZXhwIjoxNzk3NzA2OTk1fQ.ey_nePgvpQoKqTVCPtAoWl4C53VjG6AWLMKd7CjmLR8')
     no-repeat center fixed;
   background-size: cover;
+  background-attachment: fixed;
+}
+
+/* ========= MAIN CONTAINER ========= */
+.index-main{
+  padding-top: 40px;
+  padding-bottom: 40px;
+  min-height: calc(100vh - 200px);
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn{
+  from{ opacity: 0; transform: translateY(10px); }
+  to{ opacity: 1; transform: translateY(0); }
 }
 
 /* ========= TÍTULOS (brandbook: sem sombra pesada) ========= */
@@ -46,7 +61,7 @@ body {
 .brands-gallery-title,
 .stores-title {
   text-align: center;
-  margin-top: 42px;
+  margin-top: 20px;
   margin-bottom: 12px;
 }
 
@@ -54,16 +69,30 @@ body {
 .brands-gallery-title h2,
 .stores-title h2 {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 44px;
+  font-size: 48px;
   letter-spacing: 3px;
   text-transform: uppercase;
   font-weight: 400;
-  color: var(--texto-claro);
+  color: var(--bege-analogico);
   text-shadow: none;
-
   display: inline-block;
-  padding-bottom: 6px;
-  border-bottom: 2px solid var(--laranja-vintage);
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--laranja-vintage);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.mais-acessados-header h2::after,
+.brands-gallery-title h2::after,
+.stores-title h2::after{
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--laranja-vintage), var(--bege-analogico));
+  transition: width 0.5s ease;
 }
 
 /* ========= CONTAINERS (vidro premium) ========= */
@@ -72,92 +101,225 @@ body {
 .stores-carousel-wrap {
   width: 100%;
   max-width: 1300px;
-  margin: 28px auto 60px auto;
-  padding: 26px 22px;
-  border-radius: 20px;
-
-  background: rgba(27,27,27,0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-
-  border: 1px solid rgba(255,255,255,0.08);
+  margin: 12px auto 32px auto;
+  padding: 32px 28px;
+  border-radius: 24px;
+  background: rgba(27,27,27,0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.12);
   box-shadow: var(--sombra);
   color: var(--texto-claro);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.most-viewed-gallery-wrap::before,
+.brands-filter-gallery-wrap::before,
+.stores-carousel-wrap::before{
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--laranja-vintage), var(--bege-analogico));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.most-viewed-gallery-wrap:hover,
+.brands-filter-gallery-wrap:hover,
+.stores-carousel-wrap:hover{
+  border-color: rgba(255,255,255,0.18);
+  box-shadow: 0 16px 40px rgba(0,0,0,.50);
+  transform: translateY(-2px);
+}
+
+.most-viewed-gallery-wrap:hover::before,
+.brands-filter-gallery-wrap:hover::before,
+.stores-carousel-wrap:hover::before{
+  opacity: 1;
 }
 
 /* (mantém compatibilidade com seu HTML atual) */
 .mais-vistos { width: 100%; }
-.most-viewed-gallery { padding: 14px 0; }
+.most-viewed-gallery { padding: 16px 0; }
 
 /* ========= GALERIA DE PRODUTOS ========= */
 .most-viewed-gallery {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 22px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 28px;
+  justify-items: center;
+  padding: 16px 0;
 }
 
 /* card premium */
 .card-produto-uniforme {
-  width: 255px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 16px;
+  width: 100%;
+  max-width: 270px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.22);
-  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.30);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
   color: var(--texto-claro);
+  position: relative;
 }
 
 .card-produto-uniforme:hover {
-  transform: translateY(-6px);
-  border-color: rgba(242,107,58,0.55);
-  box-shadow: 0 16px 34px rgba(0,0,0,0.35);
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(242,107,58,0.65);
+  box-shadow: 0 20px 45px rgba(0,0,0,0.45), 0 0 0 1px rgba(242,107,58,0.1);
 }
 
-.card-produto-uniforme a { color: inherit; }
+.card-produto-uniforme a { 
+  color: inherit;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 
 /* imagem */
 .imagem-container {
   width: 100%;
-  height: 220px;
-  background: rgba(246,224,179,0.9);
+  height: 240px;
+  background: rgba(246,224,179,0.95);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  position: relative;
 }
 
 .imagem-container img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-produto-uniforme:hover .imagem-container img{
+  transform: scale(1.08);
+}
+
+/* Overlay no hover */
+.card-overlay{
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,.6));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+}
+
+.card-produto-uniforme:hover .card-overlay{
+  opacity: 1;
+}
+
+.card-badge{
+  background: var(--laranja-vintage);
+  color: #000;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+  transform: translateY(10px);
+  transition: transform 0.3s ease;
+}
+
+.card-produto-uniforme:hover .card-badge{
+  transform: translateY(0);
 }
 
 /* infos */
 .info-produto {
-  padding: 12px 14px 14px 14px;
+  padding: 16px 18px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .info-produto h3 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 15px;
-  line-height: 1.25;
-  margin: 6px 0 10px 0;
+  font-size: 16px;
+  line-height: 1.4;
+  margin: 0;
   color: rgba(255,255,255,0.95);
   font-weight: 700;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 44px;
 }
 
-.info-produto p {
-  margin: 5px 0;
-  font-size: 13px;
+.produto-preco{
+  margin: 0;
+}
+
+.produto-preco strong{
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  letter-spacing: 1.5px;
+  color: var(--laranja-vintage);
+  text-shadow: 0 2px 8px rgba(242,107,58,.3);
+}
+
+.produto-meta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.meta-tag{
+  background: rgba(255,255,255,0.08);
   color: var(--texto-suave);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(255,255,255,0.12);
+  font-family: 'Montserrat', sans-serif;
 }
 
-.info-produto p strong{
-  color: rgba(255,255,255,0.92);
-  font-weight: 700;
+.produto-stats{
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.stats-item{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--texto-suave);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.stats-item i{
+  font-size: 12px;
+  color: var(--laranja-vintage);
+  opacity: 0.8;
 }
 
 /* ========= (se ainda usa card-produto antigo em algum lugar) ========= */
@@ -254,17 +416,23 @@ body {
 
 #backBtn, #forwardBtn,
 #storesBackBtn, #storesForwardBtn {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
-  filter: brightness(1.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0,0,0,.2));
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 #backBtn:hover, #forwardBtn:hover,
 #storesBackBtn:hover, #storesForwardBtn:hover {
-  transform: scale(1.08);
-  filter: brightness(1.12);
+  transform: scale(1.15);
+  filter: brightness(1.2) drop-shadow(0 4px 8px rgba(0,0,0,.3));
+  background: rgba(255,255,255,0.1);
+  border-color: var(--laranja-vintage);
 }
 
 .brands-filter-gallery {
@@ -286,21 +454,43 @@ body {
 }
 
 /* marca premium */
+.brands-filter-gallery a {
+  position: relative;
+}
+
 .brands-filter-gallery a img {
-  width: 120px;
-  height: 80px;
+  width: 130px;
+  height: 85px;
   object-fit: contain;
   background: var(--bege-analogico);
-  padding: 10px;
-  border-radius: 12px;
-  transition: transform 0.25s ease, box-shadow .25s ease, outline-color .25s ease;
+  padding: 12px;
+  border-radius: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   outline: 2px solid rgba(0,0,0,0.10);
-  box-shadow: 0 10px 18px rgba(0,0,0,0.18);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.20);
+}
+
+.brands-filter-gallery a::after{
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: var(--laranja-vintage);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.brands-filter-gallery a:hover::after{
+  width: 80%;
 }
 
 .brands-filter-gallery a img:hover {
-  transform: translateY(-4px) scale(1.03);
-  outline-color: rgba(242,107,58,0.55);
+  transform: translateY(-6px) scale(1.05);
+  outline-color: rgba(242,107,58,0.65);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.30), 0 0 0 3px rgba(242,107,58,0.1);
 }
 
 /* ========= LOJAS (carrossel) ========= */
@@ -336,63 +526,256 @@ body {
   align-items: center;
   justify-content: flex-start;
   text-align: center;
-  min-width: 120px;
+  min-width: 140px;
+  padding: 8px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.store-card:hover{
+  background: rgba(255,255,255,0.04);
+  transform: translateY(-4px);
 }
 
 .store-card img.banner-logo {
-  width: 92px;
-  height: 92px;
+  width: 100px;
+  height: 100px;
   object-fit: cover;
   border-radius: 50%;
-  border: 2px solid rgba(242,107,58,0.75); /* laranja vintage */
+  border: 3px solid var(--laranja-vintage);
   padding: 6px;
   background: rgba(246,224,179,0.95);
-  transition: transform .2s ease, box-shadow .2s ease;
-  box-shadow: 0 10px 18px rgba(0,0,0,0.20);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.25);
 }
 
-.store-card img.banner-logo:hover {
-  transform: translateY(-3px) scale(1.04);
-  box-shadow: 0 14px 26px rgba(0,0,0,0.28);
+.store-card:hover img.banner-logo {
+  transform: scale(1.08);
+  border-color: var(--bege-analogico);
+  box-shadow: 0 14px 30px rgba(242,107,58,0.35);
+}
+
+.store-card-info{
+  margin-top: 10px;
+  width: 100%;
+}
+
+.store-nome{
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 34px;
 }
 
 .store-rating {
-  margin-top: 8px;
+  margin-top: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   flex-wrap: nowrap;
 }
 
 .store-rating i {
   color: var(--laranja-vintage);
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(242,107,58,.3));
+  transition: transform 0.2s ease;
+}
+
+.store-card:hover .store-rating i{
+  transform: scale(1.1);
 }
 
 .store-rating .nota-text {
-  font-size: 13px;
-  color: rgba(255,255,255,0.9);
-  margin-left: 4px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  margin-left: 6px;
   font-weight: 700;
   font-family: 'Montserrat', sans-serif;
+  background: rgba(242,107,58,0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 /* ========= RESPONSIVO ========= */
-@media (max-width: 900px){
-  .card-produto-uniforme { width: 46%; min-width: 220px; }
-  .mais-acessados-header h2,
-  .brands-gallery-title h2,
-  .stores-title h2 { font-size: 38px; }
+@media (max-width: 1024px){
+  .index-main{
+    padding-top: 40px;
+  }
+  
+  .most-viewed-gallery{
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 24px;
+  }
 }
 
-@media (max-width: 560px){
-  .card-produto-uniforme { width: 92%; }
+@media (max-width: 900px){
+  .mais-acessados-header,
+  .brands-gallery-title,
+  .stores-title{
+    margin-top: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .mais-acessados-header h2,
+  .brands-gallery-title h2,
+  .stores-title h2 { 
+    font-size: 40px;
+    letter-spacing: 2.5px;
+  }
+  
+  .most-viewed-gallery{
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  
+  .card-produto-uniforme { 
+    max-width: 100%;
+  }
+  
   .most-viewed-gallery-wrap,
   .brands-filter-gallery-wrap,
-  .stores-carousel-wrap { padding: 20px 16px; }
+  .stores-carousel-wrap{
+    padding: 24px 20px;
+  }
+}
 
+@media (max-width: 640px){
+  .index-main{
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
+  
+  .mais-acessados-header h2,
+  .brands-gallery-title h2,
+  .stores-title h2 { 
+    font-size: 34px;
+    letter-spacing: 2px;
+    padding-bottom: 8px;
+  }
+  
+  .most-viewed-gallery{
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .card-produto-uniforme{
+    max-width: 100%;
+  }
+  
+  .imagem-container{
+    height: 220px;
+  }
+  
+  .most-viewed-gallery-wrap,
+  .brands-filter-gallery-wrap,
+  .stores-carousel-wrap { 
+    padding: 20px 16px;
+    margin: 24px auto 50px auto;
+  }
+  
+  .brands-filter-gallery a img{
+    width: 110px;
+    height: 75px;
+  }
+  
+  .store-card{
+    min-width: 120px;
+  }
+  
+  .store-card img.banner-logo{
+    width: 88px;
+    height: 88px;
+  }
+  
   #backBtn, #forwardBtn,
-  #storesBackBtn, #storesForwardBtn { width: 38px; height: 38px; }
+  #storesBackBtn, #storesForwardBtn { 
+    width: 40px; 
+    height: 40px;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 480px){
+  .index-main{
+    padding-top: 28px;
+  }
+  
+  .mais-acessados-header h2,
+  .brands-gallery-title h2,
+  .stores-title h2 { 
+    font-size: 28px;
+    letter-spacing: 1.5px;
+  }
+  
+  .most-viewed-gallery-wrap,
+  .brands-filter-gallery-wrap,
+  .stores-carousel-wrap { 
+    padding: 16px 12px;
+    border-radius: 20px;
+  }
+  
+  .imagem-container{
+    height: 200px;
+  }
+  
+  .info-produto{
+    padding: 14px 16px;
+  }
+  
+  .info-produto h3{
+    font-size: 15px;
+    min-height: 40px;
+  }
+  
+  .produto-preco strong{
+    font-size: 22px;
+  }
+  
+  .brands-filter-gallery a img{
+    width: 100px;
+    height: 70px;
+    padding: 10px;
+  }
+  
+  .store-card{
+    min-width: 100px;
+  }
+  
+  .store-card img.banner-logo{
+    width: 80px;
+    height: 80px;
+  }
+  
+  .store-nome{
+    font-size: 12px;
+    min-height: 30px;
+  }
+  
+  .store-rating i{
+    font-size: 12px;
+  }
+  
+  .store-rating .nota-text{
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  
+  #backBtn, #forwardBtn,
+  #storesBackBtn, #storesForwardBtn { 
+    width: 36px; 
+    height: 36px;
+  }
 }

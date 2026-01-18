@@ -35,7 +35,8 @@
   <%- include('partials/navbar.ejs') %>
 
   <main class="checkout-container">
-    <h1>🛒 Checkout</h1>
+    <img class="carrinho-img" src="https://ckfaesrraivatujsqpxc.supabase.co/storage/v1/object/sign/newIcons/cart.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV84NmExZjBlMC05Yjg5LTQwNjMtYTk5ZS03ZDE0MGViOWZjYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJuZXdJY29ucy9jYXJ0LnBuZyIsImlhdCI6MTc2Nzk4ODI5NSwiZXhwIjoxNzk5NTI0Mjk1fQ.rCwt5FMVCP4PUyK85EeypPrzJWaRD5yUQ2LYWeCAvKA"></img>
+    <h1>Checkout</h1>
 
     <% if (itens && itens.length > 0) { %>
       <% let total = 0; %>
@@ -59,30 +60,32 @@
               </div>
 
               <p class="checkout-price">
-                Preço unitário:
-                <span class="unit">
-                  <%= Number(item.produtos.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
-                </span>
-              </p>
+  <span class="label">Preço unitário:</span>
+  <span class="unit">
+    <%= Number(item.produtos.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+  </span>
+</p>
 
-              <p class="checkout-price">
-                Subtotal:
-                <span class="subtotal">
-                  <%= Number(item.quantidade * item.produtos.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
-                </span>
-              </p>
+<p class="checkout-price">
+  <span class="label">Subtotal:</span>
+  <span class="subtotal">
+    <%= Number(item.quantidade * item.produtos.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+  </span>
+</p>
+
             </div>
           </div>
         <% }) %>
       </div>
 
-      <div class="total-container">
-        <h2>Total: 
-          <span id="total-geral">
-            <%= Number(total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
-          </span>
-        </h2>
-      </div>
+      <div class="total-container checkout-total">
+  <h2>
+    <span class="label">Total: </span>
+    <span id="total-geral">
+      <%= Number(total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
+    </span>
+  </h2>
+</div>
       <a href="/integracoes/melhorenvio/connect" class="btn btn-primario">
   Conectar com Melhor Envio
 </a>

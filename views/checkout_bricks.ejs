@@ -2,11 +2,10 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Checkout BlackBass (Bricks)</title>
-
-  <!-- CSS base do site (variáveis de cor, navbar, etc.) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout — BlackBass</title>
   <link rel="stylesheet" href="/css/checkout_bricks.css">
-  </head>
+</head>
 <body>
   <%- include('partials/navbar.ejs') %>
 
@@ -22,7 +21,7 @@
 
         <div class="bb-total-pill">
           <span>Total da compra</span>
-          <strong>R$ <%= totalAmount.toFixed(2) %></strong>
+          <strong><%= Number(totalAmount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></strong>
         </div>
       </header>
 
@@ -46,7 +45,7 @@
                     x<%= qtd %>
                   </div>
                   <div class="bb-summary-item-price">
-                    R$ <%= (qtd * preco).toFixed(2) %>
+                    <%= Number(qtd * preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %>
                   </div>
                 </li>
               <% }) %>
@@ -58,7 +57,7 @@
           <div class="bb-summary-footer">
             <div class="bb-summary-total-line">
               <span>Total</span>
-              <span>R$ <%= totalAmount.toFixed(2) %></span>
+              <span><%= Number(totalAmount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></span>
             </div>
             <p class="bb-summary-note">
               O pagamento é processado pelo Mercado Pago. Seus dados de cartão não ficam salvos no BlackBass.
@@ -78,7 +77,12 @@
             Preencha os dados do cartão no formulário seguro abaixo. Você será redirecionado automaticamente após a aprovação.
           </p>
 
-          <div id="cardPaymentBrick_container"></div>
+          <div id="cardPaymentBrick_container">
+            <div class="bb-brick-loading">
+              <div class="bb-spinner"></div>
+              <span>Carregando formulário de pagamento...</span>
+            </div>
+          </div>
 
           <div class="bb-payment-security">
             <div class="bb-payment-chip">
@@ -98,8 +102,8 @@
       </div>
     </section>
   </main>
-
   <%- include('partials/footer.ejs') %>
+  
 
   <!-- SDK do Mercado Pago -->
   <script src="https://sdk.mercadopago.com/js/v2"></script>
@@ -174,6 +178,9 @@
           },
           onReady: () => {
             console.log("Card Payment Brick pronto");
+            // Remove loading quando o brick estiver pronto
+            const loadingEl = document.querySelector('.bb-brick-loading');
+            if (loadingEl) loadingEl.style.display = 'none';
           },
           onError: (error) => {
             console.error("Erro no Brick:", error);
@@ -191,5 +198,6 @@
 
     renderCardPaymentBrick();
   </script>
+  
 </body>
 </html>

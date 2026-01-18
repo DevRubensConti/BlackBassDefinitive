@@ -1,46 +1,69 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BlackBass — Marketplace de Instrumentos Musicais</title>
   <link rel="stylesheet" href="/css/index.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
 </head>
 <body>
   <%- include('partials/navbar.ejs') %>
-  <div class="mais-acessados-header">
-    <h2>Itens mais acessados</h2>
-  </div>
-  <section class="mais-vistos">
-  <div class="most-viewed-gallery">
-    <% maisVistos.forEach(item => { %>
-      <div class="card-produto-uniforme">
-        <a href="/item/<%= item.id %>">
-          <div class="imagem-container">
-            <img src="<%= item.imagem_url.split(',')[0] %>" alt="Imagem do produto">
-          </div>
-          <div class="info-produto">
-            <h3><%= item.nome %></h3>
-            <p><strong>Preço:</strong> R$ <%= Number(item.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
-            <p><strong>Shape:</strong> <%= item.shape || '—' %></p>
-            <p><strong>Marca:</strong> <%= item.marca || '—' %></p>
-            <p><strong>Condição:</strong> <%= item.condicao || '—' %></p>
-            <p><strong>Acessos:</strong> <%= item.acessos || 0 %></p>
-          </div>
-        </a>
+
+  <main class="index-main">
+    <!-- ========= PRODUTOS MAIS ACESSADOS ========= -->
+    <div class="mais-acessados-header">
+      <h2>Itens mais acessados</h2>
+    </div>
+    
+    <section class="mais-vistos">
+      <div class="most-viewed-gallery-wrap">
+        <div class="most-viewed-gallery">
+          <% (maisVistos || []).forEach(item => { 
+               const imagens = (item.imagem_url || '').split(',').filter(Boolean);
+               const imagemPrincipal = imagens.length > 0 ? imagens[0] : '/images/item.png';
+          %>
+            <div class="card-produto-uniforme">
+              <a href="/item/<%= item.id %>">
+                <div class="imagem-container">
+                  <img src="<%= imagemPrincipal %>" alt="<%= item.nome %>" onerror="this.onerror=null;this.src='/images/item.png';">
+                  <div class="card-overlay">
+                    <span class="card-badge">Ver detalhes</span>
+                  </div>
+                </div>
+                <div class="info-produto">
+                  <h3><%= item.nome %></h3>
+                  <p class="produto-preco">
+                    <strong><%= Number(item.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) %></strong>
+                  </p>
+                  <div class="produto-meta">
+                    <% if (item.shape) { %>
+                      <span class="meta-tag"><%= item.shape %></span>
+                    <% } %>
+                    <% if (item.marca) { %>
+                      <span class="meta-tag"><%= item.marca %></span>
+                    <% } %>
+                  </div>
+                  <div class="produto-stats">
+                    <span class="stats-item">
+                      <i class="fa-solid fa-eye"></i>
+                      <%= item.acessos || 0 %> acessos
+                    </span>
+                  </div>
+                </div>
+              </a>
+            </div>
+          <% }) %>
+        </div>
       </div>
-    <% }) %>
-  </div>
-</section>
+    </section>
 
-
-
-  
-  <div class="brands-gallery-title">
-    <h2>Marcas</h2>
-  </div>  
-<div class="brands-filter-gallery-wrap">
+    <!-- ========= MARCAS EM DESTAQUE ========= -->
+    <div class="brands-gallery-title">
+      <h2>Marcas</h2>
+    </div>
+    
+    <div class="brands-filter-gallery-wrap">
   <div class="brands-carousel-row">
     <img src="/images/back.png" id="backBtn">
     <div class="brands-filter-gallery">
@@ -61,11 +84,12 @@
   </div>
 </div>
 
-  <div class="stores-title">
-  <h2>Lojas Favoritas:</h2>
-</div>
+    <!-- ========= LOJAS EM DESTAQUE ========= -->
+    <div class="stores-title">
+      <h2>Lojas em Destaque</h2>
+    </div>
 
-<div class="stores-carousel-wrap">
+    <div class="stores-carousel-wrap">
   <div class="stores-carousel-row">
     <img src="/images/back.png" id="storesBackBtn" alt="Voltar">
 
@@ -81,27 +105,30 @@
           >
         </a>
 
-        <div class="store-rating">
-          <% 
-            const nota = Number(loja.nota_media) || 0;
-            const estrelasCheias = Math.floor(nota);
-            const meiaEstrela = (nota % 1) >= 0.5;
-            const estrelasVazias = 5 - estrelasCheias - (meiaEstrela ? 1 : 0);
-          %>
+        <div class="store-card-info">
+          <h4 class="store-nome"><%= loja.nomeFantasia %></h4>
+          <div class="store-rating">
+            <% 
+              const nota = Number(loja.nota_media) || 0;
+              const estrelasCheias = Math.floor(nota);
+              const meiaEstrela = (nota % 1) >= 0.5;
+              const estrelasVazias = 5 - estrelasCheias - (meiaEstrela ? 1 : 0);
+            %>
 
-          <% for (let i = 0; i < estrelasCheias; i++) { %>
-            <i class="fa-solid fa-star"></i>
-          <% } %>
+            <% for (let i = 0; i < estrelasCheias; i++) { %>
+              <i class="fa-solid fa-star"></i>
+            <% } %>
 
-          <% if (meiaEstrela) { %>
-            <i class="fa-solid fa-star-half-stroke"></i>
-          <% } %>
+            <% if (meiaEstrela) { %>
+              <i class="fa-solid fa-star-half-stroke"></i>
+            <% } %>
 
-          <% for (let i = 0; i < estrelasVazias; i++) { %>
-            <i class="fa-regular fa-star"></i>
-          <% } %>
+            <% for (let i = 0; i < estrelasVazias; i++) { %>
+              <i class="fa-regular fa-star"></i>
+            <% } %>
 
-          <span class="nota-text">(<%= nota.toFixed(1) %>)</span>
+            <span class="nota-text">(<%= nota.toFixed(1) %>)</span>
+          </div>
         </div>
       </div>
     <% }) %>
@@ -112,10 +139,8 @@
   </div>
 </div>
 
-
-
-  </div>
-  
+<%- include('partials/footer.ejs') %>
+</main>
 
   <script>
     const backBtn = document.getElementById("backBtn");
@@ -161,7 +186,7 @@
   });
 </script>
 
-<%- include('partials/footer.ejs') %>
+
 
 
 

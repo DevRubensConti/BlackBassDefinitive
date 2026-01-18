@@ -66,7 +66,7 @@ body{
   font-size: 44px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.95);
+  color: var(--bege-analogico);
 
   text-decoration: none;
   display: inline-block;
@@ -176,7 +176,7 @@ button[type="submit"]{
   cursor: pointer;
 
   padding: 16px 18px;
-  background: var(--bb-accent);
+  background: var(--laranja-vintage);
   color: #000;
 
   font-family: 'Bebas Neue', sans-serif;
@@ -189,7 +189,7 @@ button[type="submit"]{
 }
 
 button[type="submit"]:hover{
-  filter: brightness(1.08);
+  filter: brightness(1.3);
 }
 
 button[type="submit"]:active{

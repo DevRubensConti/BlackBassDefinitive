@@ -4,7 +4,7 @@
 :root{
   --bb-accent: var(--cor-primaria, #F26B3A);
   --bb-text: var(--cor-secundaria, #ffffff);
-
+--bege-analogico: #F6E0B3;
   --bb-muted: rgba(255,255,255,.75);
   --bb-border: rgba(255,255,255,.14);
   --bb-card: rgba(27,27,27,.82);
@@ -47,7 +47,7 @@ body{
   font-size: 42px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.95);
+  color: var(--bege-analogico);
 
   padding-bottom: 8px;
   border-bottom: 2px solid var(--bb-accent);
@@ -87,7 +87,7 @@ body{
   font-size: 26px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.95);
+  color: var(--bege-analogico);
 }
 
 .frete-card small{
@@ -152,7 +152,7 @@ body{
 
 .frete-item-price span{
   font-weight: 700;
-  color: var(--bege-analogico, #F6E0B3);
+  color: var(--laranja-vintage, #F6E0B3);
 }
 
 .frete-item-price small{
@@ -175,13 +175,14 @@ body{
   justify-content: space-between;
   margin-bottom: 6px;
   font-size: 14px;
+  color: var(--bege-analogico);
 }
 
 .frete-resumo-row.total{
   margin-top: 8px;
   font-weight: 900;
   font-size: 16px;
-  color: var(--bege-analogico, #F6E0B3);
+  color: var(--laranja-vintage);
 }
 
 /* =========================
@@ -216,7 +217,7 @@ body{
 }
 
 .frete-option.checked{
-  border-color: var(--bb-accent);
+  border-color: var(--verde-bass);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--bb-accent) 45%, transparent);
 }
 
@@ -235,6 +236,7 @@ body{
 .frete-option-nome{
   font-size: 14px;
   font-weight: 700;
+  color: var(--bege-analogico);
 }
 
 .frete-option-prazo{
@@ -297,17 +299,20 @@ body{
 
 .btn-secundario:hover{
   background: var(--bb-accent);
-  border-color: var(--bb-accent);
-  color: #000;
+  border-color: var(--laranja-vintage);
+  color: var(--laranja-vintage);
 }
 
 .btn-primario{
+  border: 2px solid var(--bege-analogico);
   background: var(--bb-accent);
-  color: #000;
+  color: var(--bege-analogico);
   box-shadow: 0 12px 26px rgba(0,0,0,.30);
 }
 
-.btn-primario:hover{ filter: brightness(1.08); }
+.btn-primario:hover{   background: var(--bb-accent);
+  border-color: var(--verde-bass);
+  color: var(--verde-bass);}
 
 .btn-primario:disabled{
   opacity: .6;

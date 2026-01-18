@@ -11,7 +11,7 @@
   --preto-bass: #1B1B1B;
   --laranja-vintage: #F26B3A;
   --bege-analogico: #F6E0B3;
-
+  --verde-bass: #5FBF74;
   --bb-accent: var(--cor-primaria, var(--laranja-vintage));
   --bb-text: var(--cor-secundaria, #ffffff);
 
@@ -217,7 +217,7 @@ body{
 
 .star.filled{
   opacity: 1;
-  color: var(--bege-analogico);
+  color: var(--laranja-vintage);
   filter: drop-shadow(0 10px 14px rgba(0,0,0,.25));
 }
 
@@ -294,7 +294,7 @@ body{
 .rate input[type="radio"]:checked ~ label,
 .rate label:hover,
 .rate label:hover ~ label{
-  color: var(--bege-analogico);
+  color: var(--laranja-vintage);
   filter: drop-shadow(0 10px 14px rgba(0,0,0,.30));
 }
 
@@ -348,24 +348,22 @@ body{
 }
 
 .btn-buy{
-  background: var(--bb-accent);
+  background: var(--laranja-vintage);
   color: #000;
 }
 
 .btn-buy:hover{
-  filter: brightness(1.08);
+  filter: brightness(1.2);
 }
 
 .btn-cart{
-  background: transparent;
-  color: rgba(255,255,255,.92);
-  border: 2px solid rgba(255,255,255,.65);
+  background: var(--laranja-vintage);
+  color: black;
+
 }
 
 .btn-cart:hover{
-  border-color: var(--bb-accent);
-  color: #000;
-  background: var(--bb-accent);
+  filter: brightness(1.2);
 }
 
 .btn-buy:active,
@@ -433,7 +431,7 @@ body{
   background: rgba(0,0,0,.32);
 
   font-weight: 800;
-  color: var(--bege-analogico);
+  color: var(--laranja-vintage);
 }
 
 /* =========================

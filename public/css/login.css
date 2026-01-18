@@ -67,7 +67,7 @@ body{
   border: 1px solid rgba(255,255,255,.10);
   box-shadow: 0 18px 45px rgba(0,0,0,.45);
 
-  color: rgba(255,255,255,.92);
+  color: var(--bege-analogico);
 }
 
 .login-container h2{
@@ -168,7 +168,7 @@ body{
   cursor: pointer;
 
   padding: 14px 18px;
-  background: var(--bb-accent);
+  background: var(--laranja-vintage);
   color: #000;
 
   font-family: 'Bebas Neue', sans-serif;
@@ -217,7 +217,7 @@ body{
 
 .forgot-link a,
 .signup-link a{
-  color: var(--bb-accent);
+  color: var(--verde-bass);
   font-weight: 700;
   text-decoration: none;
 }

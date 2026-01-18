@@ -52,6 +52,20 @@ body{
   -webkit-backdrop-filter: blur(14px);
 }
 
+.checkout-container h1{
+margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 44px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--bege-analogico);
+
+  display: inline-block;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--bb-accent);
+
+}
+
 /* =========================
    HEADER
 ========================= */
@@ -196,7 +210,7 @@ body{
 .btn-qtd:hover:not(:disabled),
 .btn-qtd:focus-visible{
   background: var(--bb-accent);
-  color: #000 !important;
+  color: var(--laranja-vintage) !important;
   border-color: var(--bb-accent);
   filter: brightness(1.06);
 }
@@ -220,12 +234,27 @@ body{
   color: rgba(255,255,255,.78);
 }
 
+.checkout-price .label {
+  color: #ffffff;
+}
+
+.checkout-price .unit {
+  color: #F26B3A; /* exemplo */
+  font-weight: 600;
+}
+
+
 .checkout-price .unit,
 .checkout-price .subtotal{
   font-weight: 900;
   color: var(--bege-analogico);
   filter: drop-shadow(0 10px 14px rgba(0,0,0,.20));
 }
+.checkout-price .label {
+  color: #ffffff;
+}
+
+
 
 /* =========================
    TOTAL
@@ -254,6 +283,30 @@ body{
   color: var(--bege-analogico);
   font-weight: 900;
 }
+
+.checkout-total h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+
+  font-family: 'Bebas Neue', sans-serif;
+ 
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 26px;
+}
+
+.checkout-total .label {
+   color: var(--bege-analogico);
+}
+
+#total-geral {
+  color: var(--laranja-vintage);
+  font-weight: 700;
+  font-size: 26px;
+}
+
 
 /* =========================
    AÇÕES (botões)
@@ -322,7 +375,7 @@ body{
   border-radius: 14px;
   border: 2px solid var(--bb-accent);
 
-  background: transparent;
+  background: var(--laranja-vintage);
   color: var(--bb-accent);
   text-decoration: none;
 
@@ -335,9 +388,9 @@ body{
 }
 
 .btn.btn-primario:hover{
-  background: var(--bb-accent);
+  background: var(--laranja-vintage);
   color: #000;
-  filter: brightness(1.06);
+  filter: brightness(1.3);
   transform: translateY(-1px);
 }
 
@@ -356,7 +409,7 @@ body{
 
   padding: 16px 18px;
 
-  background: var(--bb-accent);
+  background: var(--laranja-vintage);
   color: #000;
 
   font-family: 'Bebas Neue', sans-serif;
@@ -369,7 +422,7 @@ body{
 }
 
 .btn-finalizar:hover{
-  filter: brightness(1.08);
+  filter: brightness(1.3);
 }
 
 .btn-finalizar:active{
@@ -389,6 +442,11 @@ body{
   background: rgba(0,0,0,.45);
   border: 1px solid rgba(255,255,255,.12);
   border-radius: 18px;
+}
+
+.carrinho-img{
+  width: 50px;
+  height: 50px;
 }
 
 /* =========================

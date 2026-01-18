@@ -8,7 +8,7 @@
   --preto-bass: #1B1B1B;
   --laranja-vintage: #F26B3A;
   --bege-analogico: #F6E0B3;
-
+   --verde-bass: #5FBF74;
   --bb-accent: var(--cor-primaria, var(--laranja-vintage));
   --bb-text: var(--cor-secundaria, #ffffff);
 
@@ -84,19 +84,9 @@ body{
 }
 
 .chat-link{
-  display: block;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-
-  border-radius: 14px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
-
-  color: rgba(255,255,255,.88);
-  text-decoration: none;
-  font-weight: 600;
-
-  transition: background .15s ease, border-color .15s ease, transform .1s ease;
+  background: var(--bb-accent);
+  color: white;
+  border-color: transparent;
 }
 
 .chat-link:hover{
@@ -105,9 +95,20 @@ body{
 }
 
 .chat-link.ativo{
-  background: var(--bb-accent);
-  color: #000;
-  border-color: transparent;
+
+  display: block;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+
+  border-radius: 14px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+
+  color: var(--laranja-vintage);
+  text-decoration: none;
+  font-weight: 600;
+
+  transition: background .15s ease, border-color .15s ease, transform .1s ease;
 }
 
 /* =========================
@@ -155,6 +156,7 @@ body{
   font-size: 24px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
+  color: var(--bege-analogico);
 }
 
 .chat-produto-header p{
@@ -234,8 +236,8 @@ body{
 .mensagem.minha{
   align-self: flex-end;
 
-  background: var(--bb-accent);
-  color: #000;
+  background: rgba(255,255,255,.10);
+  color: var(--verde-bass);
 
   border-bottom-right-radius: 6px;
 }
@@ -305,7 +307,7 @@ body{
   cursor: pointer;
 
   padding: 0 22px;
-  background: var(--bb-accent);
+  background: var(--verde-bass);
   color: #000;
 
   font-family: 'Bebas Neue', sans-serif;

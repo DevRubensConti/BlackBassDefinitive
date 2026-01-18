@@ -69,6 +69,7 @@ body{
   font-size: 26px;
   letter-spacing: 2px;
   text-transform: uppercase;
+  color: var(--bege-analogico);
 }
 
 .filtro-box{
@@ -91,11 +92,11 @@ body{
   border: 1px solid var(--bb-border);
 
   background: rgba(0,0,0,.45);
-  color: var(--bb-text);
+  color: white
 }
 
 .filtro-box input::placeholder{
-  color: var(--bb-muted);
+  color: white;
 }
 
 .filtros button{
@@ -107,7 +108,7 @@ body{
   border: none;
   cursor: pointer;
 
-  background: var(--bb-accent);
+  background: var(--laranja-vintage);
   color: #000;
 
   font-family: 'Bebas Neue', sans-serif;
@@ -176,6 +177,7 @@ body{
   font-size: 30px;
   letter-spacing: 2px;
   text-transform: uppercase;
+  color: var(--bege-analogico);
 }
 
 .banner-textos p{
@@ -209,12 +211,14 @@ body{
 .banner-avaliacao p{
   margin: 0;
   font-size: 14px;
+  color: var(--bege-analogico);
 }
 
 .estrelas{
   display: flex;
   justify-content: center;
   gap: 4px;
+  color: var(--laranja-vintage);
 }
 
 .star{
@@ -269,12 +273,13 @@ body{
   font-size: 22px;
   letter-spacing: 1px;
   text-transform: uppercase;
+  color: var(--bege-analogico);
 }
 
 .card-produto p{
   margin: 0;
   font-size: 14px;
-  color: var(--bege-analogico, #F6E0B3);
+  color: white;
 }
 
 .tags{
@@ -293,7 +298,7 @@ body{
   border: none;
   cursor: pointer;
 
-  background: var(--bb-accent);
+  background: var(--verde-bass);
   color: #000;
 
   font-family: 'Bebas Neue', sans-serif;

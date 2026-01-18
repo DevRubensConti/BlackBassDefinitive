@@ -163,12 +163,12 @@ body{
   padding: 0 16px;
 
   border-radius: 14px;
-  border: none;
+  border: 2px solid white;
   cursor: pointer;
   user-select: none;
 
   background: var(--bb-accent);
-  color: #000;
+  color: white;
 
   font-family: 'Bebas Neue', sans-serif;
   font-size: 20px;
@@ -179,7 +179,7 @@ body{
   transition: transform .10s ease, filter .15s ease;
 }
 
-.btn-upload:hover{ filter: brightness(1.08); transform: translateY(-1px); }
+.btn-upload:hover{ filter: brightness(1.08); transform: translateY(-1px); border-color: var(--laranja-vintage); color: var(--laranja-vintage);}
 .btn-upload:active{ transform: translateY(0); }
 
 .hint{
@@ -225,8 +225,8 @@ body{
 
 .btn-voltar-painel:hover{
   background: var(--bb-accent);
-  border-color: var(--bb-accent);
-  color: #000;
+  border-color: var(--laranja-vintage);
+  color: white;
   filter: brightness(1.06);
   transform: translateY(-1px);
 }
@@ -235,14 +235,14 @@ body{
 /* Salvar (primário) */
 .btn-salvar{
   width: 100%;
-  border: none;
+  border: 2px solid white;
   border-radius: 14px;
   cursor: pointer;
 
   padding: 16px 18px;
 
   background: var(--bb-accent);
-  color: #000;
+  color: var(--laranja-vintage);
 
   font-family: 'Bebas Neue', sans-serif;
   font-size: 22px;
@@ -253,7 +253,7 @@ body{
   transition: transform .10s ease, filter .15s ease;
 }
 
-.btn-salvar:hover{ filter: brightness(1.08); }
+.btn-salvar:hover{ filter: brightness(1.08); border-color: var(--laranja-vintage);}
 .btn-salvar:active{ transform: translateY(1px); }
 
 /* =========================
